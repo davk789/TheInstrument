@@ -274,14 +274,14 @@ DrumSynth {
 		// make the sliders //
 		paramNumSliders = [12, 10, 6, 6, 12, 12, 12, 6];
 		paramSliders = Array.fill(paramNumSliders.size, { |ind|
-		Array.fill(paramNumSliders[ind], { |i|
+			Array.fill(paramNumSliders[ind], { |i|
 				var slider;
 				slider = GUI.slider.new(dsParamViews[ind], Rect.new(0, 0, 250, 12.3))
 					.background_(Color.new255(100,240,100))
 					.knobColor_(Color.white);
 				if(i < 3){
 					slider.background = Color.red;
-			};
+				};
 				slider;
 			});
 		});
