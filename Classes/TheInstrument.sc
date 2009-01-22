@@ -1,9 +1,11 @@
 TheInstrument {
 	*new {
-		this.launchClasses;
-		this.launchGlobalMidiResponders;
+		this.launchObjects;
+		this.launchMidiResponders;
 	}
-	*launchClasses {
+	*launchObjects {
+		~audioBusRegister = Dictionary.new;
+		// this is going to be used by the effects classes. using the track name as the key
 		~mixer = Mixer.new;
 		
 		~eventLooper = EventLooper.new;
@@ -54,7 +56,7 @@ TheInstrument {
 		
 		//drumSynth.initLooper;//
 		 	}
-	*launchGlobalMidiResponders {
+	*launchMidiResponders {
 		var lastChannel=0;
 		NoteOnResponder({ |src,chan,num,vel|
 			[src,chan,num,vel].postln;
