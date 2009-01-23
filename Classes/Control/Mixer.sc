@@ -13,7 +13,7 @@ Mixer {
 		mixGroup = fxGroups.last + 1;
 		masterGroup = mixGroup + 1;
 		masterSubGroups = Array.fill(4, { |ind| ind + masterGroup + 1;});
-		insertList = ["<none>", "delay", "ringMod", "compressor", "distortion", 
+		insertList = ["<none>", "monoDelay", "ringMod", "compressor", "distortion", 
 			"eq", "pitchShift"];
 		4.do{ |ind|
 			s.sendMsg('g_new', fxGroups[ind], 1, 500);
@@ -57,11 +57,11 @@ Mixer {
 		inserts = GUI.vLayoutView.new(channel, channelHeight * 0.275)
 			.background_(Color.black.alpha_(0.95));
 
-		insertMenus = Array.fill(4, {
+		insertMenus = Array.fill(4, { |ind|
 			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
 				.items_(insertList)
 				.allowsReselection_(true)
-				.action_({ |obj| obj.items[obj.value].postln; });
+				.action_({ |obj| this.launchFXWindow(obj, fxGroups[ind]); });
 		});
 
 		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
@@ -78,6 +78,13 @@ Mixer {
 			channels[name].setVolume(obj.value);
 		};
 		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
+	}
+	launchFXWindow { |menu|
+		switch(menu.items[menu.value],
+			"monoDelay", {
+				postln("need to create and implement the mono delay class");
+			}
+		);
 	}
 }
 
@@ -126,20 +133,44 @@ MixerChannel {
 this is how things look on startup now:
 NODE TREE Group 0
    1 group
+      400 group
+         999 group
+         1003 group
+            1002 r_klank
+         1005 group
+            1004 r_lpf
+         1007 group
+            1006 r_hpf
+         1009 group
+            1008 r_hpf
+         1011 group
+            1010 r_klank
+         1013 group
+            1012 r_klank
+         1015 group
+            1014 r_klank
+         1017 group
+            1016 r_lpf
+      102 group
+      103 group
       500 group
          900 group
          901 group
          902 group
          903 group
          904 group
+            1026 monoMixerChannel
+            1001 monoMixerChannel
          905 group
             906 group
             907 group
             908 group
             909 group
             1000 stereoMixerChannel
+
 *** the group numbers should be <1000, nodes can be >1000/dereived from s.sendMsg 
 	for now. see if this causes conflicts with voice creation. node management might
 	need to be cleaned up later, to avoid mode id conflicts with synths using dynamic
 	node numbers.
 */                                                              
+ 

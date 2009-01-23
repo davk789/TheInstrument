@@ -61,21 +61,21 @@ TheInstrument {
 		NoteOnResponder({ |src,chan,num,vel|
 			[src,chan,num,vel].postln;
 			lastChannel = chan;
-			//switch(chan,
-			//	0, {
+			switch(chan,
+				0, {
 					~czSynth.noteOn(src, chan, num, vel);
 					if(~czSynth.looper.notNil){
 						~czSynth.looper.addEvent([0,src,chan,num,vel]);
 					};
-			//	},
-			//	9, {
+				},
+				9, {
 					~drumSynth.noteOn(src, chan, num, vel);
 					if(~drumSynth.looper.notNil){
 						~drumSynth.looper.addEvent([num, vel]);
 						// not automating cc controls yet
 					};
-			//	}
-			//);
+				}
+			);
 		});
 		NoteOffResponder({ |src,chan,num,vel|
 			if(chan == 0){
