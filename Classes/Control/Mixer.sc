@@ -1,11 +1,11 @@
 
 Mixer {
-	var s, <channels, insertList, win, channelWidth=100, channelHeight=530, 
+	var s, <channels, win, windowHeight=530,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
-	*new { |name|
+	*new {
 		^super.new.init_mixer;
 	}
-	init_mixer { |name|
+	init_mixer {
 		s = Server.default;
 		s.sendMsg('g_new', 500, 1, 1);
 		channels = Dictionary.new;
@@ -13,8 +13,6 @@ Mixer {
 		mixGroup = fxGroups.last + 1;
 		masterGroup = mixGroup + 1;
 		masterSubGroups = Array.fill(4, { |ind| ind + masterGroup + 1;});
-		insertList = ["<none>", "monoDelay", "ringMod", "compressor", "distortion", 
-			"eq", "pitchShift"];
 		4.do{ |ind|
 			s.sendMsg('g_new', fxGroups[ind], 1, 500);
 		};
@@ -26,72 +24,29 @@ Mixer {
 		this.initGUI;
 		this.addStereoChannel("master", masterGroup, 1);
 	}
+	
 	//// GUI methods
 	initGUI {
-		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, channelHeight));
+		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, windowHeight));
 		//win.view.decorator = FlowLayout(win.view.bounds);
 		win.front;
 	}
 	addMonoChannel { |name, group=1, addTarget=0|
 		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1));
-		this.makeChannelGUI(name);
+		channels[name].makeChannelGUI(win, fxGroups);
 	}
 	addStereoChannel { |name, group=1, addTarget=0|
 		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 2));
-		this.makeChannelGUI(name);
-	}
-	makeChannelGUI { |name|
-		var channel, inserts, insertMenus, label, labelText, 
-		faders, panFaderView, panFader, levelFader;
-		if(win.isNil){
-			this.initGUI;
-		};
-		channel = GUI.vLayoutView.new(win, Rect.new(win.bounds.width, 0, channelWidth, channelHeight))
-			.background_(Color.red);
-		
-		label = GUI.hLayoutView.new(channel, Rect.new(0, 0, channelWidth, 25))
-			.background_(Color.white);
-		labelText = GUI.staticText.new(label, label.bounds)
-			.string_(name);
-
-		inserts = GUI.vLayoutView.new(channel, channelHeight * 0.275)
-			.background_(Color.black.alpha_(0.95));
-
-		insertMenus = Array.fill(4, { |ind|
-			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
-				.items_(insertList)
-				.allowsReselection_(true)
-				.action_({ |obj| this.launchFXWindow(obj, fxGroups[ind]); });
-		});
-
-		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
-			.background_(Color.white.alpha_(0.95));
-
-		// forcing the slider to be horizontal
-		panFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30));
-		panFader = GUI.slider.new(panFaderView, Rect.new(0, 0, channelWidth, 0)).value_(0.5);
-		panFader.action = { |obj|
-			channels[name].setPan(obj.value);
-		};		
-		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, (channelHeight * 0.725) - 45)).value_(0.75);
-		levelFader.action = { |obj|
-			channels[name].setVolume(obj.value);
-		};
-		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
-	}
-	launchFXWindow { |menu|
-		switch(menu.items[menu.value],
-			"monoDelay", {
-				postln("need to create and implement the mono delay class");
-			}
-		);
+		channels[name].makeChannelGUI(win, fxGroups);
 	}
 }
 
 MixerChannel {
-	classvar lastInBus=20;
-	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus;
+	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
+	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName;
 	*new { |name, addTarget, group, channels|
+		insertList = ["<none>", "monoDelay", "ringMod", "compressor", "distortion", 
+			"eq", "pitchShift"];
 		^super.new.init_mixerChannel(name, addTarget, group, channels);
 	}
 	init_mixerChannel { |name, addTarget, group, channels|
@@ -99,18 +54,20 @@ MixerChannel {
 		volumeSpec = 'amp'.asSpec;
 		panSpec = [-1, 1].asSpec;
 		nodeID = s.nextNodeID;
-		if(name == "master"){
+		channelName = name;
+		if(channelName == "master"){
 			outBus = 0;
 		}{
 			outBus = 20;
 		};
 		inBus = lastInBus;
-		postln("creating the channel with name " ++ name ++ " and with inbus number " ++ inBus);
+		~audioBusRegister = ~audioBusRegister.add(name -> inBus);
+		effects = [nil, nil, nil, nil];
 		lastInBus = inBus + channels;
 		this.startChannel(addTarget, group, channels);
 	}
 	startChannel { |addTarget=0, group=1, channels=1|
-		switch(channels,
+		channels.switch(
 			1, {
 				s.sendMsg('s_new', 'monoMixerChannel', nodeID, addTarget, group, 'inBus', inBus, 'outBus', outBus);
 			},
@@ -127,6 +84,65 @@ MixerChannel {
 	}
 	setPan { |pan|
 		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(pan));
+	}
+	makeChannelGUI { |win, groups|
+		var channel, inserts, insertMenus, label, labelText, 
+		faders, panFaderView, panFader, levelFader;
+
+		channel = GUI.vLayoutView.new(win, Rect.new(win.bounds.width, 0, channelWidth, channelHeight))
+			.background_(Color.red);
+		
+		label = GUI.hLayoutView.new(channel, Rect.new(0, 0, channelWidth, 25))
+			.background_(Color.white);
+		labelText = GUI.staticText.new(label, label.bounds)
+			.string_(channelName);
+
+		inserts = GUI.vLayoutView.new(channel, channelHeight * 0.275)
+			.background_(Color.black.alpha_(0.95));
+
+		insertMenus = Array.fill(4, { |ind|
+			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
+				.items_(insertList)
+				.allowsReselection_(true)
+				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
+		});
+
+		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
+			.background_(Color.white.alpha_(0.95));
+
+		// forcing the slider to be horizontal
+		panFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30));
+		panFader = GUI.slider.new(panFaderView, Rect.new(0, 0, channelWidth, 0)).value_(0.5);
+		panFader.action = { |obj|
+			this.setPan(obj.value);
+		};		
+		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, (channelHeight * 0.725) - 45)).value_(0.75);
+		levelFader.action = { |obj|
+			this.setVolume(obj.value);
+		};
+		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
+	}
+	launchFXWindow { |menu, ind, group|
+		menu.items[menu.value].switch(
+			"<none>", {
+				effects[ind].releaseSynth;
+				effects[ind] = nil;
+			},
+			"monoDelay", {
+				if( effects[ind].isKindOf(MonoDelay).not ){
+					effects[ind] = nil;
+					effects[ind] = MonoDelay.new(menu, group, channelName, ind);
+					effects[ind].makeGUI("monoDelay");
+				};
+				if(effects[ind].win.isClosed){
+					effects[ind].makeGUI("monoDelay");
+				}{
+					effects[ind].win.front;
+				};
+			}, {
+				postln("default case does nothing");
+			}
+		);
 	}
 }
 /*

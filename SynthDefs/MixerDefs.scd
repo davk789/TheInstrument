@@ -11,21 +11,20 @@ SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
     Out.ar(outBus, aSig);
 }).load(s);
-// there also should be a stereo version of this probably
+// there also should be a stereo version of this
 SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0, 
 								modBus=20, modAmt=0, modLag=1|
     var aIn, aDelay, aDelayIn, aLocalIn, aOutMix, aModIn;
     aModIn = Lag.ar(InFeedback.ar(modBus) * modAmt, modLag);
 	aLocalIn = LocalIn.ar(1);
     aIn = In.ar(bus);
-	aDelayIn = (aIn * (feedback - 1).abs) + (aLocalIn * feedback); // should this be an equal power crossfade?
+	aDelayIn = (aIn * (feedback - 1).abs) + (aLocalIn * feedback);
     aDelay = DelayC.ar(aDelayIn, 10, delayTime + aModIn);
 	LocalOut.ar(aDelay);
 	aOutMix = (aIn * (mix - 1).abs) + (aDelay * mix);
     ReplaceOut.ar(bus, aOutMix.softclip);
 }).load(s);
-
-// not finished
+/* TO DO */
 SynthDef.new("fx_ringMod", { |bus, mix=1, freq=440, amount=0|
 	var aSig;
 	aSig = In.ar(bus) * SinOsc.ar(freq, 0, amount);

@@ -278,7 +278,7 @@ DrumSynth {
 				var slider;
 				slider = GUI.slider.new(dsParamViews[ind], Rect.new(0, 0, 250, 12.3))
 					.background_(Color.new255(100,240,100))
-					.knobColor_(Color.white);
+					/*.knobColor_(Color.white)*/;
 				if(i < 3){
 					slider.background = Color.red;
 				};

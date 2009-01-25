@@ -21,19 +21,17 @@ HSliderArray {
 /////////
 
 VSliderArray2D {
-		*new { arg view, numSliders=1, numArrays=1, xoff, yoff, width, height;
-				var arrLayout;
-				arrLayout = GUI.hLayoutView.new(view, Rect.new(xoff, yoff, (width * numArrays) + ((numArrays - 1) * 4), height));
-				^Array.fill(numArrays, {
-					var layout;
-					layout = GUI.vLayoutView.new(arrLayout, Rect.new(0, 0, width, 0));
-					Array.fill(numSliders, {
-							GUI.slider.new(layout, Rect.new(0, 0, width, (height / numSliders) - (((numSliders - 1) * 4) / numSliders) ));
-							});
-							});
-				
-			
-			}
+	*new { arg view, numSliders=1, numArrays=1, xoff, yoff, width, height;
+		var arrLayout;
+		arrLayout = GUI.hLayoutView.new(view, Rect.new(xoff, yoff, (width * numArrays) + ((numArrays - 1) * 4), height));
+		^Array.fill(numArrays, {
+			var layout;
+			layout = GUI.vLayoutView.new(arrLayout, Rect.new(0, 0, width, 0));
+			Array.fill(numSliders, {
+				GUI.slider.new(layout, Rect.new(0, 0, width, (height / numSliders) - (((numSliders - 1) * 4) / numSliders) ));
+			});
+		});
+	}
 
 }
 
