@@ -1,5 +1,5 @@
 MonoDelay {
-	var s, <win, inputName, inputNumber, groupID, nodeID,
+	var s, <win, inputName, inputNumber, groupID, <nodeID,
 		bus=20, mix=0.5, delayTime=0.1, feedback=0, 
 		modBus=23, modAmt=0, modLag=1;
 	*new { |menu, group, name, ind|
@@ -45,50 +45,48 @@ MonoDelay {
 				s.sendMsg('n_set', nodeID, 'modBus', modBus);
 			});
 		
-		mixKnob = EZKnob.new(win, 50 @ 16, "mix", labelWidth:50, numberWidth:50)
-			.action_({ |obj| obj.value.postln; })
+		mixKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
 			.value_(mix)
-			.centered_(true)
-			.action_({ |obj|
-				mix = obj.value;
+			.knobAction_({ |val|
+				mix = val;
 				s.sendMsg('n_set', nodeID, 'mix', mix);
 			})
-			.knobView.color_([Color.black, Color.yellow, Color.grey, Color.yellow])
-			.step_(0.005);
-		timeKnob = EZKnob.new(win, 50 @ 16, "time", labelWidth:50, numberWidth:50)
-			.set(spec:[0.001, 8, \exponential].asSpec)
-			.action_({ |obj|
-				delayTime = obj.value;
+			.knobColor_([Color.black, Color.yellow, Color.grey, Color.yellow])
+			.knob.step_(0.005);
+		timeKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "time")
+			.knobAction_({ |val|
+				delayTime = val;
 				s.sendMsg('n_set', nodeID, 'delayTime', delayTime);
 			})
 			.value_(delayTime)
-			.knobView.color_([Color.black, Color.yellow, Color.grey, Color.yellow])
-			.step_(0.005);
-		fbKnob = EZKnob.new(win, 50 @ 16, "fbk", labelWidth:50, numberWidth:50)
-			.action_({ |obj|
-				feedback = obj.value;
+			.spec_([0.001, 8, \exponential].asSpec)
+			.knobColor_([Color.black, Color.yellow, Color.grey, Color.yellow])
+			.knob.step_(0.005);
+		fbKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "fbk")
+			.knobAction_({ |val|
+				feedback = val;
 				s.sendMsg('n_set', nodeID, 'feedback', feedback);
 			})
 			.value_(feedback)
-			.knobView.color_([Color.black, Color.yellow, Color.grey, Color.yellow])
-			.step_(0.005);
-		modAmtKnob = EZKnob.new(win, 50 @ 16, "modAmt", labelWidth:50, numberWidth:50)
-			.action_({ |obj|
-				modAmt = obj.value;
+			.knobColor_([Color.black, Color.yellow, Color.grey, Color.yellow])
+			.knob.step_(0.005);
+		modAmtKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "modAmt")
+			.knobAction_({ |val|
+				modAmt = val;
 				s.sendMsg('n_set', nodeID, 'modAmt', modAmt);
 			})
 			.value_(modAmt)
-			.knobView.color_([Color.black, Color.red, Color.grey, Color.red])
-			.step_(0.005);
-		modLagKnob = EZKnob.new(win, 50 @ 16, "modLag", labelWidth:50, numberWidth:50)
-			.set(spec:[0.01, 4, \exponential].asSpec)
-			.action_({ |obj|
-				modLag = obj.value;
+			.knobColor_([Color.black, Color.red, Color.grey, Color.red])
+			.knob.step_(0.005);
+		modLagKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "modLag")
+			.knobAction_({ |val|
+				modLag = val;
 				s.sendMsg('n_set', nodeID, 'modLag', modLag);
 			})
 			.value_(modLag)
-			.knobView.color_([Color.black, Color.red, Color.grey, Color.red])
-			.step_(0.005);
+			.spec_([0.01, 4, \exponential].asSpec)
+			.knobColor_([Color.black, Color.red, Color.grey, Color.red])
+			.knob.step_(0.005);
 
 		win.front;
 							
@@ -99,3 +97,4 @@ parameters:
 |bus=20, 
 mix=1, delayTime=0.1, feedback=0, modBus=20, modAmt=0, modLag=1|
 */
+                    

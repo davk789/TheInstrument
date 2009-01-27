@@ -125,12 +125,17 @@ MixerChannel {
 	launchFXWindow { |menu, ind, group|
 		menu.items[menu.value].switch(
 			"<none>", {
-				effects[ind].releaseSynth;
+				effects[ind].releaseSynth(ind);
 				effects[ind] = nil;
 			},
 			"monoDelay", {
 				if( effects[ind].isKindOf(MonoDelay).not ){
-					effects[ind] = nil;
+					if(effects[ind].notNil){
+						// must provide a releaseSynth method for all classes
+						// mybe just allow access to a nodeID instance var instead
+						effects[ind].releaseSynth;
+						effects[ind] = nil;
+					};
 					effects[ind] = MonoDelay.new(menu, group, channelName, ind);
 					effects[ind].makeGUI("monoDelay");
 				};
@@ -189,4 +194,4 @@ NODE TREE Group 0
 	need to be cleaned up later, to avoid mode id conflicts with synths using dynamic
 	node numbers.
 */                                                              
- 
+     
