@@ -12,7 +12,9 @@ MonoDelay {
 		postln("the monoDelay Node ID is " ++ nodeID);
 		inputName = name;
 		inputNumber = ind;
-		postln("initializing the Mono Delay");
+		bus = ~mixer.channels[name].inBus;
+		modBus = bus;
+		postln("initializing the Mono Delay with node ID " ++ nodeID);
 		this.startSynth;
 		this.initGUI;
 		
@@ -44,7 +46,8 @@ MonoDelay {
 				modBus = ~audioBusRegister[obj.items[obj.value]];
 				s.sendMsg('n_set', nodeID, 'modBus', modBus);
 			});
-		
+		modSourceMenu.value = modSourceMenu.items.indexOf(~audioBusRegister.findKeyForValue(modBus));
+
 		mixKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
 			.value_(mix)
 			.knobAction_({ |val|
