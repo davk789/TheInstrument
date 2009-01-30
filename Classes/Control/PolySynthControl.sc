@@ -1,11 +1,9 @@
-CZSynthControl {
+PolySynthControl {
 	var <>mul=4, currentNote, <>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>feedback=0, touch=0, <>lag=0.1, 
 		s, pitchBend=0, synthGroup=102, <recorderID="czSynth",
 		// GUI Interface variables
-		win, transport, recordButton, playButton, clearButton, groups, seqMenu, 
-		incseqButtonUp, incseqButtonDown, addSeqGroupButton, presets, presetListMenu, 
-		presetSaveButton,
+		win,
 		// synth parameter variables
 		<>outBus=19;
 	// 	16 18 12 17 19 13 // transport cc
@@ -20,13 +18,11 @@ CZSynthControl {
 		s.sendMsg('b_gen', 72, 'sine2', 5, 1, 1);
 		s.sendMsg('g_new', synthGroup, 0, 1);
 		s.sendMsg('g_new', 103, 3, synthGroup);
-		//s.sendMsg('s_new', 'o_czFakeRez', 1029999, 1, 103);
 		this.initLooper;
 		this.addMixerChannel;
 		//this.initGUI;
 	}
 	initLooper {
-		// should implement the looper soon
 		if(~eventLooper.notNil){
 			~eventLooper.addChannel(1, recorderID);
 			~eventLooper.channels[recorderID].action = { |values,index|
@@ -51,8 +47,8 @@ CZSynthControl {
 		};
 	}
 	addMixerChannel {
-		~mixer.addMonoChannel("czSynth", ~mixer.mixGroup);
-		outBus = ~mixer.channels["czSynth"].inBus;
+		~mixer.addMonoChannel("polySynth", ~mixer.mixGroup);
+		outBus = ~mixer.channels["polySynth"].inBus;
 	}
 	looper {
 		^~eventLooper.channels[recorderID];
@@ -80,7 +76,6 @@ CZSynthControl {
 	}
 	cc { |src,chan,num,val|
 		// 72  8 74 71  20 22 86 73 //   cc numbers
-		//[src,chan,num,val].postln; 
 		switch( num,
 		1, { // mod wheel
 			mul = (val / 127).pow(2) * 8;
@@ -114,9 +109,10 @@ CZSynthControl {
 			peakC = val / 127;
 		});
 	}
-	/** GUI members */
+	// this doesn't work
 	looperHandleCC { |src,chan,num,val|
-	    case{[1, 72, 8, 74, 71, 20, 22, 86, 73].includes(num)}{
+		postln("reimplement me!!!\n" ++ [src,chan,num,val]);
+	    /*case{[1, 72, 8, 74, 71, 20, 22, 86, 73].includes(num)}{
 	        this.looper.addEvent([2,src,chan,num,val]);
 	    }
 	    { num == 16 }{
@@ -154,8 +150,26 @@ CZSynthControl {
 	             this.looper.stopRecording;
 	             { recordButton.value = 0; }.defer;
 	         };
-	    };
-	}	
+	    };*/
+	}
+	initGUI {
+		var modeRow, modeMenu;
+		win = GUI.window.new("organum", Rect.new(50,300, 300, 200)).front;
+		win.view.decorator = FlowLayout(win.view.bounds);
+		
+		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
+			.background_(Color.blue(0.2, alpha:0.1));
+		GUI.staticText.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.24, 0))
+			.string_("Synth:");
+		modeMenu = GUI.popUpMenu.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.74, 0))
+			.items_(["czFakeRez", "dualWavetable"])
+			.action_({ |obj| this.setSynth(obj); });
+
+		
+	}
+	setSynth { |menu|
+		postln("this is where the SynthControl class will switch synth modes.\n" ++ menu.value);
+	}
 }
       
             

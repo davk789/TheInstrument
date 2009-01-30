@@ -11,17 +11,15 @@ TheInstrument {
 		~eventLooper = EventLooper.new;
 		// preset support
 		
-		~czSynth = CZSynthControl.new;
-		~czSynth.att = 0.001;
-		~czSynth.dec = 0.008;
-		~czSynth.sus = 0.1;
-		~czSynth.rel = 0.5;
-		~czSynth.peakA = 1;
-		~czSynth.peakB = 0.6;
-		~czSynth.peakC = 0.63;
-		
-		//~wvSynth = WavetableSynth.new;
-		
+		~polySynth = PolySynthControl.new;
+		~polySynth.att = 0.001;
+		~polySynth.dec = 0.008;
+		~polySynth.sus = 0.1;
+		~polySynth.rel = 0.5;
+		~polySynth.peakA = 1;
+		~polySynth.peakB = 0.6;
+		~polySynth.peakC = 0.63;
+				
 		~drumSynth = DrumSynth.new;
 				
 		~drumSynth.setDrumParam(0, 'gain', 0.1);
@@ -63,9 +61,9 @@ TheInstrument {
 			lastChannel = chan;
 			switch(chan,
 				0, {
-					~czSynth.noteOn(src, chan, num, vel);
-					if(~czSynth.looper.notNil){
-						~czSynth.looper.addEvent([0,src,chan,num,vel]);
+					~polySynth.noteOn(src, chan, num, vel);
+					if(~polySynth.looper.notNil){
+						~polySynth.looper.addEvent([0,src,chan,num,vel]);
 					};
 				},
 				9, {
@@ -79,18 +77,18 @@ TheInstrument {
 		});
 		NoteOffResponder({ |src,chan,num,vel|
 			if(chan == 0){
-				~czSynth.noteOff(src,chan,num,vel);
-				if(~czSynth.looper.notNil){
-					~czSynth.looper.addEvent([1,src,chan,num,0]);
+				~polySynth.noteOff(src,chan,num,vel);
+				if(~polySynth.looper.notNil){
+					~polySynth.looper.addEvent([1,src,chan,num,0]);
 				};
 			};
 		});
 		CCResponder({ |src,chan,num,val|
 			switch(lastChannel,
 				0, {
-					~czSynth.cc(src,chan,num,val);
-					if(~czSynth.looper.notNil){
-						~czSynth.looperHandleCC(src,chan,num,val);
+					~polySynth.cc(src,chan,num,val);
+					if(~polySynth.looper.notNil){
+						~polySynth.looperHandleCC(src,chan,num,val);
 					};
 				},
 				9, {
@@ -99,15 +97,15 @@ TheInstrument {
 			);
 		});
 		TouchResponder({ |src,chan,val|
-			~czSynth.afterTouch(src,chan,val);
-			if(~czSynth.looper.notNil){
-				~czSynth.looper.addEvent([3,src,chan,val]);
+			~polySynth.afterTouch(src,chan,val);
+			if(~polySynth.looper.notNil){
+				~polySynth.looper.addEvent([3,src,chan,val]);
 			};
 		});
 		BendResponder({ |src,chan,val|
-			~czSynth.bend(src,chan,val);
-			if(~czSynth.looper.notNil){
-				~czSynth.looper.addEvent([4,src,chan,val]);
+			~polySynth.bend(src,chan,val);
+			if(~polySynth.looper.notNil){
+				~polySynth.looper.addEvent([4,src,chan,val]);
 			};
 		});
 	}
