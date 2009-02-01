@@ -11,7 +11,7 @@ TheInstrument {
 		~eventLooper = EventLooper.new;
 		// preset support
 		
-		~polySynth = PolySynthControl.new;
+		~polySynth = PolySynthControl.new('FakeCZ');
 		~polySynth.att = 0.001;
 		~polySynth.dec = 0.008;
 		~polySynth.sus = 0.1;
@@ -110,3 +110,4 @@ TheInstrument {
 		});
 	}
 }
+   

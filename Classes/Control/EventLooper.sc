@@ -183,7 +183,7 @@ SynthEventLooperChannel : EventLooperChannel {
 }
 
 EventLooper {
-	var channelIndex=0, win, <channels;
+	var channelIndex=0, win, <channels, <>seqMenu, <>playButton, <>recordButton;
 	*new { |...args|
 		^super.new.init_eventLooper(args);
 	}
@@ -217,7 +217,7 @@ EventLooper {
 	}
 // GUI methods
 	makeGUI { |id|
-		var idDisplay, idText, transport, recordButton, playButton, clearButton, groups, seqMenu, 
+		var idDisplay, idText, transport, recordButton, clearButton, groups,
 		incseqButtonUp, incseqButtonDown, addSeqGroupButton, presets, presetListMenu, 
 		presetSaveButton;
 		// ID row
@@ -406,4 +406,4 @@ MetaSequence {
  */
 
                                                                                       
- 
+   
