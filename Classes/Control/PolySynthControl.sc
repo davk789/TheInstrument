@@ -89,8 +89,8 @@ PolySynthControl {
 	    };
 	}
 	initGUI {
-		var modeRow, modeMenu, partialRow1, partial1Amps, partial1Freqs, partialRow2, partial2Amps, partial2Freqs, waveformDraw, targetColumn, targetAButton, targetBButton;
-		win = GUI.window.new("organum", Rect.new(50,300, 400, 300)).front;
+		var modeRow, modeMenu, xfadeKnob, fbLagKnob, fbMulKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, freq2Knob, fm2Knob, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton;
+		win = GUI.window.new("organum", Rect.new(50,300, 400, 360)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
 		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
@@ -100,20 +100,54 @@ PolySynthControl {
 		modeMenu = GUI.popUpMenu.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.74, 0))
 			.items_(["czFakeRez", "dualWavetable"])
 			.action_({ |obj| this.setSynthPreset(obj); });
+			
+		// controls row 1
 		partialRow1 = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 75))
 			.background_(Color.blue(0.1, alpha:0.2));
-		partial1Amps = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 98, 0))
-			.fillColor_(Color.blue(0.6, alpha:0.3))
-			.indexThumbSize_(5.0)
-			.valueThumbSize_(5.0)
-			.value_([1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])
+		GUI.staticText.new(partialRow1, Rect.new(0, 0, 10, 0))
+			.string_("A")
+			.background_(Color.black.alpha_(0.9))
+			.stringColor_(Color.white);
+		partialAAmps = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 75, 0))
+			.fillColor_(Color.blue)
+			.strokeColor_(Color.blue)
+			.indexThumbSize_(2.9)
+			.background_(Color.black.alpha_(0.9))
+			.valueThumbSize_(2.9)
+			.value_([1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0])
 			.isFilled_(true);
-		partial1Freqs = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 98, 0))
-			.fillColor_(Color.red(0.6, alpha:0.3))
-			.indexThumbSize_(5.0)
-			.valueThumbSize_(5.0)
-			.value_(Array.fill(16, { 0.5 }));
+		partialAFreqs = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 75, 0))
+			.fillColor_(Color.red)
+			.strokeColor_(Color.red)
+			.indexThumbSize_(2.9)
+			.background_(Color.black.alpha_(0.9))
+			.valueThumbSize_(2.9)
+			.value_(Array.fill(19, { 0.5 }));
+		GUI.staticText.new(partialRow1, Rect.new(0, 0, 10, 0))
+			.string_("B")
+			.background_(Color.black.alpha_(0.9))
+			.stringColor_(Color.white);
+		partialBAmps = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 75, 0))
+			.fillColor_(Color.blue)
+			.strokeColor_(Color.blue)
+			.background_(Color.black.alpha_(0.9))
+			.indexThumbSize_(2.9)
+			.valueThumbSize_(2.9)
+			.value_([1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0])
+			.isFilled_(true);
+		partialBFreqs = GUI.multiSliderView.new(partialRow1, Rect.new(0, 0, 75, 0))
+			.fillColor_(Color.red)
+			.strokeColor_(Color.red)
+			.background_(Color.black.alpha_(0.9))
+			.indexThumbSize_(2.9)
+			.valueThumbSize_(2.9)
+			.value_(Array.fill(19, { 0.5 }));
+
+		// waveform edit
 		waveformDraw = GUI.multiSliderView.new(win, Rect.new(0, 0, win.view.bounds.width * 0.85, 85))			.value_(Array.fill(256, {0.5}))
+			.fillColor_(Color.white)
+			.strokeColor_(Color.white)
+			.background_(Color.black.alpha_(0.9))
 			.indexThumbSize_(0.32)
 			.valueThumbSize_(3)
 			.isFilled_(false)
@@ -125,19 +159,48 @@ PolySynthControl {
 			.states_([["A", Color.black, Color.clear],["A", Color.red, Color.yellow]]);
 		targetBButton = GUI.button.new(targetColumn, Rect.new(0, 0, 0, targetColumn.bounds.height * 0.42))
 			.states_([["B", Color.black, Color.clear],["B", Color.red, Color.yellow]]);
+		
+		// bottom aux controls
+		midiListMenu = ["<none>", "mod wheel", "aftertouch", "envelope", "bend", "knob 1", "knob 2", "knob 3", "knob 4", "knob 5", "knob 6", "knob 7", "knob 8"];
+		pr2AuxControls = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
+			.background_(Color.blue(0.1, alpha:0.2));
+		xFadeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu);
+		GUI.staticText.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0));
+		fbMulMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu);
+		freq2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu);
+		fm2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu);
+		syncModeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 110, 0))
+			.items_(["no sync", "soft sync", "hard sync"]);
+
+		
+		// bottom control row
 		partialRow2 = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 75))
 			.background_(Color.blue(0.1, alpha:0.2));
-		partial2Amps = GUI.multiSliderView.new(partialRow2, Rect.new(0, 0, 98, 0))
-			.fillColor_(Color.blue(0.6, alpha:0.3))
-			.indexThumbSize_(5.0)
-			.valueThumbSize_(5.0)
-			.value_([1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0])
-			.isFilled_(true);
-		partial2Freqs = GUI.multiSliderView.new(partialRow2, Rect.new(0, 0, 98, 0))
-			.fillColor_(Color.red(0.6, alpha:0.3))
-			.indexThumbSize_(5.0)
-			.valueThumbSize_(5.0)
-			.value_(Array.fill(16, { 0.5 }));
+		xfadeKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "xfade")
+			.knobColor_([Color.black, Color.green, Color.black, Color.green]);
+		fbLagKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbLag")
+			.knobColor_([Color.black, Color.green, Color.black, Color.green]);
+		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
+			.knobColor_([Color.black, Color.green, Color.black, Color.green]);
+
+		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
+			.knobColor_([Color.black, Color.green, Color.black, Color.green]);
+		fm2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fm")
+			.knobColor_([Color.black, Color.green, Color.black, Color.green]);
+		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 100, 0))
+			.value_([[0, 0.05, 0.15, 0.8, 1], [0, 1, 0.5, 0.65, 0]])
+			.thumbSize_(3)
+			.fillColor_(Color.green)
+			.strokeColor_(Color.green)
+			.background_(Color.black.alpha_(0.9))
+			.drawLines_(true)
+			.setEditable(0, false)
+			.setEditable(4, false);
+
 	}
 	setSynthPreset { |menu|
 		postln("this is where the SynthControl class will switch synth modes.\n" ++ menu.value);

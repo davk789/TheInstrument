@@ -11,7 +11,7 @@ SynthDef.new("s_dualWavetable", { |gate, outBus=20,
     aInFreq = LocalIn.ar(1) * fbMul;
 
     aFreq1 = (freq1 * bend) + aInFreq;
-    aFreq2 = freq2 * bend;
+    aFreq2 = (freq2 * bend) + (aFreq1 * fm);
  
     aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
 
@@ -62,5 +62,6 @@ SynthDef.new("s_czFakeRez", { |gate, outBus=19, bend=0, lev=1, curve=(-2)
 	aSRead = BufRd.ar(1, 72, aPSlave) * ((aPMaster / 1024) * -1 + 1);
 
 	Out.ar(outBus, aSRead.softclip * kEnv);
-}).load(s);
+}).load(s);
+
                    
