@@ -11,14 +11,14 @@ TheInstrument {
 		~eventLooper = EventLooper.new;
 		// preset support
 		
-		~polySynth = PolySynthControl.new('FakeCZ');
-		~polySynth.synths[0].att = 0.001;
-		~polySynth.synths[0].dec = 0.008;
-		~polySynth.synths[0].sus = 0.1;
-		~polySynth.synths[0].rel = 0.5;
-		~polySynth.synths[0].peakA = 1;
-		~polySynth.synths[0].peakB = 0.6;
-		~polySynth.synths[0].peakC = 0.63;
+		~polySynth = PolySynthControl.new;
+		~polySynth.att = 0.001;
+		~polySynth.dec = 0.008;
+		~polySynth.sus = 0.1;
+		~polySynth.rel = 0.5;
+		~polySynth.peakA = 1;
+		~polySynth.peakB = 0.6;
+		~polySynth.peakC = 0.63;
 				
 		~drumSynth = DrumSynth.new;
 				
