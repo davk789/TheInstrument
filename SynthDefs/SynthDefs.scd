@@ -1,41 +1,47 @@
 
-SynthDef.new("s_dualWavetable", { |gate, outBus=20, 
-								curve=(-1.6), lev=1,
-                                peakA=0.7, peakB=0.5, peakC=0.6, 
-                                att=0.1, dec=0.2, sus=0.3, rel=0.2, 
-                                fbMul=0, fbLag=1, 
-                                freq1=440, freq2=440, trigMode=0, bend=1, xfade=0, 
-                                buffer1=70, buffer2=71|
-    var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, dTrigMode, aTrigMode;
-     
-    aInFreq = LocalIn.ar(1) * fbMul;
-
-    aFreq1 = (freq1 * bend) + aInFreq;
-    aFreq2 = (freq2 * bend) + (aFreq1 * fm);
+SynthDef.new("s_dualWavetable", { 
+	arg	gate, outBus=20, 
+		curve=(-1.6), lev=1,
+		peakA=0.7, peakB=0.5, peakC=0.6, 
+		att=0.1, dec=0.2, sus=0.3, rel=0.2, 
+		fbMul=0, fbLag=1, fmAmt=0,
+		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, 
+		bufferA=70, bufferB=71, 
+		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0;
+	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, dTrigMode, aTrigMode, asFreq2Env, asFmEnv, asFbMulEnv, aFmAmt;
  
-    aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
+	aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, doneAction:2);
+	aConstant1 = DC.ar(1);
+	asFreq2Env = Select.ar(freq2EnvFlag, [aConstant1, aEnv]);
+	asFmEnv = Select.ar(fmEnvFlag, [aConstant1, aEnv]);
+	asFbMulEnv = Select.ar(fbMulEnvFlag, [aConstant1, aEnv]);
 
-    dTrigMode = Dswitch.new([0, 1, 1], trigMode);
-    aTrigMode = Demand.ar(aTabPhase1, 0, dTrigMode);
+	aInFreq = LocalIn.ar(1) * fbMul *asFbMulEnv;
 
-    aTrig = Trig1.ar(aTabPhase1 * aTrigMode, 1 / 44100);
-    aTabPhase2 = Phasor.ar(aTrig, aFreq2 * 0.023219954648526, 0, 1024);
+	aFreq1 = (freq1 * bend) + aInFreq;
+	aFreq2 = (freq2 * asFreq2Env) + aFreq1;
+ 
+	aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
+	aTabReadA = BufRd.ar(1, bufferA, aTabPhase1);
+	dTrigMode = Dswitch.new([0, 1, 1], trigMode);
+	aTrigMode = Demand.ar(aTabPhase1, 0, dTrigMode);
 
-    aConstant1 = DC.ar(1);
-    aInvSync = ((aTabPhase1 / 1024) - 1).abs;
-    lSyncCoefs = [aConstant1, aConstant1, aInvSync];
-    aSyncCoef = Select.ar(trigMode, lSyncCoefs);
+	aTrig = Trig1.ar(aTabPhase1 * aTrigMode, 1 / 44100);
+	aFmAmt = aTabReadA * fmAmt * asFmEnv;
+	aTabPhase2 = Phasor.ar(aTrig, (aFreq2 * 0.023219954648526), 0, 1024);
 
-    aTabReadA = BufRd.ar(1, buffer1, aTabPhase1);
-    aTabReadB = BufRd.ar(1, buffer2 * aSyncCoef, aTabPhase2);
+	aInvSync = ((aTabPhase1 / 1024) - 1).abs;
+	lSyncCoefs = [aConstant1, aConstant1, aInvSync];
+	aSyncCoef = Select.ar(trigMode, lSyncCoefs);
+
+	aTabReadB = BufRd.ar(1, bufferB, aTabPhase2 * aSyncCoef);
    
  
-    aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, doneAction:2);
-    aSig = XFade2.ar(aTabReadA, aTabReadB, xfade) * aEnv;
+	aSig = XFade2.ar(aTabReadA, aTabReadB, xfade) * aEnv;
  
-    LocalOut.ar(Lag2.ar(aSig, fbLag));
-    Out.ar(outBus, aSig);
-     
+	LocalOut.ar(Lag2.ar(aSig, fbLag));
+	Out.ar(outBus, aSig);
+ 
 }).load(s);
 
 
