@@ -19,7 +19,7 @@ SynthDef.new("s_dualWavetable", {
 	aFreq1 = (freq1 * bend) + aInFreq;
 	
 	asFreq2Env = Select.ar(freq2EnvFlag, [aConstant1, aEnv]);
-	aFreq2 = (freq2 * asFreq2Env) + aFreq1;
+	aFreq2 = (freq2 * asFreq2Env * aFreq1) + aFreq1;
  
 	aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
 	aTabReadA = BufRd.ar(1, bufferA, aTabPhase1);

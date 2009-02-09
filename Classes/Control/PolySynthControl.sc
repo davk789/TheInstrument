@@ -126,7 +126,11 @@ PolySynthControl {
 		s.sendMsg('n_set', instGroup, 'fbMul', fbMul);
 	}
 	setFreq2 { |frq|
-		freq2 = frq;
+		if(frq > 0){
+			freq2 = frq;		
+		}{
+			freq2 = frq.abs.reciprocal;
+		};
 		s.sendMsg('n_set', instGroup, 'freq2', freq2);
 	}
 	setFM2 { |fm|
@@ -172,7 +176,7 @@ PolySynthControl {
 			'trigMode', trigMode, 'xfade', xfade, 
 			'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
 			'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
-			'envScale', envScale);
+			'envScale', envScale, 'bend', pitchBend);
 		s.sendMsg('n_set', activeNotes[num], 'gate', 1);
 	}
 	noteOff { |src,chan,num,vel|
@@ -232,7 +236,7 @@ PolySynthControl {
 		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
 			.background_(Color.blue(0.1, alpha:0.2));
 		GUI.staticText.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.24, 0))
-			.string_("Synth:");
+			.string_("preset:");
 		modeMenu = GUI.popUpMenu.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.74, 0))
 			.items_(["czFakeRez", "dualWavetable"])
 			.action_({ |obj| this.setSynthPreset(obj); });
@@ -345,7 +349,7 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
-			.spec_([-127, 127].asSpec)
+			.spec_([-6, 6].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFreq2(obj.value); })
 			.knob.centered_(true);
