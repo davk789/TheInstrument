@@ -4,7 +4,7 @@ PolySynthControl {
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=0, <>outBus=19, <recorderID="czSynth", 
-		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0;
+		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, fmEnvFlag=0, envScale=1;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
 	*new { |name|
@@ -133,18 +133,46 @@ PolySynthControl {
 		fmAmt = fm;
 		s.sendMsg('n_set', instGroup, 'fmAmt', fmAmt);
 	}
+	setFBMulEnvFlag { |fb|
+		fbMulEnvFlag = fb;
+		s.sendMsg('n_set', instGroup, 'fbMulEnvFlag', fbMulEnvFlag);
+	}
+	setFreq2EnvFlag { |frq|
+		freq2EnvFlag = frq;
+		s.sendMsg('n_set', instGroup, 'freq2EnvFlag', freq2EnvFlag);
+	}
+	setFM2EnvFlag { |fm|
+		fmEnvFlag = fm;
+		s.sendMsg('n_set', instGroup, 'fmEnvFlag', fmEnvFlag);
+	}
+	setEnvScale { |scale|
+		envScale = scale;
+		s.sendMsg('n_set', instGroup, 'envScale', envScale);	
+	}
+	setEnvelope { |env|
+		att = (env[0][1] - env[0][0]);
+		dec = (env[0][2] - env[0][1]);
+		sus = (env[0][3] - env[0][2]);
+		rel = (env[0][4] - env[0][3]);
+		peakA = env[1][1];
+		peakB = env[1][2];
+		peakC = env[1][3];
+		s.sendMsg('n_set', instGroup, 'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 'peakA', peakA, 'peakB', peakB, 'peakC', peakC);
+	}
 	addMixerChannel {
 /*		~mixer.addMonoChannel("fakeCZSynth", ~mixer.mixGroup);
 		outBus = ~mixer.channels["fakeCZSynth"].inBus;
 */	}
 	noteOn { |src,chan,num,vel|
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
-		s.sendMsg('s_new', 's_czFakeRez', activeNotes[num], 0, instGroup,
-			'outBus', outBus, 'peakA', 0.6, 'peakB', 0.3, 'peakC', 0.6,
-			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 'curve', -2,
-			'freq1', num.midicps, 'freq2', mul, 'bend', pitchBend,
-			'lev', (vel / 127).pow(2.5), 'feedback', feedback, 'lag', 0.1
-		);
+		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num], 0, instGroup,
+			'outBus', outBus, 
+			'peakA', peakA, 'peakB', peakB, 'peakC', peakC, 
+			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
+			'trigMode', trigMode, 'xfade', xfade, 
+			'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
+			'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
+			'envScale', envScale);
 		s.sendMsg('n_set', activeNotes[num], 'gate', 1);
 	}
 	noteOff { |src,chan,num,vel|
@@ -158,6 +186,8 @@ PolySynthControl {
 	afterTouch { |src,chan,val|
 		feedback = val / 20;
 		s.sendMsg('n_set', instGroup, 'feedback', feedback);
+	}
+	modWheel { |src,chan,val|
 	}
 	cc { |src,chan,num,val|
 		// 72  8 74 71  20 22 86 73 //   cc numbers
@@ -195,7 +225,7 @@ PolySynthControl {
 		});
 	}
 	initGUI {
-		var modeRow, modeMenu, xfadeKnob, fbLagKnob, fbMulKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, freq2Knob, fm2Knob, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton;
+		var modeRow, modeMenu, xfadeKnob, fbLagKnob, fbMulKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, freq2Knob, fm2Knob, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec;
 		win = GUI.window.new("organum", Rect.new(50,300, 400, 360)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
@@ -323,7 +353,7 @@ PolySynthControl {
 			.spec_('midi'.asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFM2(obj.value); });
-		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 100, 0))
+		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 150, 0))
 			.value_([[0, 0.05, 0.15, 0.8, 1], [0, 1, 0.5, 0.65, 0]])
 			.thumbSize_(3)
 			.fillColor_(Color.green)
@@ -331,7 +361,8 @@ PolySynthControl {
 			.background_(Color.black.alpha_(0.9))
 			.drawLines_(true)
 			.setEditable(0, false)
-			.setEditable(4, false);
+			.setEditable(4, false)
+			.action_({ |obj| this.setEnvelope(obj.value); });
 
 		// bottom env buttons
 		pr2EnvRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
@@ -339,11 +370,19 @@ PolySynthControl {
 		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 34, 0));
 		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 34, 0));
 		fbMulEnvButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 34, 0))
-			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]]);
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
+			.action_({|obj| this.setFBMulEnvFlag(obj.value) });
 		freq2EnvButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 34, 0))
-			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]]);
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
+			.action_({|obj| this.setFreq2EnvFlag(obj.value) });
 		fm2EnvButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 34, 0))
-			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]]);
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
+			.action_({|obj| this.setFM2EnvFlag(obj.value) });
+		envScaleSpec = [0.2, 10, 2.2].asSpec;
+		envScaleSlider = GUI.slider.new(pr2EnvRow, Rect.new(0, 0, 150, 0))
+			.background_(Color.black.alpha_(0.9))
+			.value_(envScaleSpec.unmap(1))
+			.action_({ |obj| this.setEnvScale(envScaleSpec.map(obj.value)); });
 	}
 
 }
