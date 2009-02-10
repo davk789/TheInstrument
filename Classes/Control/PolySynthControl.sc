@@ -3,7 +3,7 @@ PolySynthControl {
 	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71,
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
-		pitchBend=0, <>outBus=19, <recorderID="czSynth", 
+		pitchBend=1, <>outBus=19, <recorderID="czSynth", 
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, fmEnvFlag=0, envScale=1;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -23,14 +23,14 @@ PolySynthControl {
 		s.sendMsg('b_gen', bufferA, 'sine2', 5, 1, 1);
 		s.sendMsg('b_alloc', bufferB, 1024);
 		s.sendMsg('b_gen', bufferB, 'sine2', 5, 1, 1);
-		s.sendMsg('g_new', instGroup, 3, classGroup);
+		s.sendMsg('g_new', instGroup, 0, classGroup);
 
 		this.addMixerChannel;
 		this.initLooper;
 		this.initGUI;
 	}
 	initLooper {
-/*		~eventLooper.addChannel(1, recorderID);
+		~eventLooper.addChannel(1, recorderID);
 		~eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				0, {
@@ -49,11 +49,10 @@ PolySynthControl {
 					this.bend(values[1], values[2], values[3]);
 				}
 			);
-		};*/
+		};
 	}
 	looper {
-//		^~eventLooper.channels[recorderID];
-//
+		^~eventLooper.channels[recorderID];
 	}
 	looperHandleCC { |src,chan,num,val|
 	    case{[1, 72, 8, 74, 71, 20, 22, 86, 73].includes(num)}{
@@ -164,13 +163,13 @@ PolySynthControl {
 		s.sendMsg('n_set', instGroup, 'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 'peakA', peakA, 'peakB', peakB, 'peakC', peakC);
 	}
 	addMixerChannel {
-/*		~mixer.addMonoChannel("fakeCZSynth", ~mixer.mixGroup);
+		~mixer.addMonoChannel("fakeCZSynth", ~mixer.mixGroup);
 		outBus = ~mixer.channels["fakeCZSynth"].inBus;
-*/	}
+	}
 	noteOn { |src,chan,num,vel|
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num], 0, instGroup,
-			'outBus', outBus, 
+			'outBus', outBus, 'freq1', num.midicps, 'lev', (vel / 127).pow(2.2),
 			'peakA', peakA, 'peakB', peakB, 'peakC', peakC, 
 			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
 			'trigMode', trigMode, 'xfade', xfade, 
@@ -184,7 +183,7 @@ PolySynthControl {
 		activeNotes.removeAt(num);
 	}
 	bend { |src,chan,val|
-		pitchBend = val / 8192 - 1;
+		pitchBend = val / 8192;
 		s.sendMsg('n_set', instGroup, 'bend', pitchBend);
 	}
 	afterTouch { |src,chan,val|
@@ -230,7 +229,7 @@ PolySynthControl {
 	}
 	initGUI {
 		var modeRow, modeMenu, xfadeKnob, fbLagKnob, fbMulKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, freq2Knob, fm2Knob, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec;
-		win = GUI.window.new("organum", Rect.new(50,300, 400, 360)).front;
+		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 360)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
 		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
