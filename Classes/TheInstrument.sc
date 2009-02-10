@@ -70,7 +70,6 @@ TheInstrument {
 					~drumSynth.noteOn(src, chan, num, vel);
 					if(~drumSynth.looper.notNil){
 						~drumSynth.looper.addEvent([num, vel]);
-						// not automating cc controls yet
 					};
 				}
 			);
