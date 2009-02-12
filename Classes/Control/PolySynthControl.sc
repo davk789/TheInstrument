@@ -3,7 +3,7 @@ PolySynthControl {
 	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71,
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
-		pitchBend=1, <>outBus=19, <recorderID="czSynth", 
+		pitchBend=0, <>outBus=19, <recorderID="czSynth", 
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, fmEnvFlag=0, envScale=1;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
