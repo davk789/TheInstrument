@@ -1,5 +1,5 @@
 PolySynthControl {
-	classvar  classGroup=102, bufferIndex=68;
+	classvar  classGroup=102;
 	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71,
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
@@ -8,15 +8,12 @@ PolySynthControl {
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
 	*new { |name|
-		bufferIndex = bufferIndex + 2;
-		^super.new.init_polysynthcontrol(bufferIndex, name);
+		^super.new.init_polysynthcontrol(name);
 	}
 	init_polysynthcontrol { |buf, name|
 		s = Server.default;
 		activeNotes = Dictionary.new;
 		if(name.notNil){ recorderID = name; };
-		bufferA = buf;
-		bufferB = buf + 2;
 
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
@@ -126,9 +123,9 @@ PolySynthControl {
 	}
 	setFreq2 { |frq|
 		if(frq > 0){
-			freq2 = frq;		
+			freq2 = frq + 1;		
 		}{
-			freq2 = frq.abs.reciprocal;
+			freq2 = (frq - 1).abs.reciprocal;
 		};
 		s.sendMsg('n_set', instGroup, 'freq2', freq2);
 	}

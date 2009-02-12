@@ -8,7 +8,7 @@ SynthDef.new("s_dualWavetable", {
 		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, 
 		bufferA=70, bufferB=71, 
 		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1;
-	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, dTrigMode, aTrigMode, asFreq2Env, kFreq2, aFM2, asInEnv;
+	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq2, aFM2, asInEnv;
 	 
 	aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, 0, envScale, 2);
 	aConstant1 = DC.ar(1);
@@ -23,20 +23,16 @@ SynthDef.new("s_dualWavetable", {
  
 	aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
 	aTabReadA = BufRd.ar(1, bufferA, aTabPhase1);
-	
-	dTrigMode = Dswitch.new([0, 1, 1], trigMode);
-	aTrigMode = Demand.ar(aTabPhase1, 0, dTrigMode);
 
-	aTrig = Trig1.ar(aTabPhase1 * aTrigMode, 1 / 44100);
-	
+	aTrig = (aTabPhase1 * -1  + 512) * trigMode;
 	aFM2 = aTabReadA * fmAmt * freq1;
-	aTabPhase2 = Phasor.ar(aTrig, aFreq2 + aFM2 * 0.023219954648526, 0, 1024);
+	aTabPhase2 = Phasor.ar(aTrig, (aFreq2 + aFM2) * 0.023219954648526, 0, 1024);
 
 	aInvSync = ((aTabPhase1 / 1024) - 1).abs;
-	lSyncCoefs = [aConstant1, aConstant1, aInvSync];
+	lSyncCoefs = [aConstant1, aInvSync, aConstant1];
 	aSyncCoef = Select.ar(trigMode, lSyncCoefs);
 
-	aTabReadB = BufRd.ar(1, bufferB, aTabPhase2 * aSyncCoef);
+	aTabReadB = BufRd.ar(1, bufferB, aTabPhase2) * aSyncCoef;
    
  	aSig = XFade2.ar(aTabReadA, aTabReadB, xfade) * aEnv;
  
@@ -46,7 +42,7 @@ SynthDef.new("s_dualWavetable", {
 }).load(s);
 
 
-SynthDef.new("s_czFakeRez", { |gate, outBus=19, bend=0, lev=1, curve=(-2)
+SynthDef.new("s_czFakeRez", { |gate, outBus=19, bend=0, lev=1, curve=(-2),
 							   peakA=0.6, peakB=0.3, peakC=0.6, 
 							   att=0.05, dec=0.02, sus=0.1, rel=0.3,
 							   fbLag=0.1, feedback=0,
