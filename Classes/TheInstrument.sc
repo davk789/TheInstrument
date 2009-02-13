@@ -1,12 +1,21 @@
 TheInstrument {
 	*new {
-		this.launchObjects;
+		this.initializeMIDI;
 		this.launchMidiResponders;
+		this.launchObjects;
+	}
+	*initializeMIDI {
+		Platform.case('osx', {
+			MIDIClient.init(3, 2);
+			MIDIIn.connect(1, MIDIClient.sources[1]);
+		});
 	}
 	*launchObjects {
 		~audioBusRegister = Dictionary.new;
 		// this is going to be used by the effects classes. using the track name as the key
 		~mixer = Mixer.new;
+		
+		//~sampleLooper = SampleLooper.new;
 		
 		~eventLooper = EventLooper.new;
 		// preset support

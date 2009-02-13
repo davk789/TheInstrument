@@ -4,7 +4,8 @@ PolySynthControl {
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=1, <>outBus=19, <recorderID="czSynth", 
-		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, fmEnvFlag=0, envScale=1;
+		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, fmEnvFlag=0, envScale=1
+		midiModulators;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
 	*new { |name|
@@ -25,6 +26,9 @@ PolySynthControl {
 		this.addMixerChannel;
 		this.initLooper;
 		this.initGUI;
+		
+		midiModulators = Dictionary["xFadeMenu" -> xFadeMenu.value, "fbMulMenu" -> fbMulMenu.value, "freq2Menu" -> freq2Menu.value, "fm2Menu" -> fm2Menu.value];
+
 	}
 	initLooper {
 		~eventLooper.addChannel(1, recorderID);
@@ -167,7 +171,7 @@ PolySynthControl {
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num], 0, instGroup,
 			'outBus', outBus, 'freq1', num.midicps, 'lev', (vel / 127).pow(2.2),
-			'peakA', peakA, 'peakB', peakB, 'peakC', peakC, 
+			'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
 			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
 			'trigMode', trigMode, 'xfade', xfade, 
 			'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
@@ -186,8 +190,6 @@ PolySynthControl {
 	afterTouch { |src,chan,val|
 		feedback = val / 20;
 		s.sendMsg('n_set', instGroup, 'feedback', feedback);
-	}
-	modWheel { |src,chan,val|
 	}
 	cc { |src,chan,num,val|
 		// 72  8 74 71  20 22 86 73 //   cc numbers
@@ -314,14 +316,18 @@ PolySynthControl {
 		pr2AuxControls = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
 		xFadeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
-			.items_(midiListMenu);
+			.items_(midiListMenu)
+			.action_({ |obj| midiModulators["xFadeMenu"] = obj.value; });
 		GUI.staticText.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0));
 		fbMulMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
-			.items_(midiListMenu);
+			.items_(midiListMenu)
+			.action_({ |obj| midiModulators["fbMulMenu"] = obj.value; });
 		freq2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
-			.items_(midiListMenu);
+			.items_(midiListMenu)
+			.action_({ |obj| midiModulators["freq2Menu"] = obj.value; });
 		fm2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
-			.items_(midiListMenu);
+			.items_(midiListMenu)
+			.action_({ |obj| midiModulators["fm2Menu"] = obj.value; });
 		syncModeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 110, 0))
 			.items_(["no sync", "soft sync", "hard sync"])
 			.action_({ |obj| this.setSyncMode(obj.value); });
@@ -341,16 +347,16 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_([0, 6].asSpec)
+			.spec_([0, 16].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
-			.spec_([-6, 6].asSpec)
+			.spec_([-8, 8].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFreq2(obj.value); })
 			.knob.centered_(true);
 		fm2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fm")
-			.spec_([0, 6].asSpec)
+			.spec_([0, 8].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFM2(obj.value); });
 		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 150, 0))

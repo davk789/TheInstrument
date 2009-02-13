@@ -27,6 +27,12 @@ EZJKnob { // uses JKnob. this is might become obsolete.
             });
         numberBox = GUI.numberBox.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 4.2));
     }
+    knobValueAction {
+    	knobAction.value;
+    }
+    zeroOneValue_ { |val|
+		this.value_(controlSpec.map(val));
+    }
 	value_ { |val|
 		prValue = val;
 		if(controlSpec.isKindOf(ControlSpec)){
