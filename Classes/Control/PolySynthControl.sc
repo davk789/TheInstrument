@@ -4,7 +4,7 @@ PolySynthControl {
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=1, <>outBus=19, <recorderID="czSynth", 
-		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1,
+		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1, midiCCSources,
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -29,6 +29,8 @@ PolySynthControl {
 			'knob 8'-> []
 		];
 		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil];
+		midiCCSources = Dictionary[1 -> 'mod wheel', 72 ->  'knob 1', 8 -> 'knob 2', 74 -> 'knob 3', 71 -> 'knob 4', 20 -> 'knob 5', 22 -> 'knob 6', 86 -> 'knob 7', 73 -> 'knob 8'];
+
 
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
@@ -144,6 +146,7 @@ PolySynthControl {
 		}{
 			freq2 = (frq - 1).abs.reciprocal;
 		};
+		freq2 = frq + 1;
 		s.sendMsg('n_set', instGroup, 'freq2', freq2);
 	}
 	setFM2 { |fm|
@@ -203,7 +206,6 @@ PolySynthControl {
 			controls.do{ |obj,ind|
 				obj.switch(
 					'xFade', {
-						xfadeKnob.class.postln;
 						xfadeKnob.zeroOneValue = value;
 						xfadeKnob.knobValueAction;
 					},
@@ -236,34 +238,9 @@ PolySynthControl {
 	}
 	cc { |src,chan,num,val|
 		[src,chan,num,val].postln;
-		switch( num,
-		1, { 
-			this.handleMIDI(modulatorSources['mod wheel'], val / 127);
-		},
-		72, {
-			this.handleMIDI(modulatorSources['knob1'], val / 127);
-		},
-		8, {
-			this.handleMIDI(modulatorSources['knob2'], val / 127);
-		},
-		74, {
-			this.handleMIDI(modulatorSources['knob3'], val / 127);
-		}, 
-		71, {
-			this.handleMIDI(modulatorSources['knob4'], val / 127);
-		},
-		20, {
-			this.handleMIDI(modulatorSources['knob5'], val / 127);
-		},
-		22, {
-			this.handleMIDI(modulatorSources['knob6'], val / 127);
-		},
-		86, {
-			this.handleMIDI(modulatorSources['knob7'], val / 127);
-		},
-		73, {
-			this.handleMIDI(modulatorSources['knob8'], val / 127);
-		});
+		if(midiCCSources[num].notNil){
+			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
+		};
 	}
 	initGUI {
 		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec;
@@ -378,21 +355,21 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.value_(0.5)
 			.knobAction_({ |obj| this.setXFade(obj.value); })
-			.knob.centered_(true);
+			.knobCentered_(true);
 		fbLagKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbLag")
 			.spec_([0.001, 4, 2.3].asSpec)
 			.value_(0.3)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_([0, 16].asSpec)
+			.spec_([0, 32].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
 			.spec_([-8, 8].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFreq2(obj.value); })
-			.knob.centered_(true);
+			.knobCentered_(true);
 		fm2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fm")
 			.spec_([0, 8].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
@@ -430,7 +407,8 @@ PolySynthControl {
 	}
 	addModulator { |menu,effectName|
 		if(currentModulators[effectName].notNil){
-			modulatorSources[currentModulators[effectName]].removeAt(modulatorSources[currentModulators[effectName]].indexOf(effectName));
+			modulatorSources[currentModulators[effectName]]
+				.removeAt(modulatorSources[currentModulators[effectName]].indexOf(effectName));
 		};
 		if(menu.value > 0){
 			modulatorSources[menu.item] = modulatorSources[menu.item].add(effectName);

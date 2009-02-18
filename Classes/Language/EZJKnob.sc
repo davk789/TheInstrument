@@ -7,11 +7,13 @@ EZJKnob { // uses JKnob. this is might become obsolete.
     init_ezknobDK { |parent, dimensions, lab=("Knob")|
         labelText = lab;
         knobAction = { |val| val.postln; };
-        knobView = GUI.vLayoutView.new(parent, dimensions).background_(Color.blue(0.2, alpha:0.1));
-        this.addControls;
+        controlSpec = [0,1].asSpec;
+
+        this.addControls(parent, dimensions);
         numberBox.value = knob.value;
     }
-    addControls {
+    addControls { |parent, dimensions|
+        knobView = GUI.vLayoutView.new(parent, dimensions).background_(Color.blue(0.2, alpha:0.1));
         label = GUI.staticText.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 4.2))
             .string_(labelText)
 			.align_('center');
@@ -22,17 +24,18 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 				}{
 					prValue = obj.value;
 				};
-                knobAction.value(prValue);
-                numberBox.value = prValue;
+				postln("prValue: " ++ prValue);
+              	knobAction.value(prValue);
+              	numberBox.value = prValue;
             });
         numberBox = GUI.numberBox.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 4.2));
     }
-    knobValueAction {
-    	knobAction.value;
-    }
-    zeroOneValue_ { |val|
+	knobValueAction {
+		knobAction.value(prValue);
+	}
+	zeroOneValue_ { |val|
 		this.value_(controlSpec.map(val));
-    }
+	}
 	value_ { |val|
 		prValue = val;
 		if(controlSpec.isKindOf(ControlSpec)){
@@ -48,6 +51,9 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 	spec_ { |sp|
 		controlSpec = sp;
 		this.value = prValue;
+	}
+	knobCentered_ { |flag|
+		knob.centered = flag;
 	}
 
 }
