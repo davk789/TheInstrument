@@ -230,7 +230,7 @@ PolySynthControl {
 	}
 	bend { |src,chan,val|
 		[src,chan,val].postln;
-		this.handleMIDI(modulatorSources['bend'], val / 8192);
+		this.handleMIDI(modulatorSources['bend'], val / 16384);
 	}
 	afterTouch { |src,chan,val|
 		[src,chan,val].postln;
@@ -243,7 +243,7 @@ PolySynthControl {
 		};
 	}
 	initGUI {
-		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec;
+		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 360)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
@@ -353,7 +353,7 @@ PolySynthControl {
 			.background_(Color.blue(0.1, alpha:0.2));
 		xfadeKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "xfade")
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
-			.value_(0.5)
+			.spec_('pan'.asSpec)
 			.knobAction_({ |obj| this.setXFade(obj.value); })
 			.knobCentered_(true);
 		fbLagKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbLag")
@@ -388,7 +388,8 @@ PolySynthControl {
 		// bottom env buttons
 		pr2EnvRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
-		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 34, 0));
+		bendButton = GUI.button.new(win, Rect.new(0, 0, 34, 0))
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]]);
 		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 34, 0));
 		fbMulEnvButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 34, 0))
 			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
