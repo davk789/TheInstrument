@@ -3,7 +3,7 @@ PolySynthControl {
 	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71,
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
-		pitchBend=1, <>outBus=19, <recorderID="czSynth", 
+		pitchBend=1, <>outBus=19, <recorderID="czSynth", pitchBend=1,
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1, midiCCSources,
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob;
 	// 	16 18 12 17 19 13 // transport cc
@@ -34,9 +34,9 @@ PolySynthControl {
 
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
-		s.sendMsg('b_gen', bufferA, 'sine2', 5, 1, 1);
+		s.sendMsg('b_gen', bufferA, 'sine2', 4, 1, 1);
 		s.sendMsg('b_alloc', bufferB, 1024);
-		s.sendMsg('b_gen', bufferB, 'sine2', 5, 1, 1);
+		s.sendMsg('b_gen', bufferB, 'sine2', 4, 1, 1);
 		s.sendMsg('g_new', instGroup, 0, classGroup);
 
 		this.addMixerChannel;
@@ -128,6 +128,16 @@ PolySynthControl {
 		trigMode = flag;
 		s.sendMsg('n_set', instGroup, 'trigMode', trigMode);
 	}
+	setPitchBend { |bend|
+		var bScaled;
+		bScaled = bend * 2;
+		if(bScaled > 1){
+			pitchBend = ((bScaled - 1) * 2) + 1;
+		}{
+			pitchBend = bScaled.pow(2);
+		};
+		s.sendMsg('n_set', instGroup, 'bend', pitchBend);
+	}
 	setXFade { |amt|
 		xfade = amt;
 		s.sendMsg('n_set', instGroup, 'xfade', xfade);
@@ -179,6 +189,8 @@ PolySynthControl {
 		peakC = env[1][3];
 		s.sendMsg('n_set', instGroup, 'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 'peakA', peakA, 'peakB', peakB, 'peakC', peakC);
 	}
+	setPitchBendFlag { |flag|
+		this.addModulator(flag, 'bend', 'pitchBend');	}
 	addMixerChannel {
 		~mixer.addMonoChannel("fakeCZSynth", ~mixer.mixGroup);
 		outBus = ~mixer.channels["fakeCZSynth"].inBus;
@@ -221,6 +233,9 @@ PolySynthControl {
 						fm2Knob.zeroOneValue = value;
 						fm2Knob.knobValueAction;
 					},
+					'pitchBend', {
+						this.setPitchBend(value);
+					},
 					{
 						"no param assigned to this control".postln;
 					}
@@ -231,6 +246,7 @@ PolySynthControl {
 	bend { |src,chan,val|
 		[src,chan,val].postln;
 		this.handleMIDI(modulatorSources['bend'], val / 16384);
+		
 	}
 	afterTouch { |src,chan,val|
 		[src,chan,val].postln;
@@ -333,17 +349,17 @@ PolySynthControl {
 			.background_(Color.blue(0.1, alpha:0.2));
 		xFadeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
 			.items_(midiListMenu)
-			.action_({ |obj| this.addModulator(obj, 'xFade');});
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'xFade');});
 		GUI.staticText.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0));
 		fbMulMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
 			.items_(midiListMenu)
-			.action_({ |obj| this.addModulator(obj, 'fbMul'); });
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'fbMul'); });
 		freq2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
 			.items_(midiListMenu)
-			.action_({ |obj| this.addModulator(obj, 'freq2'); });
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'freq2'); });
 		fm2Menu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
 			.items_(midiListMenu)
-			.action_({ |obj| this.addModulator(obj, 'fm2'); });
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'fm2'); });
 		syncModeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 110, 0))
 			.items_(["no sync", "soft sync", "hard sync"])
 			.action_({ |obj| this.setSyncMode(obj.value); });
@@ -362,7 +378,7 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_([0, 32].asSpec)
+			.spec_([0, 64].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
@@ -388,9 +404,10 @@ PolySynthControl {
 		// bottom env buttons
 		pr2EnvRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
-		bendButton = GUI.button.new(win, Rect.new(0, 0, 34, 0))
-			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]]);
-		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 34, 0));
+		bendButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 62, 0))
+			.states_([["pitch bend", Color.black, Color.clear],["pitch bend", Color.red, Color.yellow]])
+			.action_({ |obj| this.setPitchBendFlag(obj.value); });
+		GUI.staticText.new(pr2EnvRow, Rect.new(0, 0, 6, 0));
 		fbMulEnvButton = GUI.button.new(pr2EnvRow, Rect.new(0, 0, 34, 0))
 			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
 			.action_({|obj| this.setFBMulEnvFlag(obj.value) });
@@ -406,14 +423,15 @@ PolySynthControl {
 			.value_(envScaleSpec.unmap(1))
 			.action_({ |obj| this.setEnvScale(envScaleSpec.map(obj.value)); });
 	}
-	addModulator { |menu,effectName|
+	
+	addModulator { |value,sourceName,effectName|
 		if(currentModulators[effectName].notNil){
 			modulatorSources[currentModulators[effectName]]
 				.removeAt(modulatorSources[currentModulators[effectName]].indexOf(effectName));
 		};
-		if(menu.value > 0){
-			modulatorSources[menu.item] = modulatorSources[menu.item].add(effectName);
-			currentModulators[effectName] = menu.item;
+		if(value > 0){
+			modulatorSources[sourceName] = modulatorSources[sourceName].add(effectName);
+			currentModulators[effectName] = sourceName;
 		}{
 			currentModulators[effectName] = nil;
 		};

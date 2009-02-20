@@ -8,7 +8,7 @@ SynthDef.new("s_dualWavetable", {
 		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, 
 		bufferA=70, bufferB=71, 
 		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1;
-	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq2, aFM2, asInEnv;
+	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq1, kFreq2, aFM2, asInEnv;
 	 
 	aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, 0, envScale, 2);
 	aConstant1 = DC.ar(1);
@@ -16,10 +16,11 @@ SynthDef.new("s_dualWavetable", {
 	asInEnv = Select.ar(fbMulEnvFlag, [aConstant1, aEnv]);
 	aInFreq = LocalIn.ar(1) * fbMul * asInEnv;
 	
-	aFreq1 = (freq1 * bend) + aInFreq;
-	kFreq2 = freq2 * freq1;
+	kFreq1 = freq1 * bend;
+	aFreq1 = kFreq1 + aInFreq;
+	kFreq2 = freq2 * kFreq1;
 	asFreq2Env = Select.ar(freq2EnvFlag, [aConstant1, aEnv]);
-	aFreq2 = (kFreq2 * asFreq2Env) +  freq1;
+	aFreq2 = (kFreq2 * asFreq2Env) +  kFreq1;
  
 	aTabPhase1 = Phasor.ar(0, aFreq1 * 0.023219954648526, 0, 1024);
 	aTabReadA = BufRd.ar(1, bufferA, aTabPhase1);

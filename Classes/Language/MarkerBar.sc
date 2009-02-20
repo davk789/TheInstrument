@@ -27,6 +27,7 @@ MarkerBar {
 			});
 	}
 	zoom { |start, end|
+		
 		[start, end].postln;
 	}
 	markerUpdate { |x|

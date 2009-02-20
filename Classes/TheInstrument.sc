@@ -12,7 +12,7 @@ TheInstrument {
 	}
 	*launchObjects {
 		~audioBusRegister = Dictionary.new;
-		// this is going to be used by the effects classes. using the track name as the key
+		// this is to be used by the effects classes. using the track name as the key
 		~mixer = Mixer.new;
 		
 		//~sampleLooper = SampleLooper.new;
