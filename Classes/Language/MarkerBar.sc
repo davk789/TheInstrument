@@ -1,5 +1,5 @@
 MarkerBar {
-	var markers, <>markerColor, values, dimensions, uView;
+	var visibleMarkers, markers, <>markerColor, values, dimensions, uView;
 	*new { |view, dim|
 		^super.new.init_markerbar(view, dim);
 	}
@@ -26,7 +26,11 @@ MarkerBar {
 				};
 			});
 	}
+	zoom { |start, end|
+		[start, end].postln;
+	}
 	markerUpdate { |x|
+		x.postln;
 		if(markers.indexOf(x).notNil){
 			markers.removeAt(markers.indexOf(x));
 		}{
@@ -34,6 +38,7 @@ MarkerBar {
 		};
 		values = markers * (1 / dimensions.width);
 		uView.refresh;
+		markers.postln;
 	}
 	value {
 		^values;
