@@ -131,8 +131,6 @@ MixerChannel {
 			"monoDelay", {
 				if( effects[ind].isKindOf(MonoDelay).not ){
 					if(effects[ind].notNil){
-						// must provide a releaseSynth method for all classes
-						// mybe just allow access to a nodeID instance var instead
 						effects[ind].releaseSynth;
 						effects[ind] = nil;
 					};

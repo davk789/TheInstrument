@@ -9,7 +9,6 @@ MonoDelay {
 		s = Server.default;
 		groupID = group;
 		nodeID = s.nextNodeID;
-		postln("the monoDelay Node ID is " ++ nodeID);
 		inputName = name;
 		inputNumber = ind;
 		bus = ~mixer.channels[name].inBus;

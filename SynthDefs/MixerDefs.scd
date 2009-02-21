@@ -1,4 +1,4 @@
-// finished
+/*** DONE ***/
 SynthDef.new("monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     var aSig, aIn;
 	aIn = (In.ar(inBus, 1) * gain).softclip;
@@ -24,6 +24,12 @@ SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0,
 	aOutMix = (aIn * (mix - 1).abs) + (aDelay * mix);
     ReplaceOut.ar(bus, aOutMix.softclip);
 }).load(s);
+SynthDef.new("fx_distortion", { |bus, buffer=73, mul=1|
+    var aIn, aSig;
+    aIn = In.ar(bus);
+    aSig = Shaper.ar(buffer, aIn, mul);
+    ReplaceOut.ar(bus, aSig);
+}).load(s);
 /* TO DO */
 SynthDef.new("fx_ringMod", { |bus, mix=1, freq=440, amount=0|
 	var aSig;
@@ -39,13 +45,6 @@ SynthDef.new("fx_compressor", { |bus=20, mix=1,
     aSig = Compander.ar(aIn, control, thresh, slopeBelow, slopeAbove);
     ReplaceOut(bus, aSig);
 }).load(s);
-
-SynthDef.new("fx_distortion", { |bus, mix|
-    var aSig;
-    aSig = In.ar(bus).distort;
-    ReplaceOut.ar(bus, aSig);
-}).load(s);
-
 SynthDef.new("fx_eq", { |bus, mix|
     var aSig;
     aSig = 0;// blabla filters here;
