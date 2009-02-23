@@ -2,7 +2,7 @@ Distortion {
 	var server, groupID, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps,
 		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, chebyAmt=0, expAmt=1, 
 		postMixBuffer,
-		win, shapeView, curve=1, mix, mul=1;
+		<win, shapeView, curve=1, mix, mul=1;
 	*new { |group,name,ind|
 		^super.new.init_distortion(group, name, ind);
 	}
@@ -119,10 +119,10 @@ Distortion {
 	}
 	makeGUI {
 		var expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, labelColumn, mixSlider, gainSlider;
-		/*if(win.isClosed){ 
+		if(win.isClosed){ 
 			win = nil;
 			this.initGUI;
-		};*/
+		};
 		GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
 			.align_('center')
 			.string_(inputName ++ " channel, slot " ++ inputNumber)
@@ -195,3 +195,4 @@ Distortion {
 }
 
 
+  
