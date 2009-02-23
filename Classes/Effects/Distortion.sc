@@ -2,7 +2,7 @@ Distortion {
 	var server, groupID, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps,
 		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, chebyAmt=0, expAmt=1, 
 		postMixBuffer,
-		win, shapeView, curve=1, mix=1;
+		win, shapeView, curve=1, mix, mul=1;
 	*new { |group,name,ind|
 		^super.new.init_distortion(group, name, ind);
 	}
@@ -12,8 +12,9 @@ Distortion {
 		groupID = group;
 		inputName = name;
 		inputNumber = ind;
+		mix = -1;
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
-	//	bus = ~mixer.channels[inputName].inBus;
+		bus = ~mixer.channels[inputName].inBus;
 		chebyArr = Array.new;
 		expArr = Array.fill(1024, { |ind| this.calculateExpoCurve(ind, 1024) });
 		postArr = Array.new;
@@ -21,10 +22,16 @@ Distortion {
 		expPreBuffer  = Buffer.alloc(server, 1024, 1);
 		postMixBuffer  = Buffer.alloc(server, 1024, 1);
 		this.writeBuffers;
+		this.startSynth;
 		this.initGUI;
+		//this.makeGUI;
 	}
 	startSynth {
-		
+		server.sendMsg('s_new', 'fx_distortion', nodeID, 0, groupID,
+			'buffer', postMixBuffer.bufnum, 'mul', mul, 'mix', mix, 'bus', bus);
+	}
+	releaseSynth {
+		server.sendMsg('n_free', nodeID);
 	}
 	writeBuffers {
 		var task;
@@ -104,15 +111,22 @@ Distortion {
 		server.sendMsg('n_set', nodeID, 'mix', val);
 	}
 	initGUI {
-		var expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, labelColumn, mixSlider, expSlider;
-		
-		win = GUI.window.new("Distortion", Rect.new(100, 350, 550, 260))
+		win = GUI.window.new("Distortion", Rect.new(100, 350, 550, 280))
 			.front;
 		win.view
 			.decorator_(FlowLayout(win.view.bounds))
 			.background_(Color.black);
-		
-		
+	}
+	makeGUI {
+		var expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, labelColumn, mixSlider, gainSlider;
+		/*if(win.isClosed){ 
+			win = nil;
+			this.initGUI;
+		};*/
+		GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
+			.align_('center')
+			.string_(inputName ++ " channel, slot " ++ inputNumber)
+			.stringColor_(Color.yellow);
 		shapeView = GUI.userView.new(win, Rect.new(0, 0, 250, 250))
 			.relativeOrigin_(false)
 			.background_(Color.black.alpha_(0.8))
@@ -145,9 +159,14 @@ Distortion {
 			.value_(expAmt)
 			.mouseUpAction_({ |obj| this.setExpAmt(obj.value); }); 
 
+		gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+		GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
+			.value_([0.001, 4, 2].asSpec.unmap(mul))
+			.action_({ |obj| this.setWetDryMix([0.001, 4, 2].asSpec.map(obj.value)); }); 
+
 		mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
-			.value_(mix)
+			.value_('pan'.asSpec.unmap(mix))
 			.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
 
 
@@ -164,7 +183,10 @@ Distortion {
 			.string_("exp coef");
 		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
 			.stringColor_(Color.yellow)
-			.string_("exp amt");
+			.string_("exp amt");		
+		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+			.stringColor_(Color.yellow)
+			.string_("gain");
 		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
 			.stringColor_(Color.yellow)
 			.string_("mix");

@@ -24,10 +24,11 @@ SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0,
 	aOutMix = (aIn * (mix - 1).abs) + (aDelay * mix);
     ReplaceOut.ar(bus, aOutMix.softclip);
 }).load(s);
-SynthDef.new("fx_distortion", { |bus, buffer=73, mul=1|
-    var aIn, aSig;
-    aIn = In.ar(bus);
-    aSig = Shaper.ar(buffer, aIn, mul);
+SynthDef.new("fx_distortion", { |bus, buffer=73, mul=1, mix=(-1)|
+    var aIn, aShape, aSig;
+    aIn = In.ar(bus) * mul;
+    aShape = Shaper.ar(buffer, aIn);
+	aSig = XFade2.ar(aShape, aIn, mix);
     ReplaceOut.ar(bus, aSig);
 }).load(s);
 /* TO DO */

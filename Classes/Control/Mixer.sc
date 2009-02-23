@@ -45,7 +45,7 @@ MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
 	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName;
 	*new { |name, addTarget, group, channels|
-		insertList = ["<none>", "monoDelay", "ringMod", "compressor", "distortion", 
+		insertList = ["<none>", "monoDelay", "distortion", "ringMod", "compressor", 
 			"eq", "pitchShift"];
 		^super.new.init_mixerChannel(name, addTarget, group, channels);
 	}
@@ -123,7 +123,7 @@ MixerChannel {
 		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
 	}
 	launchFXWindow { |menu, ind, group|
-		menu.items[menu.value].switch(
+		menu.item.switch(
 			"<none>", {
 				effects[ind].releaseSynth(ind);
 				effects[ind] = nil;
@@ -142,7 +142,23 @@ MixerChannel {
 				}{
 					effects[ind].win.front;
 				};
-			}, {
+			},
+			"distortion", {
+				if( effects[ind].isKindOf(Distortion).not ){
+					if(effects[ind].notNil){
+						effects[ind].releaseSynth;
+						effects[ind] = nil;
+					};
+					effects[ind] = Distortion.new(group, channelName, ind);
+					effects[ind].makeGUI("distortion");
+				};
+				if(effects[ind].win.isClosed){
+					effects[ind].makeGUI("distortion");
+				}{
+					effects[ind].win.front;
+				};
+			},
+			{
 				postln("default case does nothing");
 			}
 		);

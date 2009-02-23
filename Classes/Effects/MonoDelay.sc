@@ -42,7 +42,7 @@ MonoDelay {
 		modSourceMenu = GUI.popUpMenu.new(labelRow, Rect.new(0, 0, labelRow.bounds.width / 2.1, 0))
 			.items_(~audioBusRegister.keys.asArray)
 			.action_({ |obj|
-				modBus = ~audioBusRegister[obj.items[obj.value]];
+				modBus = ~audioBusRegister[obj.item];
 				s.sendMsg('n_set', nodeID, 'modBus', modBus);
 			});
 		modSourceMenu.value = modSourceMenu.items.indexOf(~audioBusRegister.findKeyForValue(modBus));
