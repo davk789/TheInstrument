@@ -1,8 +1,8 @@
 Distortion {
-	var server, groupID, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps,
-		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, chebyAmt=0, expAmt=1, 
+	var server, groupID, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
+		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, 
 		postMixBuffer,
-		<win, shapeView, curve=1, mix, mul=1;
+		<win, shapeView, curve=1, mix, gain=1;
 	*new { |group,name,ind|
 		^super.new.init_distortion(group, name, ind);
 	}
@@ -20,44 +20,9 @@ Distortion {
 		postArr = Array.new;
 		chebyPreBuffer = Buffer.alloc(server, 1024, 1);
 		expPreBuffer  = Buffer.alloc(server, 1024, 1);
-		postMixBuffer  = Buffer.alloc(server, 1024, 1);
-		this.writeBuffers;
-		this.startSynth;
-		this.initGUI;
-		//this.makeGUI;
-	}
-	startSynth {
-		server.sendMsg('s_new', 'fx_distortion', nodeID, 0, groupID,
-			'buffer', postMixBuffer.bufnum, 'mul', mul, 'mix', mix, 'bus', bus);
-	}
-	releaseSynth {
-		server.sendMsg('n_free', nodeID);
-	}
-	writeBuffers {
-		var task;
-		
-		task = Task.new({
-			chebyPreBuffer.cheby(chebyAmps, true, false, true);
-			0.2.wait;
-			expArr.size.do{ |ind| expArr[ind] = this.calculateExpoCurve(ind, expArr.size) };
-			expArr.postln;
-			chebyPreBuffer.loadToFloatArray(action:{ |arr| 
-				arr.postln; 
-				chebyArr = arr;
-				expPreBuffer.loadCollection(expArr, action:{ |buf|
-					postArr = ((chebyArr * chebyAmt) + (expArr * expAmt)).clip2(1);
-					postMixBuffer.loadCollection(postArr);
-				});
-				0.1.wait;
-				shapeView.refresh;
-			});
-		}, AppClock);
-		task.reset;
-		task.play;
-
-	}
-	draw {
-		^{
+		postMixBuffer  = Buffer.alloc(server, 2048, 1);
+		postSignal = Signal.newClear(1024);
+		drawFunction = {
 			var displayY=0, displayX=0;
 			JPen.use{
 				JPen.width = 1;
@@ -79,6 +44,41 @@ Distortion {
 				JPen.stroke;
 			};
 		};
+		this.writeBuffers;
+		this.startSynth;
+		this.initGUI;
+		//this.makeGUI;
+	}
+	startSynth {
+		server.sendMsg('s_new', 'fx_distortion', nodeID, 0, groupID,
+			'buffer', postMixBuffer.bufnum, 'gain', gain, 'mix', mix, 'bus', bus);
+	}
+	releaseSynth {
+		server.sendMsg('n_free', nodeID);
+	}
+	writeBuffers {
+		var task;
+		
+		task = Task.new({
+			chebyPreBuffer.cheby(chebyAmps, true, false, true);
+			0.2.wait;
+			expArr.size.do{ |ind| expArr[ind] = this.calculateExpoCurve(ind, expArr.size) };
+			chebyPreBuffer.loadToFloatArray(action:{ |arr| 
+				chebyArr = arr;
+				expPreBuffer.loadCollection(expArr, action:{ |buf|
+					postArr = ((chebyArr * chebyAmt) + (expArr * expAmt)).clip2(1);
+					postSignal.waveFill({ |xval,ind|
+						postArr[xval];
+					}, 0, 1024);
+					postMixBuffer.loadCollection(postSignal.asWavetable);
+				});
+			});
+			0.1.wait;
+			shapeView.refresh;
+		}, AppClock);
+		task.reset;
+		task.play;
+
 	}
 	calculateExpoCurve { |index,numPoints|
 		var unscaledLinY=(-1), unscaledCurveY=(-1);
@@ -108,7 +108,11 @@ Distortion {
 	}
 	setWetDryMix { |val|
 		mix = val;
-		server.sendMsg('n_set', nodeID, 'mix', val);
+		server.sendMsg('n_set', nodeID, 'mix', mix);
+	}
+	setGain { |val|
+		gain = val;
+		server.sendMsg('n_set', nodeID, 'gain', gain);
 	}
 	initGUI {
 		win = GUI.window.new("Distortion", Rect.new(100, 350, 550, 280))
@@ -128,10 +132,10 @@ Distortion {
 			.string_(inputName ++ " channel, slot " ++ inputNumber)
 			.stringColor_(Color.yellow);
 		shapeView = GUI.userView.new(win, Rect.new(0, 0, 250, 250))
-			.relativeOrigin_(false)
+			.relativeOrigin_(true)
 			.background_(Color.black.alpha_(0.8))
 			//.mouseUpAction_({ |obj,x,y,mod| this.refreshUserView(x,y,mod); })
-			.drawFunc_(this.draw);
+			.drawFunc_(drawFunction);
 		sliderColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 200, 250))
 			.background_(Color.black);
 		chebyCoefSlider = GUI.multiSliderView.new(sliderColumn, Rect.new(0, 0, 0, 100))
@@ -161,8 +165,8 @@ Distortion {
 
 		gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
-			.value_([0.001, 4, 2].asSpec.unmap(mul))
-			.action_({ |obj| this.setWetDryMix([0.001, 4, 2].asSpec.map(obj.value)); }); 
+			.value_([0.001, 4, 2].asSpec.unmap(gain))
+			.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
 
 		mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
