@@ -16,6 +16,7 @@ TheInstrument {
 		~mixer = Mixer.new;
 		
 		//~sampleLooper = SampleLooper.new;
+		//~audioInChannel = AudioInChannel.new;
 		
 		~eventLooper = EventLooper.new;
 		// preset support
