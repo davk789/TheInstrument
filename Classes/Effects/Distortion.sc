@@ -1,5 +1,5 @@
 Distortion {
-	var server, groupID, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
+	var server, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
 		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, 
 		postMixBuffer,
 		<win, shapeView, curve=1, mix, gain=1;

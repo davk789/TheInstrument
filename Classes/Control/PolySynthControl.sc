@@ -192,8 +192,8 @@ PolySynthControl {
 	setPitchBendFlag { |flag|
 		this.addModulator(flag, 'bend', 'pitchBend');	}
 	addMixerChannel {
-		~mixer.addMonoChannel("fakeCZSynth", ~mixer.mixGroup);
-		outBus = ~mixer.channels["fakeCZSynth"].inBus;
+		~mixer.addMonoChannel("WavetableSynth", ~mixer.mixGroup);
+		outBus = ~mixer.channels["WavetableSynth"].inBus;
 	}
 	noteOn { |src,chan,num,vel|
 		activeNotes = activeNotes.add(num -> s.nextNodeID);

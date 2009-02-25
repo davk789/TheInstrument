@@ -1,11 +1,11 @@
-SynthDef.new("monoInputChannel", { |channel=2|
+SynthDef.new("s_monoInputChannel", { |outBus=20, channel=0|
 	var aSig;
 	aSig = SoundIn.ar(channel);
-	Out.ar(aSig);
+	Out.ar(outBus, aSig);
 }).load(s);
 
-SynthDef.new("stereoInputChannel", { |left=2,right=3|
+SynthDef.new("s_stereoInputChannel", { |outBus=20, channel=0|
 	var aSig;
-	aSig = SoundIn.ar([left,right]);
-	Out.ar(aSig);
+	aSig = SoundIn.ar([channel, channel + 1]);
+	Out.ar(outBus, aSig);
 }).load(s);
