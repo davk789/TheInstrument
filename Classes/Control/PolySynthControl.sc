@@ -4,7 +4,7 @@ PolySynthControl {
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=1, <>outBus=19, <recorderID="czSynth", pitchBend=1,
-		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1, midiCCSources,
+		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -28,9 +28,9 @@ PolySynthControl {
 			'knob 7'-> [], 
 			'knob 8'-> []
 		];
-		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil];
+		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil, 'cutoff' -> nil, 'cutoffMod' -> nil];
 		midiCCSources = Dictionary[1 -> 'mod wheel', 72 ->  'knob 1', 8 -> 'knob 2', 74 -> 'knob 3', 71 -> 'knob 4', 20 -> 'knob 5', 22 -> 'knob 6', 86 -> 'knob 7', 73 -> 'knob 8'];
-
+		midiListMenu = ['<none>', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8'];
 
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
@@ -151,12 +151,8 @@ PolySynthControl {
 		s.sendMsg('n_set', instGroup, 'fbMul', fbMul);
 	}
 	setFreq2 { |frq|
-		if(frq > 0){
-			freq2 = frq + 1;		
-		}{
-			freq2 = (frq - 1).abs.reciprocal;
-		};
-		freq2 = frq + 1;
+		freq2 = this.octaveToRatio(frq);
+		//freq2 = frq + 1;
 		s.sendMsg('n_set', instGroup, 'freq2', freq2);
 	}
 	setFM2 { |fm|
@@ -257,7 +253,7 @@ PolySynthControl {
 		};
 	}
 	initGUI {
-		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
+		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 340)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
@@ -342,7 +338,6 @@ PolySynthControl {
 			.states_([["B", Color.black, Color.clear],["B", Color.red, Color.yellow]]);
 		
 		// bottom aux controls
-		midiListMenu = ['<none>', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8'];
 		pr2AuxControls = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
 		xFadeMenu = GUI.popUpMenu.new(pr2AuxControls, Rect.new(0, 0, 37.5, 0))
@@ -434,10 +429,20 @@ PolySynthControl {
 			currentModulators[effectName] = nil;
 		};
 	}
+	octaveToRatio { |oct|
+		var ret;
+		if(oct > 0){
+			ret = oct + 1;
+		}{
+			ret = (oct - 1).abs.reciprocal;
+		};
+		^ret;
+	}
 
 }
 
 PolySynthControlRLPF : PolySynthControl {
+	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=0, modSource=0, cutoffKnob, cutoffModKnob;
 	*new {
 		^super.new.init_polysynthcontrolrlpf;
 	}
@@ -445,14 +450,124 @@ PolySynthControlRLPF : PolySynthControl {
 		"PolySynthControlRLPF initializing".postln;
 		this.addGUI;
 	}
-	addGUI {
-		var filterRow;
-		("inside addGUI method and the bounds are " ++ win.view.bounds).postln;
-		win.view.bounds.left.postln;
-		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 100);
-		filterRow = GUI.vLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 90))
-			.background_(Color.blue(0.1, alpha:0.2));
-		
+	noteOn { |src,chan,num,vel|
+		activeNotes = activeNotes.add(num -> s.nextNodeID);
+		s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
+			'outBus', outBus, 'freq1', num.midicps, 'lev', (vel / 127).pow(2.2),
+			'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
+			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
+			'trigMode', trigMode, 'xfade', xfade, 
+			'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
+			'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
+			'envScale', envScale, 'bend', pitchBend,
+			'cutoff', cutoff, 'cutoffMod', cutoffMod, 'cutoffFlag', cutoffFlag, 'cutoffModFlag', cutoffModFlag, 
+			'resonance', resonance, 'modSource', modSource);
+		s.sendMsg('n_set', activeNotes[num], 'gate', 1);
 	}
+	setCutoff { |val|
+		cutoff = this.octaveToRatio(val);
+		s.sendMsg('n_set', instGroup, 'cutoff', cutoff);
+	}
+	setCutoffMod { |val|
+		cutoffMod = val;
+		s.sendMsg('n_set', instGroup, 'cutoffMod', cutoffMod);
+	}
+	setCutoffFlag { |val|
+		cutoffFlag = val;
+		s.sendMsg('n_set', instGroup, 'cutoffFlag', cutoffFlag);
+	}
+	setCutoffModFlag { |val|
+		cutoffModFlag = val;
+		s.sendMsg('n_set', instGroup, 'cutoffModFlag', cutoffModFlag);
+	}
+	setResonance { |val|
+		resonance = val;
+		s.sendMsg('n_set', instGroup, 'resonance', resonance);
+	}
+	setModSource { |val|
+		modSource = val;
+		s.sendMsg('n_set', instGroup, 'modSource', modSource);
+	}
+	handleMIDI { |controls,value|
+		if(controls.size > 0){
+			controls.do{ |obj,ind|
+				obj.switch(
+					'xFade', {
+						xfadeKnob.zeroOneValue = value;
+						xfadeKnob.knobValueAction;
+					},
+					'fbMul', {
+						fbMulKnob.zeroOneValue = value;
+						fbMulKnob.knobValueAction;
+					},
+					'freq2', {
+						freq2Knob.zeroOneValue = value;
+						freq2Knob.knobValueAction;
+					},
+					'fm2', {
+						fm2Knob.zeroOneValue = value;
+						fm2Knob.knobValueAction;
+					},
+					'pitchBend', {
+						this.setPitchBend(value);
+					},
+					'cutoff', {
+						cutoffKnob.zeroOneValue = value;
+						cutoffKnob.knobValueAction;
+					},
+					'cutoffMod', {
+						cutoffModKnob.zeroOneValue = value;
+						cutoffModKnob.knobValueAction;
+					},
+					{
+						"no param assigned to this control".postln;
+					}
+				);
+			}
+		};
+	}
+	addGUI {
+		var filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, rezKnob, cutoffModSourceButton;
+		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 135);
+		
+		filterMidiRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 25))
+			.background_(Color.blue(0.1, alpha:0.2));
+		cutoffMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu)
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'cutoff'); });
+		cutoffModMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 37.5, 0))
+			.items_(midiListMenu)
+			.action_({ |obj| this.addModulator(obj.value, obj.item, 'cutoffMod'); });
+		GUI.staticText.new(filterMidiRow, Rect.new(0, 0, 37.5, 0));
+		cutoffModSourceButton = GUI.button.new(filterMidiRow, Rect.new(0, 0, 75, 0))
+			.states_([["osc1 mod", Color.black, Color.blue(0.1, alpha:0.2)],["osc2 mod", Color.blue, Color.red(0.1, alpha:0.2)]])
+			.action_({ |obj| this.setModSource(obj.value); });
+		
+		filterControlRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 75))
+			.background_(Color.blue(0.1, alpha:0.2));
+		cutoffKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "cutoff")
+			.spec_([-12, 12].asSpec)
+			.knobColor_([Color.black, Color.green, Color.black, Color.green])
+			.knobAction_({ |obj| this.setCutoff(obj.value); })
+			.knobCentered_(true);
+		cutoffModKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "coMod")
+			.spec_([0, 8].asSpec)
+			.knobColor_([Color.black, Color.green, Color.black, Color.green])
+			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
+		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
+			.spec_([1, 100].asSpec)
+			.knobColor_([Color.black, Color.green, Color.black, Color.green])
+			.knobAction_({ |obj| this.setResonance(obj.value); });
+		
+		filterEnvRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 25))
+			.background_(Color.blue(0.1, alpha:0.2));
+		cutoffEnvButton = GUI.button.new(filterEnvRow, Rect.new(0, 0, 34, 0))
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
+			.action_({|obj| this.setCutoffFlag(obj.value) });
+		cutoffModEnvButton = GUI.button.new(filterEnvRow, Rect.new(0, 0, 34, 0))
+			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
+			.action_({|obj| this.setCutoffModFlag(obj.value) });
+	}
+	
 }
                     

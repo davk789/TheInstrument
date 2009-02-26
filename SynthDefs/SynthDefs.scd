@@ -43,16 +43,16 @@ SynthDef.new("s_dualWavetable", {
 }).load(s);
 
 SynthDef.new("s_dualWavetableRLPF", { 
-	arg gate, outBus=20, 
+	|gate, outBus=20, 
 		curve=(-1.6), lev=1,
 		peakA=0.7, peakB=0.5, peakC=0.6, 
 		att=0.1, dec=0.2, sus=0.3, rel=0.2, 
 		fbMul=0, fbLag=1, fmAmt=0,
-		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, reson=10,
+		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, resonance=1,
 		bufferA=70, bufferB=71, 
-		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1
-		cutoff=0, cutoffMod=0, filterModulator=0;
-	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq1, kFreq2, aFM2, asInEnv, aFilt, aLPFreq;
+		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1,
+		cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, modSource=0|
+	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq1, kFreq2, aFM2, asInEnv, aFilt, aLPFreq, asLPFModSources, aLPFreqMod, asCutoff, asCutoffFreqEnv, asCutoffModEnv;
 	 
 	aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, 0, envScale, 2);
 	aConstant1 = DC.ar(1);
@@ -79,15 +79,18 @@ SynthDef.new("s_dualWavetableRLPF", {
 
 	aTabReadB = BufRd.ar(1, bufferB, aTabPhase2) * aSyncCoef;
    
- 	aSig = XFade2.ar(aTabReadA, aTabReadB, xfade) * aEnv;
+ 	aSig = XFade2.ar(aTabReadA, aTabReadB, xfade);
  	
-	lLPFModSources = [aTabReadA, aTabReadB];
-	aLPFModSources = Select.ar(filterModulator, lLPFModSources);
-	aLPFreq = (freq1 + (cutoff * freq)) + (aLPFModSources * cutoffMod);
- 	aFilt = RLPF.ar(aSig, aLPFreq, reson.reciprocal); // need to make the freq work better.
+ 	asCutoffFreqEnv = Select.ar(cutoffFlag, [aConstant1, aEnv]);
+ 	asCutoffModEnv = Select.ar(cutoffModFlag, [aConstant1, aEnv]);
+	asLPFModSources = Select.ar(modSource, [aTabReadA, aTabReadB]);
+	
+	aLPFreqMod = freq1 * asLPFModSources * cutoffMod * asCutoffModEnv;
+	aLPFreq = (freq1 + (cutoff * freq1 * asCutoffFreqEnv)) + aLPFreqMod;
+ 	aFilt = RLPF.ar(aSig, aLPFreq, resonance.reciprocal);
  
 	LocalOut.ar(Lag2.ar(aFilt, fbLag));
-	Out.ar(outBus, aFilt);
+	Out.ar(outBus, aFilt * aEnv);
 	 
 }).load(s);
 
