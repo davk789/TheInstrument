@@ -1,8 +1,10 @@
 AudioInputChannel {
-	classvar classGroup=102;
+	classvar classGroup=102, id=0;
 	var <numChannels=8, instGroup=104,
-		win, inputMenu, windowName="Input Channel", server, nodeID, groupID, inputChannel=0, outBus=20;
+		win, inputMenu, windowName="Input Channel", server, nodeID, groupID, 
+		inputChannel=0, outBus=20, instanceNum, instanceName;
 	*new {
+		id = id + 1;
 		^super.new.init_audioinchannel;
 	}
 	init_audioinchannel {
@@ -31,20 +33,24 @@ AudioInputChannel {
 }
 
 MonoInputChannel : AudioInputChannel {
+	var instanceNum;
 	*new {
-		^super.new.init_monoinchannel;
+		^super.new.init_monoinchannel(id);
 	}
-	init_monoinchannel {
+	init_monoinchannel { |id|
+		instanceNum = id;
+		instanceName = "MonoInput" ++ id;
 		windowName = "Mono Input Channel";
 		this.makeGUI;
 		numChannels.do{ |ind|
 			inputMenu.items = inputMenu.items.add("in " ++ ind);
 		};
 		this.startSynth;
+		this.addMixerChannel;
 	}
 	addMixerChannel {
-		~mixer.addMonoChannel("MonoInputChannel", ~mixer.mixGroup);
-		outBus = ~mixer.channels["MonoInputChannel"].inBus;
+		~mixer.addMonoChannel(instanceName, ~mixer.mixGroup);
+		outBus = ~mixer.channels[instanceName].inBus;
 	}
 	startSynth {
 		server.sendMsg('s_new', 's_monoInputChannel', nodeID, 0, instGroup,
@@ -54,9 +60,11 @@ MonoInputChannel : AudioInputChannel {
 
 StereoInputChannel : AudioInputChannel {
 	*new {
-		^super.new.init_stereoinchannel;
+		^super.new.init_stereoinchannel(id);
 	}
-	init_stereoinchannel {
+	init_stereoinchannel { |id|
+		instanceNum = id;
+		instanceName = "StereoInput" ++ id;
 		windowName = "Stereo Input Channel";
 		this.makeGUI;
 		numChannels.do{ |ind|
@@ -65,10 +73,11 @@ StereoInputChannel : AudioInputChannel {
 			};
 		};
 		this.startSynth;
+		this.addMixerChannel;
 	}
 	addMixerChannel {
-		~mixer.addStereoChannel("StereoInputChannel", ~mixer.mixGroup);
-		outBus = ~mixer.channels["StereoInputChannel"].inBus;
+		~mixer.addStereoChannel(instanceName, ~mixer.mixGroup);
+		outBus = ~mixer.channels[instanceName].inBus;
 	}
 	startSynth {
 		server.sendMsg('s_new', 's_stereoInputChannel', nodeID, 0, instGroup,
@@ -76,3 +85,4 @@ StereoInputChannel : AudioInputChannel {
 	}
 
 }
+   

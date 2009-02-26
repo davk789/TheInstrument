@@ -212,8 +212,6 @@ PolySynthControl {
 		activeNotes.removeAt(num);
 	}
 	handleMIDI { |controls,value|
-		modulatorSources.postln;
-		[controls,value].postln;
 		if(controls.size > 0){
 			controls.do{ |obj,ind|
 				obj.switch(
@@ -260,7 +258,7 @@ PolySynthControl {
 	}
 	initGUI {
 		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, midiListMenu, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
-		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 360)).front;
+		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 340)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
 		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
@@ -439,3 +437,22 @@ PolySynthControl {
 
 }
 
+PolySynthControlRLPF : PolySynthControl {
+	*new {
+		^super.new.init_polysynthcontrolrlpf;
+	}
+	init_polysynthcontrolrlpf {
+		"PolySynthControlRLPF initializing".postln;
+		this.addGUI;
+	}
+	addGUI {
+		var filterRow;
+		("inside addGUI method and the bounds are " ++ win.view.bounds).postln;
+		win.view.bounds.left.postln;
+		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 100);
+		filterRow = GUI.vLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 90))
+			.background_(Color.blue(0.1, alpha:0.2));
+		
+	}
+}
+                    

@@ -50,8 +50,9 @@ SynthDef.new("s_dualWavetableRLPF", {
 		fbMul=0, fbLag=1, fmAmt=0,
 		freq1=440, freq2=0, trigMode=0, bend=1, xfade=0, reson=10,
 		bufferA=70, bufferB=71, 
-		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1;
-	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq1, kFreq2, aFM2, asInEnv, aFilt;
+		fmEnvFlag=0, freq2EnvFlag=0, fbMulEnvFlag=0, envScale=1
+		cutoff=0, cutoffMod=0, filterModulator=0;
+	var aTabReadA, aTabReadB, aTabPhase1, aTabPhase2, aEnv, aInFreq, aSig, aFreq1, aFreq2, aTrig, aConstant1, aInvSync, lSyncCoefs, aSyncCoef, asFreq2Env, kFreq1, kFreq2, aFM2, asInEnv, aFilt, aLPFreq;
 	 
 	aEnv = EnvGen.ar(Env.new([0, peakA, peakB, peakC, 0], [att, sus, dec, rel], curve, 3), gate, lev, 0, envScale, 2);
 	aConstant1 = DC.ar(1);
@@ -80,10 +81,13 @@ SynthDef.new("s_dualWavetableRLPF", {
    
  	aSig = XFade2.ar(aTabReadA, aTabReadB, xfade) * aEnv;
  	
- 	aFilt = RLPF.ar(aSig, freq1, 1/ reson); // need to make the freq work better.
+	lLPFModSources = [aTabReadA, aTabReadB];
+	aLPFModSources = Select.ar(filterModulator, lLPFModSources);
+	aLPFreq = (freq1 + (cutoff * freq)) + (aLPFModSources * cutoffMod);
+ 	aFilt = RLPF.ar(aSig, aLPFreq, reson.reciprocal); // need to make the freq work better.
  
 	LocalOut.ar(Lag2.ar(aFilt, fbLag));
-	Out.ar(outBus, aSig);
+	Out.ar(outBus, aFilt);
 	 
 }).load(s);
 
@@ -114,3 +118,4 @@ SynthDef.new("s_czFakeRez", { |gate, outBus=19, bend=0, lev=1, curve=(-2),
 }).load(s);
 
 				   
+         
