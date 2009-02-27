@@ -20,6 +20,7 @@ SampleLooper {
 		if(range < 1){
 			sampleView.scrollTo(lo / (1 - range));
 		};
+		markerBar.zoom(lo, hi);
 	}
 	initGUI {
 		var winWidth, sampleViewRow, vZoomSlider;
@@ -39,7 +40,7 @@ SampleLooper {
 		zoomSlider = GUI.rangeSlider.new(win, Rect.new(0, 0, winWidth, 20))
 			.knobColor_(Color.new255(109, 126, 143))
 			.background_(Color.white.alpha_(0.3))
-			.action_({ |obj| this.zoomView(obj.lo, obj.hi, obj.range); [obj.lo, obj.hi].postln; });
+			.action_({ |obj| this.zoomView(obj.lo, obj.hi, obj.range); });
 	}
 }
 

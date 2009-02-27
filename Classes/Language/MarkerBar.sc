@@ -1,5 +1,5 @@
 MarkerBar {
-	var visibleMarkers, markers, <>markerColor, values, dimensions, uView;
+	var visibleMarkers, markers, <>markerColor, values, dimensions, uView, <start=0, <end=1;
 	*new { |view, dim|
 		^super.new.init_markerbar(view, dim);
 	}
@@ -18,7 +18,7 @@ MarkerBar {
 				JPen.use{
 					JPen.width = 3;
 					JPen.color = markerColor;
-					markers.do{ |val,ind|
+					visibleMarkers.do{ |val,ind|
 						JPen.moveTo(val @ 0);
 						JPen.lineTo(val @ (dimensions.height + 10));
 						JPen.stroke;
@@ -26,20 +26,30 @@ MarkerBar {
 				};
 			});
 	}
-	zoom { |start, end|
-		
-		[start, end].postln;
+	zoom { |startIn, endIn|
+		start = startIn;
+		end = endIn;
+		this.updateVisibleMarkers;
+		uView.refresh;
+	}
+	updateVisibleMarkers {
+		var range, startPoint;
+		range = (end - start).reciprocal;
+		startPoint = start * dimensions.width;
+		visibleMarkers = (markers - startPoint) * range;
 	}
 	markerUpdate { |x|
-		x.postln;
-		if(markers.indexOf(x).notNil){
-			markers.removeAt(markers.indexOf(x));
+		var scaledX;
+		scaledX = ((x * (end - start)) + (start * dimensions.width)).round;
+		scaledX.postln;
+		if(markers.indexOf(scaledX).notNil){
+			markers.removeAt(markers.indexOf(scaledX));
 		}{
-			markers = markers.add(x);	
+			markers = markers.add(scaledX);	
 		};
 		values = markers * (1 / dimensions.width);
+		this.updateVisibleMarkers;
 		uView.refresh;
-		markers.postln;
 	}
 	value {
 		^values;
