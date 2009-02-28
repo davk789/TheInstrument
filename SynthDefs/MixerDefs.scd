@@ -12,7 +12,6 @@ SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
     Out.ar(outBus, aSig);
 }).load(s);
-// there also should be a stereo version of this
 SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0, 
 								modBus=20, modAmt=0, modLag=1|
     var aIn, aDelay, aDelayIn, aLocalIn, aOutMix, aModIn;
@@ -32,20 +31,23 @@ SynthDef.new("fx_distortion", { |bus, buffer=73, gain=1, mix=(-1)|
 	aSig = XFade2.ar(aShape, aIn, mix);
     ReplaceOut.ar(bus, aSig);
 }).load(s);
+SynthDef.new("fx_compressor", { 
+	|bus=20, controlBus=20, mix=1, 
+		threshold=0.6, slopeBelow=1, slopeAbove=0.2, 
+		clampTime=0.005, relaxTime=0.01|
+    var aSig, aIn, aControl, aFX;
+    aIn = In.ar(bus);
+    aControl = InFeedback.ar(controlBus);
+    aFX = Compander.ar(aIn, aControl, threshold, slopeBelow, slopeAbove);
+    aSig = XFade2.ar(aIn, aFX, mix);
+    ReplaceOut(bus, aSig);
+}).load(s);
+
 /* TO DO */
 SynthDef.new("fx_ringMod", { |bus, mix=1, freq=440, amount=0|
 	var aSig;
 	aSig = In.ar(bus) * SinOsc.ar(freq, 0, amount);
 	ReplaceOut.ar(bus, aSig);
-}).load(s);
-
-SynthDef.new("fx_compressor", { |bus=20, mix=1, 
-	control, threshold=0.6, slopBelow=1, slopeAbove=0.2, 
-	clampTime=0.005, relaxTime=0.01|
-    var aSig;
-    aIn = In.ar(bus);
-    aSig = Compander.ar(aIn, control, thresh, slopeBelow, slopeAbove);
-    ReplaceOut(bus, aSig);
 }).load(s);
 SynthDef.new("fx_eq", { |bus, mix|
     var aSig;
