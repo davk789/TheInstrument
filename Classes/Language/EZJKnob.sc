@@ -45,6 +45,9 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 		};
 		numberBox.value = prValue;
 	}
+	stringColor_ { |color|
+		label.stringColor_(color);
+	}
 	knobColor_ { |colors|
 		knob.color = colors;
 	}
@@ -57,4 +60,3 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 	}
 
 }
-                       

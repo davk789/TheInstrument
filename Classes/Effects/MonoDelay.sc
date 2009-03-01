@@ -2,10 +2,10 @@ MonoDelay {
 	var s, <win, inputName, inputNumber, groupID, <nodeID,
 		bus=20, mix=0.5, delayTime=0.1, feedback=0, 
 		modBus=23, modAmt=0, modLag=1;
-	*new { |menu, group, name, ind|
-		^super.new.init_monoDelay(menu, group, name, ind);
+	*new { |group, name, ind|
+		^super.new.init_monoDelay(group, name, ind);
 	}
-	init_monoDelay { |menu, group, name, ind|
+	init_monoDelay { |group, name, ind|
 		s = Server.default;
 		groupID = group;
 		nodeID = s.nextNodeID;

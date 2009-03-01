@@ -27,9 +27,9 @@ Mixer {
 	
 	//// GUI methods
 	initGUI {
-		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, windowHeight));
+		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, windowHeight)).front;
+		win.view.background = Color.grey(15);
 		//win.view.decorator = FlowLayout(win.view.bounds);
-		win.front;
 	}
 	addMonoChannel { |name, group=1, addTarget=0|
 		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1));
@@ -45,8 +45,8 @@ MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
 	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName;
 	*new { |name, addTarget, group, channels|
-		insertList = ["<none>", "monoDelay", "distortion", "ringMod", "compressor", 
-			"eq", "pitchShift"];
+		insertList = ["<none>", "MonoDelay", "Distortion", "Compressor", "RingMod", 
+			"EQ", "PitchShift"];
 		^super.new.init_mixerChannel(name, addTarget, group, channels);
 	}
 	init_mixerChannel { |name, addTarget, group, channels|
@@ -123,45 +123,24 @@ MixerChannel {
 		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
 	}
 	launchFXWindow { |menu, ind, group|
-		menu.item.switch(
-			"<none>", {
+		if(menu.value > 0){
+				if( effects[ind].isKindOf(menu.item.interpret).not ){
+					if(effects[ind].notNil){
+						effects[ind].releaseSynth;
+						effects[ind] = nil;
+					};
+					effects[ind] = menu.item.interpret.new(group, channelName, ind);
+					effects[ind].makeGUI(menu.item);
+				};
+				if(effects[ind].win.isClosed){
+					effects[ind].makeGUI(menu.item);
+				}{
+					effects[ind].win.front;
+				};
+		}{
 				effects[ind].releaseSynth(ind);
 				effects[ind] = nil;
-			},
-			"monoDelay", {
-				if( effects[ind].isKindOf(MonoDelay).not ){
-					if(effects[ind].notNil){
-						effects[ind].releaseSynth;
-						effects[ind] = nil;
-					};
-					effects[ind] = MonoDelay.new(menu, group, channelName, ind);
-					effects[ind].makeGUI("monoDelay");
-				};
-				if(effects[ind].win.isClosed){
-					effects[ind].makeGUI("monoDelay");
-				}{
-					effects[ind].win.front;
-				};
-			},
-			"distortion", { // dirty
-				if( effects[ind].isKindOf(Distortion).not ){
-					if(effects[ind].notNil){
-						effects[ind].releaseSynth;
-						effects[ind] = nil;
-					};
-					effects[ind] = Distortion.new(group, channelName, ind);
-					effects[ind].makeGUI("distortion");
-				};
-				if(effects[ind].win.isClosed){
-					effects[ind].makeGUI("distortion");
-				}{
-					effects[ind].win.front;
-				};
-			},
-			{
-				postln("default case does nothing");
-			}
-		);
+		};
 	}
 }
 /*
