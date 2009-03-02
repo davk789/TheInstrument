@@ -1,5 +1,5 @@
 EffectBase {
-	var server, inputName, inputNumber, groupID, <nodeID, startParams, 
+	var server, inputName, inputNumber, groupID, <nodeID, startParams, synthdefName,
 		win;
 	*new { |group, name, ind|
 		^super.new.init_effectbase(group, name, ind);
@@ -12,7 +12,7 @@ EffectBase {
 		inputNumber = ind;
 	}
 	startSynth {
-		server.listSendMsg(['s_new', nodeID, 0, groupID] ++ startParams);
+		server.listSendMsg(['s_new', synthdefName, nodeID, 0, groupID] ++ startParams);
 	}
 	releaseSynth {
 		server.sendMsg('n_free', nodeID);
