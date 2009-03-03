@@ -37,10 +37,10 @@ SynthDef.new("fx_compressor", {
 		clampTime=0.005, relaxTime=0.01|
     var aSig, aIn, aControl, aFX;
     aIn = In.ar(bus);
-    aControl = InFeedback.ar(controlBus);
+    aControl = In.ar(controlBus);
     aFX = Compander.ar(aIn, aControl, threshold, slopeBelow, slopeAbove);
     aSig = XFade2.ar(aIn, aFX, mix);
-    ReplaceOut(bus, aSig);
+    ReplaceOut.ar(bus, aSig);
 }).load(s);
 
 /* TO DO */
