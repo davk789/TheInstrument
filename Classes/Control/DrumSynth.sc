@@ -1,3 +1,80 @@
+DSKlunk {
+	*new {
+		^super.new.init_dsklunk;
+	}
+	init_dsklunk {
+		postln(this.class ++ " initialized");
+	}
+}
+
+DSOsc {
+	var <drumID, <rezID, groupID=999, server, 
+		xAtt=0.001, xRel=0.5, xLev=1, xCurve, xFreq=80, 
+		xModPhase=0, xModFreq, xModAmt=0, xDrive=0, xOutBus=15,
+		rFreq=1600, rRes=10,
+		rOutBus=0, rInBus=12, rLev=1, rGain=1;
+	*new {
+		^super.new.init_dsosc;
+	}
+	init_dsosc {
+		server = Server.default;
+		xCurve = -8;
+		xModFreq = -1;
+		this.initGUI;
+		postln(this.class ++ " initialized");
+	}
+	startRez {
+		if(rezID.isNil){ rezID = server.nextNodeID; };
+		server.sendMsg('s_new', 'r_lpf', rezID, 1, groupID,
+			'freq', rFreq, 'res', rRes,
+			'outBus', rOutBus, 'inBus', rInBus, 'lev', rLev, 'gain', rGain);
+	}
+	stopRez {
+		server.sendMsg('n_free', rezID);
+		rezID = nil;
+	}
+	hit {
+		drumID = server.nextNodeID;
+		server.sendMsg('s_new', 'x_osc', drumID, 0, groupID,
+			'att', xAtt, 'rel', xRel, 'lev', xLev, 'curve', xCurve, 'freq', xFreq, 
+			'modPhase', xModPhase, 'modFreq', xModFreq, 'modAmt', xModAmt, 'drive', xDrive, 'trig', 1, 'outBus', xOutBus,
+		);
+	}
+	initGUI { |parent|
+		
+	}
+}
+
+DSHiHat {
+	*new {
+		^super.new.init_dshihat;
+	}
+	init_dshihat {
+		postln(this.class ++ " initialized");
+	}
+}
+
+DSSnare {
+	*new {
+		^super.new.init_dssnare;
+	}
+	init_dssnare {
+		postln(this.class ++ " initialized");
+	}
+}
+
+// x_gray r_klank
+// x_osc r_lpf
+// x_crackle r_hpf
+// x_crackle r_hpf
+// x_clip r_klank
+// x_clip r_klank
+// x_clip r_klank
+// x_whiteSnare r_lpf
+
+
+/*
+
 DSBase {
 	var <nodeID, <>groupID=999, <>params, <>synthDef, s;
 	*new {
@@ -324,4 +401,6 @@ DrumSynth {
 		};
 	}
 }
-                
+*/
+
+

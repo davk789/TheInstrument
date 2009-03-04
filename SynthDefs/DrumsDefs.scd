@@ -1,7 +1,8 @@
 postln("loading SynthDefs");
 // Drums ~~~~~~~~~~
-SynthDef.new("x_osc", { |att=0.001, rel=0.5, lev=1, curve=(-8), freq=80, 
-	modPhase=0, modFreq=(-1), modAmt=0, drive=0, trig=1, outBus=15| 
+SynthDef.new("x_osc", { 
+	|att=0.001, rel=0.5, lev=1, curve=(-8), freq=80, 
+		modPhase=0, modFreq=(-1), modAmt=0, drive=0, trig=1, outBus=15| 
     var uMod, uOsc, uEnv, uDrive, kModFreq, kModAmt;
 
     kModFreq = (modFreq * 0.25) / (att + rel);
@@ -15,32 +16,36 @@ SynthDef.new("x_osc", { |att=0.001, rel=0.5, lev=1, curve=(-8), freq=80,
 
 }).load(s);
 
-SynthDef.new("x_gray", { |att=0.001, rel=0.5, lev=1, curve=(-8), 
-						  trig=1, outBus=10, gain=0.25|
+SynthDef.new("x_gray", { 
+	|att=0.001, rel=0.5, lev=1, curve=(-8), 
+		trig=1, outBus=10, gain=0.25|
 	var aNoise, aEnv;
 	aNoise = GrayNoise.ar;
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 	Out.ar(outBus, RLPF.ar(aNoise * aEnv * gain, 200, 1));
 }).load(s);
 
-SynthDef.new("x_crackle", { |att=0.001, rel=1.5, lev=1, curve=(-4), 
-							 trig=1, outBus=11, crackle=1.5, gain=1|
+SynthDef.new("x_crackle", { 
+	|att=0.001, rel=1.5, lev=1, curve=(-4), 
+		trig=1, outBus=11, crackle=1.5, gain=1|
 	var aNoise, aEnv;
 	aNoise = (Crackle.ar(crackle) * gain).tanh;
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 	Out.ar(outBus, aNoise * aEnv);//RLPF.ar(aNoise * aEnv, 200, 1));
 }).load(s);
 
-SynthDef.new("x_clip", { |att=0.001, rel=0.5, lev=1, curve=(-8), 
-						  trig=1, outBus=10|
+SynthDef.new("x_clip", { 
+	|att=0.001, rel=0.5, lev=1, curve=(-8), 
+		trig=1, outBus=10|
 	var aNoise, aEnv;
 	aNoise = ClipNoise.ar;
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev * 0.25, curve), trig, doneAction:2);
 	Out.ar(outBus, RLPF.ar(aNoise * aEnv, 200, 1));
 }).load(s);
 
-SynthDef.new("x_whiteSnare", { |outBus=10, freq=1200, gain=1, rez=2, trig=1, 
-							  att=0.011, rel=0.5, lev=1, curve=(-10)|
+SynthDef.new("x_whiteSnare", { 
+	|outBus=10, freq=1200, gain=1, rez=2, trig=1, 
+		att=0.011, rel=0.5, lev=1, curve=(-10)|
 	var aNoise, aLo, aHi, aSig, kRez, aEnv;
 	kRez = rez.reciprocal; 
 	aNoise = WhiteNoise.ar(gain).softclip;
