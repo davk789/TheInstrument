@@ -3,7 +3,7 @@ DSKlunk {
 		^super.new.init_dsklunk;
 	}
 	init_dsklunk {
-		postln(this.class ++ " initialized");
+		postln(this.class.asString ++ " initialized");
 	}
 }
 
@@ -21,7 +21,7 @@ DSOsc {
 		xCurve = -8;
 		xModFreq = -1;
 		this.initGUI;
-		postln(this.class ++ " initialized");
+		postln(this.class.asString ++ " initialized");
 	}
 	startRez {
 		if(rezID.isNil){ rezID = server.nextNodeID; };
@@ -37,8 +37,48 @@ DSOsc {
 		drumID = server.nextNodeID;
 		server.sendMsg('s_new', 'x_osc', drumID, 0, groupID,
 			'att', xAtt, 'rel', xRel, 'lev', xLev, 'curve', xCurve, 'freq', xFreq, 
-			'modPhase', xModPhase, 'modFreq', xModFreq, 'modAmt', xModAmt, 'drive', xDrive, 'trig', 1, 'outBus', xOutBus,
-		);
+			'modPhase', xModPhase, 'modFreq', xModFreq, 'modAmt', xModAmt, 
+			'drive', xDrive, 'trig', 1, 'outBus', xOutBus);
+	}
+	setRFreq { |val|
+		rFreq = val;
+		server.sendMsg('n_set', rezID, 'freq', rFreq);
+	}
+	setRRes { |val|
+		rRes = val;
+		server.sendMsg('n_set', rezID, 'res', rRes);
+	}
+	setXAtt { |val|
+		rRes = val;
+		server.sendMsg('n_set', rezID, 'res', rRes);
+	}
+	setXRel { |val|
+		rRes = val;
+		server.sendMsg('n_set', rezID, 'res', rRes);
+	}
+	setXCurve { |val|
+		xCurve = val;
+		server.sendMsg('n_set', rezID, 'curve', xCurve);
+	}
+	setXFreq { |val|
+		xFreq = val;
+		server.sendMsg('n_set', rezID, 'freq', xFreq);
+	}
+	setXModPhase { |val|
+		xModPhase = val;
+		server.sendMsg('n_set', rezID, 'modPhase', xModPhase);
+	}
+	setXModFreq { |val|
+		xModFreq = val;
+		server.sendMsg('n_set', rezID, 'modFreq', xModFreq);
+	}
+	setXModAmt { |val|
+		xModAmt = val;
+		server.sendMsg('n_set', rezID, 'modAmt', xModAmt);
+	}
+	setXDrive { |val|
+		xDrive = val;
+		server.sendMsg('n_set', rezID, 'drive', xDrive);
 	}
 	initGUI { |parent|
 		
@@ -50,7 +90,7 @@ DSHiHat {
 		^super.new.init_dshihat;
 	}
 	init_dshihat {
-		postln(this.class ++ " initialized");
+		postln(this.class.asString ++ " initialized");
 	}
 }
 
@@ -59,7 +99,7 @@ DSSnare {
 		^super.new.init_dssnare;
 	}
 	init_dssnare {
-		postln(this.class ++ " initialized");
+		postln(this.class.asString ++ " initialized");
 	}
 }
 
