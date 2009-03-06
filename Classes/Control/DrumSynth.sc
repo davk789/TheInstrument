@@ -12,16 +12,19 @@ DSOsc {
 		xAtt=0.001, xRel=0.5, xLev=1, xCurve, xFreq=80, 
 		xModPhase=0, xModFreq, xModAmt=0, xDrive=0, xOutBus=15,
 		rFreq=1600, rRes=10,
-		rOutBus=0, rInBus=12, rLev=1, rGain=1;
-	*new {
-		^super.new.init_dsosc;
+		rOutBus=0, rInBus=12, rLev=1, rGain=1,
+		view, rFreqKnob, rResKnob, 
+		xAttKnob, xRelKnob, xCurveKnob, xFreqKnob, 
+		xModPhaseKnob, xModFreqKnob, xModAmtKnob, xDriveKnob;
+	*new { |parent|
+		^super.new.init_dsosc(parent);
 	}
-	init_dsosc {
+	init_dsosc { |parent|
+		postln(this.class.asString ++ " initialized");
 		server = Server.default;
 		xCurve = -8;
 		xModFreq = -1;
-		this.initGUI;
-		postln(this.class.asString ++ " initialized");
+		this.initGUI(parent);
 	}
 	startRez {
 		if(rezID.isNil){ rezID = server.nextNodeID; };
@@ -81,6 +84,65 @@ DSOsc {
 		server.sendMsg('n_set', rezID, 'drive', xDrive);
 	}
 	initGUI { |parent|
+		var view, knobColors;
+		knobColors = [Color.white.alpha_(0.5), Color.yellow, Color.black, Color.yellow];
+		view = GUI.compositeView.new(parent, Rect.new(0, 0, 100, 200))
+			.background_(Color.blue(0.1, alpha:0.2));
+		view.decorator = FlowLayout(view.bounds);
+		rFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
+			.spec_('freq'.asSpec)
+			.knobColor_(knobColors)
+			.value_(rFreq)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setRFreq(obj.value); });
+		rResKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
+			.spec_([1, 100].asSpec)
+			.knobColor_(knobColors)
+			.value_(rRes)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setRRes(obj.value); });
+		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
+			.spec_([0.0001, 0.5, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xAtt)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setClampTime(obj.value); });
+		xRelKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
+			.spec_([0.0001, 2, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xRel)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXrRel(obj.value); });
+		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
+			.spec_([-5, 5].asSpec)
+			.knobColor_(knobColors)
+			.value_(xCurve)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXCurve(obj.value); });
+		xModPhaseKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mPhase")
+			.spec_([0, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xModPhase)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXMod(obj.value); });
+		xModFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mFreq")
+			.spec_([0, 20, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xModFreq)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXModFreq(obj.value); });
+		xModAmtKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mAmt")
+			.spec_([0, 20, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xModAmt)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXModAMt(obj.value); });
+		xDriveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "drive")
+			.spec_([0.0001, 0.3, 2].asSpec)
+			.knobColor_(knobColors)
+			.value_(xDrive)
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setXDrive(obj.value); });
 		
 	}
 }
