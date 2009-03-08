@@ -87,10 +87,10 @@ SynthDef.new("s_dualWavetableRLPF", {
 	
 	aLPFreqMod = freq1 * asLPFModSources * cutoffMod * asCutoffModEnv;
 	aLPFreq = (freq1 + (cutoff * freq1 * asCutoffFreqEnv)) + aLPFreqMod;
- 	aFilt = RLPF.ar(aSig, aLPFreq, resonance.reciprocal);
+ 	aFilt = RLPF.ar(aSig * aEnv, aLPFreq, resonance.reciprocal);
  
 	LocalOut.ar(Lag2.ar(aFilt, fbLag));
-	Out.ar(outBus, aFilt * aEnv);
+	Out.ar(outBus, aFilt);
 	 
 }).load(s);
 

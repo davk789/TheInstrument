@@ -48,6 +48,9 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 	stringColor_ { |color|
 		label.stringColor_(color);
 	}
+	font_ { |fnt|
+		label.font_(fnt);
+	}
 	knobColor_ { |colors|
 		knob.color = colors;
 	}

@@ -18,20 +18,20 @@ SynthDef.new("x_osc", {
 
 SynthDef.new("x_gray", { 
 	|att=0.001, rel=0.5, lev=1, curve=(-8), 
-		trig=1, outBus=10, gain=0.25|
+		trig=1, outBus=10|
 	var aNoise, aEnv;
 	aNoise = GrayNoise.ar;
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
-	Out.ar(outBus, RLPF.ar(aNoise * aEnv * gain, 200, 1));
+	Out.ar(outBus, RLPF.ar(aNoise * aEnv, 200, 1));
 }).load(s);
 
 SynthDef.new("x_crackle", { 
 	|att=0.001, rel=1.5, lev=1, curve=(-4), 
 		trig=1, outBus=11, crackle=1.5, gain=1|
 	var aNoise, aEnv;
-	aNoise = (Crackle.ar(crackle) * gain).tanh;
+	aNoise = Crackle.ar(crackle);
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
-	Out.ar(outBus, aNoise * aEnv);//RLPF.ar(aNoise * aEnv, 200, 1));
+	Out.ar(outBus, (aNoise * aEnv).tanh);//RLPF.ar(aNoise * aEnv, 200, 1));
 }).load(s);
 
 SynthDef.new("x_clip", { 
@@ -73,11 +73,12 @@ SynthDef.new("r_lpf", { |freq=1600, res=10,
 }).load(s);	
 
 SynthDef.new("r_hpf", { |freq=1600, res=10,
-						 outBus=0, inBus=13, lev=1|
-	var aRez;
-	aRez = RHPF.ar(In.ar(inBus), freq, 1 / res);
+						 outBus=0, inBus=13, lev=1, gain=1|
+	var aRez, aIn;
+	aIn = (In.ar(inBus) * gain).tanh;
+	aRez = RHPF.ar(aIn, freq, 1 / res);
 	Out.ar(outBus, Pan2.ar(aRez) * lev);
-}).load(s);
+}).load(s);	
 
 SynthDef.new("r_klank", { |outBus=0, inBus=10, lev=1, 
 						   f1=80,f2=90,f3=145,
