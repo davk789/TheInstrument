@@ -1,10 +1,11 @@
 PolySynthControl {
 	classvar  classGroup=102;
-	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71,
+	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71, tunings, tuning=1,
 		<>att=0.05, <>dec=0.02, <>sus=0.7, <>rel=0.4, 
 		<>peakA=0.6, <>peakB=0.3, <>peakC=0.6, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=1, <>outBus=19, <recorderID="czSynth", pitchBend=1,
-		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0, 		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
+		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0,
+ 		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -27,6 +28,12 @@ PolySynthControl {
 			'knob 6'-> [], 
 			'knob 7'-> [], 
 			'knob 8'-> []
+		];
+		tunings = [
+			[0,1,2,3,4,5,6,7,8,9,10, 11], // 12tet
+			[0, 0.844671934697, 2.039100017308, 2.668709056037, 3.863137138648, 
+			 4.980449991346, 5.825121926043, 7.019550008654, 7.649159047383, 
+			 8.843587129994, 9.688259064691, 10.882687147302] // centaur
 		];
 		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil, 'cutoff' -> nil, 'cutoffMod' -> nil];
 		midiCCSources = Dictionary[1 -> 'mod wheel', 72 ->  'knob 1', 8 -> 'knob 2', 74 -> 'knob 3', 71 -> 'knob 4', 20 -> 'knob 5', 22 -> 'knob 6', 86 -> 'knob 7', 73 -> 'knob 8'];
@@ -112,8 +119,8 @@ PolySynthControl {
 	         };
 	    };
 	}
-	setSynthPreset { |menu|
-		postln("this is where the SynthControl class will switch synth modes.\n" ++ menu);
+	setTuning { |ind|
+		tuning = ind;
 	}
 	generatePartials { |freqs, amps, buffer|
 		var sFrequency, sAmplitude;
@@ -192,9 +199,11 @@ PolySynthControl {
 		outBus = ~mixer.channels["WavetableSynth"].inBus;
 	}
 	noteOn { |src,chan,num,vel|
+		var pitch;
+		pitch = num.degreeToKey(tunings[tuning]).midicps;
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num], 0, instGroup,
-			'outBus', outBus, 'freq1', num.midicps, 'lev', (vel / 127).pow(2.2),
+			'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 			'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
 			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
 			'trigMode', trigMode, 'xfade', xfade, 
@@ -260,10 +269,10 @@ PolySynthControl {
 		modeRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
 			.background_(Color.blue(0.1, alpha:0.2));
 		GUI.staticText.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.24, 0))
-			.string_("preset:");
+			.string_("tuning:");
 		modeMenu = GUI.popUpMenu.new(modeRow, Rect.new(0, 0, win.view.bounds.width * 0.74, 0))
-			.items_(["czFakeRez", "dualWavetable"])
-			.action_({ |obj| this.setSynthPreset(obj); });
+			.items_(["12tet", "centaur"])
+			.action_({ |obj| this.setTuning(obj.value); });
 			
 		// controls row 1
 		partialRow1 = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 75))
