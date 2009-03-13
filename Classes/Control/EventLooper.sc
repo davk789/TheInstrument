@@ -4,14 +4,13 @@ EventLooperChannel {
 		waitTime=0, firstEvent=true, <>isRecording=false, <eventCollection, <metaSeq,
 		<>seqMenu, <>playButton, <>recordButton, 
 		currSeq=0, cTempo=1;
-	*new { |win, name|
-		^super.new.init_eventLooperChannel(win, name);
+	*new { |name, win|
+		^super.new.init_eventLooperChannel(name, win);
 	}
-	init_eventLooperChannel { |win, name|
+	init_eventLooperChannel { |name,win|
 		var sep;
 		sep = Platform.pathSeparator;
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups" ++ sep ++ "";
-		metaSeq = MetaSequence.new(eventValue.size);
 		totalTime = 8;
 		index = 0;
 		nextTime = [totalTime];
@@ -21,6 +20,8 @@ EventLooperChannel {
 		    postln("waiting " ++ waitTime ++ " beats");
 		};*/
 		iterator = this.itr;
+		this.makeGUI(name, win);
+		metaSeq = MetaSequence.new(eventValue.size, win);
 	}
 	itr {
 		^{
@@ -287,7 +288,7 @@ EventLooperChannel {
 			parent.view.bounds.left, 
 			parent.view.bounds.top, 
 			parent.view.bounds.width,
-			parent.view.bounds.height + 110
+			parent.view.bounds.height + 140
 		);
 	}
 }
@@ -343,13 +344,12 @@ EventLooper {
 		};
 		switch( type,
 			0, {
-				channels = channels.add(name -> EventLooperChannel.new);
+				channels = channels.add(name -> EventLooperChannel.new(name, win));
 			},
 			1, {
-				channels = channels.add(name -> SynthEventLooperChannel.new);
+				channels = channels.add(name -> SynthEventLooperChannel.new(name, win));
 			}
 		);
-		this.makeGUI(name, win);
 		^channelIndex;
 	}
 	initGUI {
@@ -365,12 +365,13 @@ EventLooper {
 MetaSequence {
 	var <>seq, counter=0, index=0, superIndex=0, isPlaying=false, seqSize=1;
 	
-	*new { |inSize=1|
-		^super.new.ms_init(inSize);
+	*new { |inSize=1, parent|
+		^super.new.ms_init(inSize, parent);
 	}
-	ms_init { |inSize=1|
+	ms_init { |inSize=1, parent|
 		seqSize = inSize;
 		seq = Dictionary['wait' -> [1], 'delta' -> [0]];
+		this.makeGUI(parent);
 	}
 	next {
 		var ret=(-1);
@@ -398,13 +399,17 @@ MetaSequence {
 	sIndex_ { |ind|
 		superIndex = ind;
 	}
+	makeGUI { |parent|
+		var controlRow;
+		controlRow = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 25))
+			.background_(Color.new255(20, 10, 2));
+	}
 }
 /*
   ...to do later:
   add pause/resume
   fix the hiccup on starting the sequence
   add a recordable metasequence
-  make the stupid thing actually work
  */
 
                                                                                       
