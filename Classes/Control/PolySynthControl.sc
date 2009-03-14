@@ -176,6 +176,7 @@ PolySynthControl {
 	    };
 	}
 	setTuning { |choice|
+		choice.postln;
 		tuning = choice;
 	}
 	generatePartials { |freqs, amps, buffer|
@@ -517,9 +518,12 @@ PolySynthControlRLPF : PolySynthControl {
 		this.addGUI;
 	}
 	noteOn { |src,chan,num,vel|
+		var pitch;
+		pitch = num.degreeToKey(tunings[tuning]).midicps;
+		pitch.postln;
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
-			'outBus', outBus, 'freq1', num.midicps, 'lev', (vel / 127).pow(2.2),
+			'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 			'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
 			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
 			'trigMode', trigMode, 'xfade', xfade, 

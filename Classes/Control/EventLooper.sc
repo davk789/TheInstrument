@@ -38,8 +38,9 @@ EventLooperChannel {
 			nextSeq = metaSeq.next;
 			if(nextSeq != -1){
 				this.load((nextSeq + currSeq) % eventCollection.size);
-				postln("load this sequence: " ++ "( " ++ nextSeq ++ " + " ++ currSeq ++ " ) % "++eventCollection.size);
+				postln("load this sequence: ( " ++ nextSeq ++ " + " ++ currSeq ++ " ) % "++eventCollection.size);
 			};
+			//
 			waitTime;
 		};
 	}
@@ -135,6 +136,7 @@ EventLooperChannel {
 			eventValue = eventCollection[sel][1];
 		};
 		metaSeq.loopSize = eventValue.size;
+		if(metaSeq.isRecording){ metaSeq.record(sel); };
 	}
 	numBeats_ { |beats|
 		nextTime = nextTime * (beats / totalTime);
@@ -363,23 +365,25 @@ EventLooper {
 }
 
 MetaSequence {
-	var <>seq, counter=0, index=0, superIndex=0, isPlaying=false, seqSize=1;
+	var <>seq, recordCounter=0, counter=0, index=0, superIndex=0, isPlaying=false, isRecording=false, seqSize=1;
 	
 	*new { |inSize=1, parent|
 		^super.new.ms_init(inSize, parent);
 	}
 	ms_init { |inSize=1, parent|
 		seqSize = inSize;
-		seq = Dictionary['wait' -> [1], 'delta' -> [0]];
+		seq = [[1, 0]]; // wait, delta pairs
 		this.makeGUI(parent);
 	}
 	next {
 		var ret=(-1);
 		if(isPlaying){
 			counter = counter + 1;
-			if( counter == seq['wait'][index] ){
-				ret = seq['delta'][index];
-				index = (index + 1) % seq['wait'].size;
+			if(isRecording){ recordCounter = recordCounter + 1; };
+			recordCounter = recordCounter + 1;
+			if( counter == seq[index][0] ){
+				ret = seq[index][1];
+				index = (index + 1) % seq.size;
 				counter = 0;
 				postln("about to return ret: " ++ ret);
 			};
@@ -390,19 +394,68 @@ MetaSequence {
 		isPlaying = true;
 	}
 	stop {
+		counter = 0;
 		isPlaying = false;
 	}
-	// ~~~~~~~~~~ data MetaSequence needs from EventLooper
+	pause {
+		isPlaying = false;
+	}
+	record { |sel|
+		seq = seq.add([recordCounter, sel]);
+	}
 	loopSize_ { |inSize|
 		seqSize = inSize;
 	}
 	sIndex_ { |ind|
 		superIndex = ind;
 	}
+	setPlay { |val, button|
+		if(val == 1){ 
+			this.play;
+			button.enabled = true;
+		}{
+			this.stop;
+			button.enabled = false;
+		};
+	}
+	setPause { |val|
+		if(val == 1){ this.play; }{	this.pause; };
+	}
+	setSeq { |set|
+		seq = set;
+	}
+	setRecord { |choice|
+		isRecording = (choice == 1);
+	}
+	makeEditWindow {
+		var editWin, editValue;
+		editWin = GUI.window.new("edit MetaSequence", Rect.new(500.rand, 500.rand, 300, 200)).front;
+		editWin.view
+			.background_(Color.black)
+			.decorator_(FlowLayout(editWin.view.bounds));
+		editValue = GUI.textField.new(editWin, Rect.new(0, 0, 290, 190))
+			.action_({ |obj| this.setSeq(obj.value.interpret)})
+			.value_(seq.asInfString);
+	}
 	makeGUI { |parent|
-		var controlRow;
+		var controlRow, pauseButton;
 		controlRow = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 25))
 			.background_(Color.new255(20, 10, 2));
+		GUI.button.new(controlRow, Rect.new(0, 0, 40, 0))
+			.states_([[">", Color.black, Color.green],["[]", Color.black, Color.red]])
+			.action_({ |obj| this.setPlay(obj.value, pauseButton); });
+		pauseButton = GUI.button.new(controlRow, Rect.new(0, 0, 40, 0))
+			.states_([["||", Color.yellow, Color.clear],["||", Color.black, Color.yellow]])
+			.action_({ |obj| this.setPause(obj.value); });
+		GUI.button.new(controlRow, Rect.new(0, 0, 65, 0))
+			.states_([["record", Color.red, Color.black],["recording", Color.black, Color.red]])
+			.action_({ |obj| this.setRecord(obj.value); });
+		GUI.button.new(controlRow, Rect.new(0, 0, 40, 0))
+			.states_([["edit", Color.white, Color.black]])
+			.action_({ |obj| this.makeEditWindow(obj.value); });
+		GUI.staticText.new(controlRow, Rect.new(0, 0, 60, 0))
+			.stringColor_(Color.white)
+			.string_("MetaSeq");
 	}
 }
 /*
