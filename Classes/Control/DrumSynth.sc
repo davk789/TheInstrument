@@ -76,19 +76,19 @@ DSKlunk : DSBase {
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setRezParam('f3', obj.value); });
 		r1Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r1")
-			.spec_([1, 150].asSpec)
+			.spec_([0.001, 2].asSpec)
 			.knobColor_(knobColors)
 			.value_(rezParams['r1'])
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setRezParam('r1', obj.value); });
 		r2Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r2")
-			.spec_([1, 150].asSpec)
+			.spec_([0.001, 2].asSpec)
 			.knobColor_(knobColors)
 			.value_(rezParams['r2'])
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setRezParam('r2', obj.value); });
 		r3Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r3")
-			.spec_([1, 150].asSpec)
+			.spec_([0.001, 2].asSpec)
 			.knobColor_(knobColors)
 			.value_(rezParams['r3'])
 			.stringColor_(Color.yellow)
@@ -396,13 +396,13 @@ DrumSynth {
 				Dictionary['curve' -> -10, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 10, 'lev' -> 0.1], 
 				Dictionary['lev' -> 1, 'f1' -> 100, 'f2' -> 80, 'f3'-> 250,
 					  'r1' -> 0.1, 'r2' -> 0.5, 'r3' -> 0.8,
-					  'a1' -> 0.2, 'a2' -> 0.3, 'a3' -> 0.4, 'inBus' -> 10, 'outBus' -> outBus]), 
+					  'a1' -> 0.01, 'a2' -> 0.1, 'a3' -> 0.11, 'inBus' -> 10, 'outBus' -> outBus]), 
 			DSKlunk.new(
 				win, 
 				Dictionary['lev' -> 1, 'curve' -> -10, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 11], 
 				Dictionary['lev' -> 1, 'f1' -> 100, 'f2' -> 80, 'f3'-> 250,
 					'r1' -> 0.1, 'r2' -> 0.5, 'r3' -> 0.8,
-					'a1' -> 0.2, 'a2' -> 0.3, 'a3' -> 0.4, 'inBus' -> 11, 'outBus' -> outBus]), 
+					'a1' -> 0.1, 'a2' -> 0.11, 'a3' -> 0.08, 'inBus' -> 11, 'outBus' -> outBus]), 
 			DSHiHat.new(
 				win, 
 				Dictionary['lev' -> 1, 'curve' -> -10, 'att' -> 0.0001, 'rel' -> 0.6, 'outBus' -> 12, 
@@ -418,7 +418,7 @@ DrumSynth {
 				Dictionary['lev' -> 1, 'curve' -> -10, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 14], 
 				Dictionary['lev' -> 1, 'f1' -> 120, 'f2' -> 75, 'f3'-> 55,
 					  'r1' -> 0.2, 'r2' -> 0.1, 'r3' -> 0.1,
-					  'a1' -> 0.4, 'a2' -> 0.3, 'a3' -> 0.2, 'inBus' -> 14, 'outBus' -> outBus]), 
+					  'a1' -> 0.2, 'a2' -> 0.05, 'a3' -> 0.1, 'inBus' -> 14, 'outBus' -> outBus]), 
 			DSOsc.new(
 				win, 
 				Dictionary['curve' -> -5, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 11,

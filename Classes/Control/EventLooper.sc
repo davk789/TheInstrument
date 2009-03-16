@@ -130,13 +130,15 @@ EventLooperChannel {
 		eventValue = [nil];
 	}
 	load { |sel|
+		var lastChoice=0;
+		lastChoice = currSeq;
 		if(sel != nil){
 			currSeq = sel;
-			nextTime = eventCollection[sel][0];
-			eventValue = eventCollection[sel][1];
+			nextTime = eventCollection[currSeq][0];
+			eventValue = eventCollection[currSeq][1];
 		};
 		metaSeq.loopSize = eventValue.size;
-		if(metaSeq.isRecording){ metaSeq.record(sel); };
+		metaSeq.record(currSeq - lastChoice);
 	}
 	numBeats_ { |beats|
 		nextTime = nextTime * (beats / totalTime);
@@ -294,6 +296,7 @@ EventLooperChannel {
 		);
 	}
 }
+
 SynthEventLooperChannel : EventLooperChannel {
 	var <>synthGroup;	
 	*init { |group|
@@ -312,6 +315,8 @@ SynthEventLooperChannel : EventLooperChannel {
 			eventValue = eventCollection[sel][1];
 		};
 		metaSeq.loopSize = eventValue.size;
+		metaSeq.record(sel);
+
 	}
 	clear {
 		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
@@ -377,10 +382,9 @@ MetaSequence {
 	}
 	next {
 		var ret=(-1);
+		if(isRecording){ recordCounter = recordCounter + 1; };
 		if(isPlaying){
 			counter = counter + 1;
-			if(isRecording){ recordCounter = recordCounter + 1; };
-			recordCounter = recordCounter + 1;
 			if( counter == seq[index][0] ){
 				ret = seq[index][1];
 				index = (index + 1) % seq.size;
@@ -401,7 +405,7 @@ MetaSequence {
 		isPlaying = false;
 	}
 	record { |sel|
-		seq = seq.add([recordCounter, sel]);
+		if(isRecording){ seq = seq.add([recordCounter, sel]); };
 	}
 	loopSize_ { |inSize|
 		seqSize = inSize;
@@ -423,13 +427,16 @@ MetaSequence {
 	}
 	setSeq { |set|
 		seq = set;
+		seq.postln;
 	}
 	setRecord { |choice|
 		isRecording = (choice == 1);
+		if(isRecording){recordCounter = 0};
 	}
 	makeEditWindow {
 		var editWin, editValue;
-		editWin = GUI.window.new("edit MetaSequence", Rect.new(500.rand, 500.rand, 300, 200)).front;
+		editWin = GUI.window.new("edit MetaSequence", Rect.new(500.rand, 500.rand, 300, 200))
+			.front;
 		editWin.view
 			.background_(Color.black)
 			.decorator_(FlowLayout(editWin.view.bounds));
@@ -462,7 +469,6 @@ MetaSequence {
   ...to do later:
   add pause/resume
   fix the hiccup on starting the sequence
-  add a recordable metasequence
  */
 
                                                                                       
