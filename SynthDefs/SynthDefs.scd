@@ -40,7 +40,7 @@ SynthDef.new("s_dualWavetable", {
 	LocalOut.ar(Lag2.ar(aSig, fbLag));
 	Out.ar(outBus, aSig);
 	 
-}).load(s);
+}, [nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 1, nil, 1, 1, 1, nil, 1, 1]).load(s);
 
 SynthDef.new("s_dualWavetableRLPF", { 
 	|gate, outBus=20, 
@@ -87,12 +87,12 @@ SynthDef.new("s_dualWavetableRLPF", {
 	
 	aLPFreqMod = freq1 * asLPFModSources * cutoffMod * asCutoffModEnv;
 	aLPFreq = (freq1 + (cutoff * freq1 * asCutoffFreqEnv)) + aLPFreqMod;
- 	aFilt = RLPF.ar(aSig * aEnv, aLPFreq, resonance.reciprocal);
+ 	aFilt = RLPF.ar(aSig, aLPFreq, resonance.reciprocal);
  
 	LocalOut.ar(Lag2.ar(aFilt, fbLag));
-	Out.ar(outBus, aFilt);
+	Out.ar(outBus, aFilt * aEnv);
 	 
-}).load(s);
+}, [nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 1, nil, 1, 1, 1, nil, 1, 1, 1, nil, nil, nil, nil, nil, nil, 1, 1]).load(s);
 
 
 SynthDef.new("s_czFakeRez", { |gate, outBus=19, bend=0, lev=1, curve=(-2),

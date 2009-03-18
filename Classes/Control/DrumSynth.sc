@@ -12,7 +12,7 @@ DSBase {
 	hit { |lev|
 		this.setDrumParam('lev', lev);
 		drumID = server.nextNodeID;
-		server.listSendMsg(['s_new', 'x_osc', drumID, 0, groupID] ++ drumParams.getPairs);
+		server.listSendMsg(['s_new', drumName, drumID, 0, groupID] ++ drumParams.getPairs);
 	}
 	startRez {
 		if(rezID.isNil){ 
@@ -28,6 +28,7 @@ DSBase {
 	}
 	setRezParam { |key,val|
 		rezParams[key] = val;
+		['n_set', rezID, key, rezParams[key]].postln;
 		server.sendMsg('n_set', rezID, key, rezParams[key]);
 	}
 	setDrumParam { |key,val|
@@ -136,7 +137,7 @@ DSKlunk : DSBase {
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setDrumParam('lev', obj.value); });
 		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-3, 3].asSpec)
+			.spec_([-10, 10].asSpec)
 			.knobColor_(knobColors)
 			.value_(drumParams['curve'])
 			.stringColor_(Color.yellow)
@@ -147,7 +148,7 @@ DSKlunk : DSBase {
 DSOsc : DSBase {
 	var rFreqKnob, rResKnob, rGainKnob,
 		xAttKnob, xRelKnob, xCurveKnob, xFreqKnob, 
-		xModPhaseKnob, xModFreqKnob, xModAmtKnob, xDriveKnob;
+		xModPhaseKnob, xFreqKnob, xModFreqKnob, xModAmtKnob, xDriveKnob;
 	*new { |parent,dParams,rParams|
 		^super.new.init_dsosc(parent,dParams,rParams);
 	}
@@ -182,7 +183,7 @@ DSOsc : DSBase {
 			.knobColor_(knobColors)
 			.value_(rezParams['gain'])
 			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('res', obj.value); });
+			.knobAction_({ |obj| this.setRezParam('gain', obj.value); });
 		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
 			.spec_([0.0001, 0.5, 2].asSpec)
 			.knobColor_(knobColors)
@@ -196,11 +197,17 @@ DSOsc : DSBase {
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setDrumParam('rel', obj.value); });
 		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-5, 5].asSpec)
+			.spec_([-10, 10].asSpec)
 			.knobColor_(knobColors)
 			.value_(drumParams['curve'])
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setDrumParam('curve', obj.value); });
+		xFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "freq")
+			.spec_('freq'.asSpec)
+			.knobColor_(knobColors)
+			.value_(drumParams['freq'])
+			.stringColor_(Color.yellow)
+			.knobAction_({ |obj| this.setDrumParam('freq', obj.value); });
 		xModPhaseKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mPhase")
 			.spec_([0, 2].asSpec)
 			.knobColor_(knobColors)
@@ -220,7 +227,7 @@ DSOsc : DSBase {
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setDrumParam('modAmt', obj.value); });
 		xDriveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "drive")
-			.spec_([0.0001, 0.3, 2].asSpec)
+			.spec_([0.0001, 3, 2].asSpec)
 			.knobColor_(knobColors)
 			.value_(drumParams['drive'])
 			.stringColor_(Color.yellow)
@@ -285,7 +292,7 @@ DSHiHat : DSBase {
 			.stringColor_(Color.yellow)
 			.knobAction_({ |obj| this.setDrumParam('lev', obj.value); });
 		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-3, 3].asSpec)
+			.spec_([-10, 10].asSpec)
 			.knobColor_(knobColors)
 			.value_(drumParams['curve'])
 			.stringColor_(Color.yellow)
@@ -421,14 +428,14 @@ DrumSynth {
 					  'a1' -> 0.2, 'a2' -> 0.05, 'a3' -> 0.1, 'inBus' -> 14, 'outBus' -> outBus]), 
 			DSOsc.new(
 				win, 
-				Dictionary['curve' -> -5, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 11,
+				Dictionary['curve' -> -5, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 15,
 					'freq' -> 80, 'modPhase' -> 0, 'modFreq' -> -1, 'modAmt' -> 0, 'drive' -> 10], 
-				Dictionary['lev' -> 1, 'freq' -> 1600, 'res' -> 10, 'gain' -> 2, 'inBus' -> 15, 'outBus' -> outBus]),   
+				Dictionary['lev' -> 1, 'freq' -> 1600, 'res' -> 1, 'gain' -> 2, 'inBus' -> 15, 'outBus' -> outBus]),   
 			DSOsc.new(
 				win, 
-				Dictionary['curve' -> -5, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 11,
+				Dictionary['curve' -> -5, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 16,
 					'freq' -> 80, 'modPhase' -> 0, 'modFreq' -> -1, 'modAmt' -> 0, 'drive' -> 10], 
-				Dictionary['lev' -> 1, 'freq' -> 1600, 'res' -> 10, 'gain' -> 2, 'inBus' -> 16, 'outBus' -> outBus]),   
+				Dictionary['lev' -> 1, 'freq' -> 1600, 'res' -> 1, 'gain' -> 2, 'inBus' -> 16, 'outBus' -> outBus]),   
 			DSSnare.new(
 				win, 
 				Dictionary['lev' -> 1, 'curve' -> -10, 'att' -> 0.001, 'rel' -> 0.5, 'outBus' -> 17,

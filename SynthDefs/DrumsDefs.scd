@@ -48,7 +48,7 @@ SynthDef.new("x_whiteSnare", {
 		att=0.011, rel=0.5, lev=1, curve=(-10)|
 	var aNoise, aLo, aHi, aSig, kRez, aEnv;
 	kRez = rez.reciprocal; 
-	aNoise = WhiteNoise.ar(gain).softclip;
+	aNoise = ClipNoise.ar(gain);
 	aLo = RLPF.ar(aNoise, freq, rez);
 	aHi = RHPF.ar(aLo, freq, rez);
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);

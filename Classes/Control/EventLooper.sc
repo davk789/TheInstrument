@@ -11,7 +11,7 @@ EventLooperChannel {
 		var sep;
 		sep = Platform.pathSeparator;
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups" ++ sep ++ "";
-		totalTime = 8;
+		totalTime = 16;
 		index = 0;
 		nextTime = [totalTime];
 		eventValue = [nil];
