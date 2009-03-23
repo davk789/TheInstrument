@@ -153,7 +153,15 @@ EventLooperChannel {
 	beat {
 		^index;
 	}
-	makeGUI { |id,parent|
+	incrementSequence {
+			seqMenu.value = (seqMenu.value + 1) % seqMenu.items.size; 
+			this.load(seqMenu.value);
+	}
+	decrementSequence {
+			seqMenu.value = (seqMenu.value - 1) % seqMenu.items.size; 
+			this.load(seqMenu.value);
+	}
+	makeGUI { |id,parent| // need to separate all the gui actions out to member functions
 		var idDisplay, idText, transport, recordButton, clearButton, groups,
 		incseqButtonUp, incseqButtonDown, addSeqGroupButton, presets, presetListMenu, 
 		presetSaveButton;
@@ -221,22 +229,14 @@ EventLooperChannel {
 		};
 		
 		incseqButtonUp = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
-					 /*.font_(Font.new("Arial", 9))*/
-					 .enabled_(false);
-		incseqButtonUp.states = [["^", Color.green, Color.black]];
-		incseqButtonUp.action = { |obj|
-			seqMenu.value = (seqMenu.value + 1) % seqMenu.items.size; 
-			this.load(seqMenu.value);
-		};
+			.enabled_(false)
+			.states_([["^", Color.green, Color.black]])
+			.action_({ this.incrementSequence; });
 		
 		incseqButtonDown = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
-					 /*.font_(Font.new("Arial", 9))*/
-					 .enabled_(false);
-		incseqButtonDown.states = [["v", Color.green, Color.black]];
-		incseqButtonDown.action = { |obj|
-			seqMenu.value = (seqMenu.value - 1) % seqMenu.items.size;
-			this.load(seqMenu.value);
-		};
+			.enabled_(false)
+			.states_([["^", Color.green, Color.black]])
+			.action_({ this.decrementSequence; });
 		
 		addSeqGroupButton = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 4, 0))
 					 /*.font_(Font.new("Arial", 9))*/;
@@ -333,7 +333,7 @@ SynthEventLooperChannel : EventLooperChannel {
 }
 
 EventLooper {
-	var channelIndex=0, win, <channels;
+	var channelIndex=0, win, <channels, largestCollection, setSeqMenu;
 	*new { |...args|
 		^super.new.init_eventLooper(args);
 	}
@@ -359,10 +359,48 @@ EventLooper {
 		);
 		^channelIndex;
 	}
+	incrementAllSequences {
+		channels.values.do{ |obj,ind| obj.incrementSequence; }
+	}
+	decrementAllSequences {
+		channels.values.do{ |obj,ind| obj.decrementSequence; }
+	}
+	setAllSequences { |seq|
+		channels.values.do{ |obj,ind| obj.load(seq % largestCollection) };
+	}
+	updateLargestCollection {
+		channels.values.do{ |obj,ind|
+			obj.postln;
+			if(obj.seqMenu.items.size > largestCollection){
+				largestCollection = obj.seqMenu.items.size;
+			};
+		};
+		setSeqMenu.items = Array.series(largestCollection, 0, 1);
+		^largestCollection;
+	}
 	initGUI {
-		win = GUI.window.new("Event Loopers", Rect.new(0, 300, 300, 100));
+		var masterView, nextSeqButton, prevSeqButton;
+		win = GUI.window.new("Event Loopers", Rect.new(0, 300, 300, 200)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
-		win.front;
+		masterView = GUI.compositeView.new(win, Rect.new(0, 0, 290, 25))
+			.background_(Color.black.alpha_(0.9))
+			.decorator_(FlowLayout(Rect.new(0, 0, 290, 25)));
+			
+		nextSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 70, 20))
+			.states_([["^", Color.green, Color.black]])
+			.mouseDownAction_({ |obj| this.updateLargestCollection; })
+			.mouseUpAction_({ |obj| this.incrementAllSequences });
+		prevSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 70, 20))
+			.states_([["v", Color.green, Color.black]])
+			.mouseDownAction_({ |obj| this.updateLargestCollection; })
+			.mouseUpAction_({ |obj| this.decrementAllSequences });
+		setSeqMenu = GUI.popUpMenu.new(masterView, Rect.new(0, 0, 70, 20))
+			.items_(Array.series(largestCollection, 0, 1))
+			.mouseDownAction_({ |obj| this.updateLargestCollection; })
+			.mouseUpAction_({ |obj| this.setAllSequences(obj.value); });
+		//recordSeqChangeButton
+		
+		
 	}
 	makeGUI { |id,parent|
 		channels[id].makeGUI(id,parent);
