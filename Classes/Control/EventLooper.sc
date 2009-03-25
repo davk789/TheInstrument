@@ -169,15 +169,12 @@ EventLooperChannel {
 		idDisplay = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 20))
 					 .background_(Color.white);
 		idText = GUI.staticText.new(idDisplay, idDisplay.bounds)
-			.string_(id)
-			//.stringColor_(Color.white)
-			/*.font_(Font.new("Arial", 9))*/;
+			.string_(id);
 		// transport row
 		transport = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 30))
 					 .background_(Color.new255(200, 80, 100, 180));
 		
-		recordButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0))
-					 /*.font_(Font.new("Arial", 9))*/;
+		recordButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0));
 		recordButton.states = [
 			["record", Color.red, Color.new255(30, 0, 0, 180)],
 			["stop record", Color.black, Color.red]
@@ -190,9 +187,7 @@ EventLooperChannel {
 				this.stopRecording;
 			};
 		};
-		
-		playButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0))
-					 /*.font_(Font.new("Arial", 9))*/;
+		playButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0));
 		playButton.states = [
 			["play", Color.yellow, Color.new255(30, 30, 0, 180)],
 			["stop", Color.black, Color.yellow]
@@ -206,46 +201,36 @@ EventLooperChannel {
 			};
 		};
 		
-		clearButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0))
-					 /*.font_(Font.new("Arial", 9))*/;
+		clearButton = GUI.button.new(transport, Rect.new(0, 0, (transport.bounds.width - 30)/ 3, 0));
 		clearButton.states = [["clear", Color.new255(150,150,150), Color.new255(0, 0, 0, 180)]];
 		clearButton.action = { |obj|
 			this.clear;
 		};
-		
 		// live group management 
-		
 		groups = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 30))
 					 .background_(Color.new255(200, 80, 200, 180));
-		
 		seqMenu = GUI.popUpMenu.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 2, 0))
-					 /*.font_(Font.new("Arial", 9))*/
 					 .background_(Color.new255(0, 30, 30, 180))
-					 //.stringColor_(Color.new255(0, 255, 255))
 					 .enabled_(false)
 					 .allowsReselection_(true);
 		seqMenu.action = { |obj|
 			this.load(obj.value);
 		};
-		
 		incseqButtonUp = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
 			.enabled_(false)
 			.states_([["^", Color.green, Color.black]])
 			.action_({ this.incrementSequence; });
-		
 		incseqButtonDown = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
 			.enabled_(false)
-			.states_([["^", Color.green, Color.black]])
+			.states_([["v", Color.green, Color.black]])
 			.action_({ this.decrementSequence; });
-		
-		addSeqGroupButton = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 4, 0))
-					 /*.font_(Font.new("Arial", 9))*/;
+		addSeqGroupButton = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 4, 0));
 		addSeqGroupButton.states = [["add", Color.red, Color.black]];
 		addSeqGroupButton.action = { |obj|
 			if(seqMenu.enabled.not){
 				seqMenu.enabled = true;
 				incseqButtonUp.enabled = true;
-				incseqButtonDown.enabled = true;		
+				incseqButtonDown.enabled = true;
 			};
 			this.addToGroup;
 			seqMenu.items = seqMenu.items.add(seqMenu.items.size.asString);
@@ -254,10 +239,7 @@ EventLooperChannel {
 		presets =  GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 30))
 					 .background_(Color.new255(70, 100, 100, 180));
 		presetListMenu = GUI.popUpMenu.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 1.2, 0))
-					 /*.font_(Font.new("Arial", 9))*/
 					 .background_(Color.new255(0, 30, 30, 180))
-					 //.stringColor_(Color.new255(0, 255, 255))
-					 //.enabled_(false);
 					 .allowsReselection_(true);
 		presetListMenu.action = { |obj|
 			this.loadGroup(obj.items[obj.value]);
@@ -277,8 +259,7 @@ EventLooperChannel {
 			);
 		};
 
-		presetSaveButton = GUI.button.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 4, 0))
-					 /*.font_(Font.new("Arial", 9))*/;
+		presetSaveButton = GUI.button.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 4, 0));
 		presetSaveButton.states = [["save", Color.green, Color.black]];
 		presetSaveButton.action = { |obj|
 			var pathName, fileName;			
@@ -378,29 +359,48 @@ EventLooper {
 		setSeqMenu.items = Array.series(largestCollection, 0, 1);
 		^largestCollection;
 	}
+	setAllMetaPlay { |val, button|
+		channels.values.do{ |obj,ind| obj.metaSeq.setPlay(val, obj.metaSeq.pauseButton); };
+		button.enabled = (val == 1);
+	}
+	setAllMetaPause { |val|
+		channels.values.do{ |obj,ind| obj.metaSeq.setPause(val) };
+	}
+	setAllMetaRecord { |val|
+		channels.values.do{ |obj,ind| obj.metaSeq.setRecord(val); };
+	}
 	initGUI {
-		var masterView, nextSeqButton, prevSeqButton;
+		var masterView, nextSeqButton, prevSeqButton, pauseButton;
 		win = GUI.window.new("Event Loopers", Rect.new(0, 300, 300, 200)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
-		masterView = GUI.compositeView.new(win, Rect.new(0, 0, 290, 25))
+		masterView = GUI.compositeView.new(win, Rect.new(0, 0, 290, 55))
 			.background_(Color.black.alpha_(0.9))
 			.decorator_(FlowLayout(Rect.new(0, 0, 290, 25)));
 			
-		nextSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 70, 20))
+		nextSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 90, 20))
 			.states_([["^", Color.green, Color.black]])
 			.mouseDownAction_({ |obj| this.updateLargestCollection; })
 			.mouseUpAction_({ |obj| this.incrementAllSequences });
-		prevSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 70, 20))
+		prevSeqButton = GUI.button.new(masterView, Rect.new(0, 0, 90, 20))
 			.states_([["v", Color.green, Color.black]])
 			.mouseDownAction_({ |obj| this.updateLargestCollection; })
 			.mouseUpAction_({ |obj| this.decrementAllSequences });
-		setSeqMenu = GUI.popUpMenu.new(masterView, Rect.new(0, 0, 70, 20))
+		setSeqMenu = GUI.popUpMenu.new(masterView, Rect.new(0, 0, 90, 20))
 			.items_(Array.series(largestCollection, 0, 1))
 			.mouseDownAction_({ |obj| this.updateLargestCollection; })
 			.mouseUpAction_({ |obj| this.setAllSequences(obj.value); });
-		//recordSeqChangeButton
-		
-		
+		GUI.button.new(masterView, Rect.new(0, 0, 40, 20))
+			.states_([[">", Color.black, Color.green],["[]", Color.black, Color.red]])
+			.action_({ |obj| this.setAllMetaPlay(obj.value, pauseButton); });
+		pauseButton = GUI.button.new(masterView, Rect.new(0, 0, 40, 20))
+			.states_([["||", Color.yellow, Color.clear],["||", Color.black, Color.yellow]])
+			.action_({ |obj| this.setAllMetaPause(obj.value); });
+		GUI.button.new(masterView, Rect.new(0, 0, 65, 20))
+			.states_([["record", Color.red, Color.black],["recording", Color.black, Color.red]])
+			.action_({ |obj| this.setAllMetaRecord(obj.value); });
+		GUI.staticText.new(masterView, Rect.new(0, 0, 100, 20))
+			.stringColor_(Color.white)
+			.string_("Master MetaSeq");
 	}
 	makeGUI { |id,parent|
 		channels[id].makeGUI(id,parent);
@@ -408,7 +408,8 @@ EventLooper {
 }
 
 MetaSequence {
-	var <>seq, recordCounter=0, counter=0, index=0, superIndex=0, isPlaying=false, isRecording=false, seqSize=1;
+	var <>seq, recordCounter=0, counter=0, index=0, superIndex=0, isPlaying=false, isRecording=false, seqSize=1,
+		<pauseButton;
 	
 	*new { |inSize=1, parent|
 		^super.new.ms_init(inSize, parent);
@@ -483,7 +484,7 @@ MetaSequence {
 			.value_(seq.asInfString);
 	}
 	makeGUI { |parent|
-		var controlRow, pauseButton;
+		var controlRow;
 		controlRow = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 25))
 			.background_(Color.new255(20, 10, 2));
 		GUI.button.new(controlRow, Rect.new(0, 0, 40, 0))

@@ -10,7 +10,7 @@ SampleLooper {
 		this.loadSoundFile;
 	}
 	loadSoundFile {
-		soundFile.openRead("/Applications/SuperCollider/sounds/a11wlk01.wav");
+		soundFile.openRead("/Applications/SC3/sounds/a11wlk01.wav");
 		sampleView.soundfile = soundFile;
 		sampleView.read(0, soundFile.numFrames);
 	}
