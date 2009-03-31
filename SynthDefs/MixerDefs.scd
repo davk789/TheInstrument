@@ -1,16 +1,16 @@
 /*** DONE ***/
 SynthDef.new("monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     var aSig, aIn;
-	aIn = (In.ar(inBus, 1) * gain).softclip;
+	aIn = In.ar(inBus, 1) * gain;
     aSig = Pan2.ar(aIn, pan, lev);
-    Out.ar(outBus, aSig);
+    Out.ar(outBus, aSig.softclip);
 	Out.ar(3, aSig); // temporary hack for modular synth
 }).load(s);
 SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     var aSig, aIn;
-	aIn = (In.ar(inBus, 2) * gain).softclip;
+	aIn = In.ar(inBus, 2) * gain;
     aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
-    Out.ar(outBus, aSig);
+    Out.ar(outBus, aSig.softclip);
 }).load(s);
 SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0, 
 								modBus=20, modAmt=0, modLag=1|

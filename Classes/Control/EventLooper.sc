@@ -3,14 +3,13 @@ EventLooperChannel {
 	var <>clock, <totalTime, index, nextTime, <eventValue, lastEvent, iterator, >action, 
 		waitTime=0, firstEvent=true, <>isRecording=false, <eventCollection, <metaSeq,
 		<>seqMenu, <>playButton, <>recordButton, incseqButtonDown, incseqButtonUp, presetListMenu,
-		currSeq=0, cTempo=1;
+		currSeq=0, cTempo=1, sep;
 	*new { |name, win|
 		^super.new.init_eventLooperChannel(name, win);
 	}
 	init_eventLooperChannel { |name,win|
-		var sep;
 		sep = Platform.pathSeparator;
-		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups" ++ sep ++ "";
+		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
 		totalTime = 16;
 		index = 0;
 		nextTime = [totalTime];
@@ -21,6 +20,7 @@ EventLooperChannel {
 		};*/
 		iterator = this.itr;
 		this.makeGUI(name, win);
+		this.populatePresetListMenu;
 		metaSeq = MetaSequence.new(eventValue.size, win);
 	}
 	itr {
@@ -91,12 +91,12 @@ EventLooperChannel {
 	loadGroup { |name|
 		var fh;
 		if(name != nil){	
-			fh = File.new(root ++ name, "r");
+			fh = File.new(root ++ sep ++ "trig" ++ sep ++ name, "r");
 		}{
 			"need to provide a filename".postln;
 		};
 		if(fh.isOpen){
-			eventCollection = fh.readAllString.compile.value;
+			eventCollection = fh.readAllString.interpret;
 			eventCollection.do{ |o,i| o.postln};
 			eventCollection.postln;
 		}{
@@ -107,9 +107,9 @@ EventLooperChannel {
 	saveGroup { |name|
 		var fh, fullName;
 		if(name.notNil){
-			fullName = root ++ name;
+			fullName = root ++ sep ++ "trig" ++ sep ++ name;
 		}{
-			fullName = root ++ Date.localtime.stamp;			
+			fullName = root ++ sep ++ "trig" ++ sep ++ Date.localtime.stamp;			
 		};
 		fh = File.new(fullName, "w");
 		if(fh.isOpen){
@@ -117,7 +117,7 @@ EventLooperChannel {
 			fh.close;
 		}{
 			postln("please create this directory manually to save loop set:\n"++root);
-		}; // this should automatically create the directory "root", but it doesn't right now
+		}; 
 		^fullName;
 	}
 	addToGroup {
@@ -133,7 +133,7 @@ EventLooperChannel {
 		var lastChoice=0;
 		lastChoice = currSeq;
 		if(sel != nil){
-			currSeq = sel;
+			currSeq = sel.min(eventCollection.lastIndex);
 			nextTime = eventCollection[currSeq][0];
 			eventValue = eventCollection[currSeq][1];
 		};
@@ -154,8 +154,8 @@ EventLooperChannel {
 		^index;
 	}
 	incrementSequence {
-			seqMenu.value = (seqMenu.value + 1) % seqMenu.items.size; 
-			this.load(seqMenu.value);
+		seqMenu.value = (seqMenu.value + 1) % seqMenu.items.size; 
+		this.load(seqMenu.value);
 	}
 	decrementSequence {
 			seqMenu.value = (seqMenu.value - 1) % seqMenu.items.size; 
@@ -182,6 +182,8 @@ EventLooperChannel {
 			seqMenu.enabled = true;
 			incseqButtonUp.enabled = true;
 			incseqButtonDown.enabled = true;
+		}{
+			postln("seqmenu not not enabled");
 		};
 		this.addToGroup;
 		seqMenu.items = seqMenu.items.add(seqMenu.items.size.asString);
@@ -201,12 +203,12 @@ EventLooperChannel {
 		var pathName, fileName;			
 		pathName = this.saveGroup;
 		fileName = pathName.split($/).last;
-		if(presetListMenu.items.includes(fileName).not){
+		presetListMenu.items.includes(fileName).not.if{
 			presetListMenu.items = presetListMenu.items.add(fileName);
 		};
 	}
 	makeGUI { |id,parent|
-		var idDisplay, idText, transport, recordButton, clearButton, groups,
+		var idDisplay, idText, transport, clearButton, groups,
 		addSeqGroupButton, presets, 
 		presetSaveButton;
 		// ID row
@@ -239,7 +241,7 @@ EventLooperChannel {
 			.background_(Color.new255(0, 30, 30, 180))
 			.enabled_(false)
 			.allowsReselection_(true)
-			.action({ |obj|	this.load(obj.value); });
+			.action_({ |obj|	this.load(obj.value); });
 		incseqButtonUp = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
 			.enabled_(false)
 			.states_([["^", Color.green, Color.black]])
@@ -250,7 +252,7 @@ EventLooperChannel {
 			.action_({ this.decrementSequence; });
 		addSeqGroupButton = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 4, 0))
 			.states_([["add", Color.red, Color.black]])
-			.action({ |obj| this.addSeqToGroup; });
+			.action_({ |obj| this.addSeqToGroup; });
 		// load preset
 		presets =  GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 30))
 			.background_(Color.new255(70, 100, 100, 180));
@@ -258,11 +260,7 @@ EventLooperChannel {
 			.background_(Color.new255(0, 30, 30, 180))
 			.allowsReselection_(true)
 			.action_({ |obj| this.setCurrentGroupPreset(obj.item); });
-		pathMatch(EventLooperChannel.root ++ "*").do{ |obj|
-			presetListMenu.items = presetListMenu.items.add(
-				obj.split(Platform.pathSeparator).last
-			);
-		};
+		this.populatePresetListMenu;
 		presetSaveButton = GUI.button.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 4, 0));
 		presetSaveButton.states = [["save", Color.green, Color.black]];
 		presetSaveButton.action = { |obj| this.savePreset; };
@@ -274,10 +272,17 @@ EventLooperChannel {
 			parent.view.bounds.height + 140
 		);
 	}
+	populatePresetListMenu {
+		pathMatch(root ++ sep ++ "trig" ++ sep ++ "*").do{ |obj|
+			presetListMenu.items = presetListMenu.items.add(
+				obj.split(Platform.pathSeparator).last
+			);
+		};
+	}
 }
 
 SynthEventLooperChannel : EventLooperChannel {
-	var <>synthGroup;	
+	var <>synthGroup;
 	*init { |group|
 		^super.new.init_synthEventLooper(group);
 	}
@@ -289,7 +294,7 @@ SynthEventLooperChannel : EventLooperChannel {
 	load { |sel|
 		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
 		if(sel != nil){
-			currSeq = sel;
+			currSeq = sel.min(eventCollection.lastIndex);
 			nextTime = eventCollection[sel][0];
 			eventValue = eventCollection[sel][1];
 		};
@@ -309,10 +314,50 @@ SynthEventLooperChannel : EventLooperChannel {
 		isRecording = false;
 		clock.stop;
 	}
+	populatePresetListMenu {
+		pathMatch(root ++ sep ++ "gate" ++ sep ++ "*").do{ |obj|
+			presetListMenu.items = presetListMenu.items.add(
+				obj.split(Platform.pathSeparator).last
+			);
+		};
+	}
+	loadGroup { |name|
+		var fh;
+		if(name != nil){	
+			fh = File.new(root ++ sep ++ "gate" ++ sep ++ name, "r");
+		}{
+			"need to provide a filename".postln;
+		};
+		if(fh.isOpen){
+			eventCollection = fh.readAllString.interpret;
+			eventCollection.do{ |o,i| o.postln};
+			eventCollection.postln;
+		}{
+			"invalid filename".postln;
+		};
+		fh.close;
+	}
+	saveGroup { |name|
+		var fh, fullName;
+		if(name.notNil){
+			fullName = root ++ sep ++ "gate" ++ sep ++ name;
+		}{
+			fullName = root ++ sep ++ "gate" ++ sep ++ Date.localtime.stamp;			
+		};
+		fh = File.new(fullName, "w");
+		if(fh.isOpen){
+			fh.write(eventCollection.asInfString);
+			fh.close;
+		}{
+			postln("please create this directory manually to save loop set:\n"++root);
+		}; 
+		^fullName;
+	}
+
 }
 
 EventLooper {
-	var channelIndex=0, win, <channels, largestCollection, setSeqMenu;
+	var channelIndex=0, win, <channels, largestCollection=0, <setSeqMenu;
 	*new { |...args|
 		^super.new.init_eventLooper(args);
 	}
@@ -345,13 +390,14 @@ EventLooper {
 		channels.values.do{ |obj,ind| obj.decrementSequence; }
 	}
 	setAllSequences { |seq|
-		channels.values.do{ |obj,ind| obj.load(seq % largestCollection) };
+		channels.values.do{ |obj,ind| obj.load(seq) }; // not working
 	}
 	updateLargestCollection {
 		channels.values.do{ |obj,ind|
-			obj.postln;
-			if(obj.seqMenu.items.size > largestCollection){
-				largestCollection = obj.seqMenu.items.size;
+			var size=0;
+			obj.seqMenu.notNil.if{ size = obj.seqMenu.items.size };
+			if(size > largestCollection){
+				largestCollection = size;
 			};
 		};
 		setSeqMenu.items = Array.series(largestCollection, 0, 1);
@@ -412,18 +458,16 @@ EventLooper {
 		masterRecordButton = GUI.button.new(masterView, Rect.new(0, 0, 90, 20))
 			.states_([
 				["record", Color.red, Color.new255(30, 0, 0, 180)],
-				["stop record", Color.black, Color.red]
-			])
-			.action_({ |obj| this.setRecord(obj.value); });
+				["stop record", Color.black, Color.red]])
+			.action_({ |obj| this.setAllRecord(obj.value); });
 		masterPlayButton = GUI.button.new(masterView, Rect.new(0, 0, 90, 20))
 			.states_([
 				["play", Color.yellow, Color.new255(30, 30, 0, 180)],
-				["stop", Color.black, Color.yellow]
-			])
-			.action_({ |obj| this.setPlay(obj.value); });
+				["stop", Color.black, Color.yellow]])
+			.action_({ |obj| this.setAllPlay(obj.value); });
 		masterClearButton = GUI.button.new(masterView, Rect.new(0, 0, 90, 20))
 			.states_([["clear", Color.new255(150,150,150), Color.new255(0, 0, 0, 180)]])
-			.action_({ |obj| this.clear; });
+			.action_({ |obj| this.setAllClear; });
 		GUI.button.new(masterView, Rect.new(0, 0, 40, 20))
 			.states_([[">", Color.black, Color.green],["[]", Color.black, Color.red]])
 			.action_({ |obj| this.setAllMetaPlay(obj.value, pauseButton); });

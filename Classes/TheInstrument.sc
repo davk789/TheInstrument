@@ -11,7 +11,6 @@ TheInstrument {
 			MIDIIn.connect(1, MIDIClient.sources[1]);
 		});
 		noteOnFunction = { |src,chan,num,vel|
-			[src,chan,num,vel].postln;
 			lastChannel = chan;
 			switch(chan,
 				0, {
