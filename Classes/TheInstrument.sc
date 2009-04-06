@@ -75,7 +75,8 @@ TheInstrument {
 		~monoInputChannel = MonoInputChannel.new;
 
 		//~polySynth = PolySynthControl.new;
-		~polySynth = PolySynthControlRLPF.new;
+//		~polySynth = PolySynthControlRLPF.new;
+		~polySynth = PolySynthControl.new;
 		~polySynth.att = 0.001;
 		~polySynth.dec = 0.008;
 		~polySynth.sus = 0.1;

@@ -1,10 +1,10 @@
 /*** DONE ***/
-SynthDef.new("monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+SynthDef.new("s_monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     var aSig, aIn;
 	aIn = In.ar(inBus, 1) * gain;
     aSig = Pan2.ar(aIn, pan, lev);
     Out.ar(outBus, aSig.softclip);
-	Out.ar(3, aSig); // temporary hack for modular synth
+	Out.ar(3, aSig); // 
 }).load(s);
 SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
     var aSig, aIn;

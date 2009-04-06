@@ -10,7 +10,7 @@ EventLooperChannel {
 	init_eventLooperChannel { |name,win|
 		sep = Platform.pathSeparator;
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
-		totalTime = 16;
+		totalTime = 256;
 		index = 0;
 		nextTime = [totalTime];
 		eventValue = [nil];

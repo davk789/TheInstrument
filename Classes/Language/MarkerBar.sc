@@ -1,3 +1,32 @@
+/*MarkerArea {
+	*new { |view, dim|
+		^super.new.init_markerbar(view, dim);
+	}
+	init_markerbar { |view, dim|
+		dimensions = dim;
+		markers = Array.new;
+		values = Array.new;
+		markerColor = Color.black.alpha_(0.8);
+		uView = GUI.userView.new(view, dimensions)
+			.background_(Color.black.alpha_(0.8))
+			.relativeOrigin_(false)
+			.mouseUpAction_({ |obj,x,y,mod|
+				this.markerUpdate(x);
+			})
+			.drawFunc_({
+				JPen.use{
+					JPen.width = 3;
+					JPen.color = markerColor;
+					visibleMarkers.do{ |val,ind|
+						JPen.moveTo(val @ 0);
+						JPen.addArc();
+						JPen.stroke;
+					};
+				};
+			});
+	}
+}*/
+
 MarkerBar {
 	var visibleMarkers, markers, <>markerColor, values, dimensions, uView, <start=0, <end=1;
 	*new { |view, dim|

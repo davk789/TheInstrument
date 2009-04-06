@@ -438,16 +438,16 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_([0, 64].asSpec)
+			.spec_([0, 256].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
-			.spec_([-8, 8].asSpec)
+			.spec_([-12, 12].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFreq2(obj.value); })
 			.knobCentered_(true);
 		fm2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fm")
-			.spec_([0, 8].asSpec)
+			.spec_([0, 12].asSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFM2(obj.value); });
 		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 150, 0))
