@@ -1,31 +1,38 @@
 MarkerArea {
-	var uView, <dimensions, markerColor, coords;
+	var uView, <dimensions, markerColor, markerSize=5, coords;
 	*new { |view, dim|
-		^super.new.init_markerbar(view, dim);
+		^super.new.init_markerarea(view, dim);
 	}
-	init_markerbar { |view, dim|
+	*test {
+		var win;
+		win = GUI.window.new("asd", Rect.new(200.rand, 200.rand, 150, 150)).front;
+		^super.new.init_markerarea(win, Rect.new(0, 0, 145, 145));
+	}
+	init_markerarea { |view, dim|
 		dimensions = dim;
 		markerColor = Color.yellow;
 		coords = Array.new;
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(false)
-			.mouseDownAction_({ |obj| this.addMarker(obj) })
-			.mouseUpAction_({ |obj| this.updateView; })
+			.mouseDownAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod) })
+			.mouseUpAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod); })
 			.drawFunc_({
 				JPen.use{
 					JPen.color = markerColor;
 					coords.do{ |coord,ind|
-						[coord.x, coord.y].postln;
+						JPen.addArc(coord, markerSize / 2, 0, 2pi);
+						JPen.fill;
 					};
 				};
 			});
 	}
-	addMarker { |coord|
-		coords = coords.add(coord.x @ coord.y);
-	}
-	updateView {
+	addMarker { |coord,mod|
+		coords = coords.add(coord);
 		uView.refresh;
+	}
+	checkMarker {
+		
 	}
 }
 
@@ -94,4 +101,4 @@ MarkerBar {
 		uView.background = color;
 	}
 }
-          
+                             
