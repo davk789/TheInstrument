@@ -21,14 +21,18 @@ MarkerArea {
 				JPen.use{
 					JPen.color = markerColor;
 					coords.do{ |coord,ind|
-						JPen.addArc(coord, markerSize / 2, 0, 2pi);
+						JPen.addArc(coord, markerSize, 0, 2pi);
 						JPen.fill;
 					};
 				};
 			});
 	}
 	addMarker { |coord,mod|
-		coords = coords.add(coord);
+		coords.weakIncludes(coord).if{
+			postln("hit an existing point");
+		}{
+			coords = coords.add(coord);
+		};
 		uView.refresh;
 	}
 	checkMarker {

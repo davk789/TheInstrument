@@ -8,3 +8,9 @@
 	}
 }
 
++ Collection {
+	weakIncludes { | item1 | 
+		this.do {|item2| if (item1 == item2) {^true} };
+		^false
+	}
+}
