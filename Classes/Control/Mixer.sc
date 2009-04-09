@@ -56,7 +56,7 @@ MixerChannel {
 		nodeID = s.nextNodeID;
 		channelName = name;
 		if(channelName == "master"){
-			outBus = 2; // MAIN OUTPUT CHANNEL
+			outBus = 0; // MAIN OUTPUT CHANNEL
 		}{
 			outBus = 20;
 		};

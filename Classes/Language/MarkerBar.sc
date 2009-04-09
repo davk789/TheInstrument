@@ -16,7 +16,7 @@ MarkerArea {
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(false)
 			.mouseDownAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod) })
-			.mouseUpAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod); })
+			//.mouseUpAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod); })
 			.drawFunc_({
 				JPen.use{
 					JPen.color = markerColor;
@@ -28,28 +28,33 @@ MarkerArea {
 			});
 	}
 	addMarker { |coord,mod|
-		coords.do{ |obj,ind|
-			this.pointIsNearExisting(coord,obj).if{
-				postln("this point " ++ coord ++ " hit this marker " ++ obj);
-			}{
-				postln("adding new point " ++ coord);
-				coords = coords.add(coord);
+		if(coords.size > 0){
+			coords.do{ |obj,ind|
+				this.pointIsNearExisting(coord,obj).if{
+					postln("this point " ++ coord ++ " hit this marker " ++ obj);
+				}{
+					postln("adding new point " ++ coord);
+					coords = coords.add(coord);
+				};
+				coords.postln;
 			};
+		}{
+			coords = coords.add(coord);			
 		};
 		uView.refresh;
 	}
 	pointIsNearExisting { |currentCoord,prevCoord|
 		^(
 			(
-				(currentCoord.x <= prevCoord.x + markerSize) 
+				(currentCoord.x <= (prevCoord.x + markerSize)) 
 					&& 
-				(currentCoord.y <= prevCoord.y + markerSize)
+				(currentCoord.y <= (prevCoord.y + markerSize))
 			) 
-			|| 
+			&& 
 			(
-				(currentCoord.y > prevCoord.y - markerSize) 
+				(currentCoord.y > (prevCoord.y - markerSize)) 
 					&& 
-				(currentCoord.y > prevCoord.y - markerSize)
+				(currentCoord.y > (prevCoord.y - markerSize))
 			)
 		);
 	}

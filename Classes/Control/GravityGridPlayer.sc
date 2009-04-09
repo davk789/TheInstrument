@@ -48,6 +48,5 @@ GravityGridPlayer {
 			.mouseUpAction_({ |obj| this.updateBuffer; });
 		massWeightView.indexThumbSize_(150 / massWeightView.value.size);
 
-
 	}
 }

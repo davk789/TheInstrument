@@ -45,8 +45,8 @@ MonoInputChannel : AudioInputChannel {
 		numChannels.do{ |ind|
 			inputMenu.items = inputMenu.items.add("in " ++ ind);
 		};
-		this.startSynth;
 		this.addMixerChannel;
+		this.startSynth;
 	}
 	addMixerChannel {
 		~mixer.addMonoChannel(instanceName, ~mixer.mixGroup);
@@ -72,8 +72,8 @@ StereoInputChannel : AudioInputChannel {
 				inputMenu.items = inputMenu.items.add("left " ++ ind ++ " right " ++ (ind + 1));
 			};
 		};
-		this.startSynth;
 		this.addMixerChannel;
+		this.startSynth;
 	}
 	addMixerChannel {
 		~mixer.addStereoChannel(instanceName, ~mixer.mixGroup);
