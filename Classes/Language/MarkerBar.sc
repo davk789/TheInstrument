@@ -1,5 +1,5 @@
 MarkerArea {
-	var uView, <dimensions, markerColor, markerSize=5, coords;
+	var uView, <dimensions, markerColor, markerSize=5, coords, currentMarker;
 	*new { |view, dim|
 		^super.new.init_markerarea(view, dim);
 	}
@@ -15,7 +15,8 @@ MarkerArea {
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(false)
-			.mouseDownAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod) })
+			.mouseDownAction_({ |obj,x,y,mod| currentMarker = this.addMarker(x @ y, mod) })
+			.mouseMoveAction_({ |obj,x,y,mod| this.moveMarker(x @ y); })
 			//.mouseUpAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod); })
 			.drawFunc_({
 				JPen.use{
@@ -27,20 +28,24 @@ MarkerArea {
 				};
 			});
 	}
+	moveMarker { |coord|
+		
+	}
 	addMarker { |coord,mod|
+		var add=true;
 		if(coords.size > 0){
 			coords.do{ |obj,ind|
 				this.pointIsNearExisting(coord,obj).if{
-					postln("this point " ++ coord ++ " hit this marker " ++ obj);
-				}{
-					postln("adding new point " ++ coord);
-					coords = coords.add(coord);
+					currentMarker = ind;
+					add = false;
 				};
-				coords.postln;
 			};
-		}{
-			coords = coords.add(coord);			
 		};
+		add.if{ 
+			coords = coords.add(coord);
+			currentMarker = nil;
+		};
+		coords.postln;
 		uView.refresh;
 	}
 	pointIsNearExisting { |currentCoord,prevCoord|
@@ -129,3 +134,4 @@ MarkerBar {
 	}
 }
                              
+                 
