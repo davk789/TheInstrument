@@ -28,12 +28,30 @@ MarkerArea {
 			});
 	}
 	addMarker { |coord,mod|
-		coords.weakIncludes(coord).if{
-			postln("hit an existing point");
-		}{
-			coords = coords.add(coord);
+		coords.do{ |obj,ind|
+			this.pointIsNearExisting(coord,obj).if{
+				postln("this point " ++ coord ++ " hit this marker " ++ obj);
+			}{
+				postln("adding new point " ++ coord);
+				coords = coords.add(coord);
+			};
 		};
 		uView.refresh;
+	}
+	pointIsNearExisting { |currentCoord,prevCoord|
+		^(
+			(
+				(currentCoord.x <= prevCoord.x + markerSize) 
+					&& 
+				(currentCoord.y <= prevCoord.y + markerSize)
+			) 
+			|| 
+			(
+				(currentCoord.y > prevCoord.y - markerSize) 
+					&& 
+				(currentCoord.y > prevCoord.y - markerSize)
+			)
+		);
 	}
 	checkMarker {
 		
