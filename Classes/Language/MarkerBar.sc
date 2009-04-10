@@ -15,8 +15,8 @@ MarkerArea {
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(false)
-			.mouseDownAction_({ |obj,x,y,mod| currentMarker = this.addMarker(x @ y, mod) })
-			.mouseMoveAction_({ |obj,x,y,mod| this.moveMarker(x @ y); })
+			.mouseDownAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod) })
+			.mouseMoveAction_({ |obj,x,y,mod| this.moveMarker(x @ y, mod); })
 			//.mouseUpAction_({ |obj,x,y,mod| this.addMarker(x @ y, mod); })
 			.drawFunc_({
 				JPen.use{
@@ -28,23 +28,18 @@ MarkerArea {
 				};
 			});
 	}
-	moveMarker { |coord|
-		
+	moveMarker { |coord,mod|
+		coords.removeAt(coords.lastIndex);
+		this.addMarker(coord,mod);
 	}
 	addMarker { |coord,mod|
 		var add=true;
 		if(coords.size > 0){
 			coords.do{ |obj,ind|
-				this.pointIsNearExisting(coord,obj).if{
-					currentMarker = ind;
-					add = false;
-				};
+				this.pointIsNearExisting(coord,obj).if{ add = false; postln("near " ++ coord);};
 			};
 		};
-		add.if{ 
-			coords = coords.add(coord);
-			currentMarker = nil;
-		};
+		add.if{ coords = coords.add(coord);	};
 		coords.postln;
 		uView.refresh;
 	}
