@@ -13,10 +13,14 @@ GravityGridPlayer {
 		this.updateBuffer;
 	}
 	updateBuffer {
-		server.listSendMsg(['b_setn', bufnum, 1 + (size * 3), size] ++ this.getParamList);
+		this.getParamList.postln;
+		//server.listSendMsg(['b_setn', bufnum, 1 + (size * 3), size] ++ this.getParamList);
 	}
 	getParamList {
-		^lace([massCoordView.value[0], massCoordView.value[1], massWeightView.value]);
+		var x, y;
+		x = coords.collect({ |obj,ind| obj.x });
+		y = coords.collect({ |obj,ind| obj.y });
+		^lace([x, y, massWeightView.value]);
 	}
 	start {}
 	stop {}
@@ -29,13 +33,7 @@ GravityGridPlayer {
 			.front;
 		win.view.decorator_(FlowLayout(win.view.bounds))
 			.background_(Color.black);
-		massCoordView = GUI.envelopeView.new(win, Rect.new(0, 0, 150, 150))
-			.value_([[1.frand, 1.frand, 1.frand, 1.frand, 1.frand], [1.frand, 1.frand, 1.frand, 1.frand, 1.frand]])
-			.thumbSize_(6)
-			.fillColor_(Color.green.alpha_(0.7))
-			.strokeColor_(Color.green)
-			.background_(Color.black.alpha_(0.9))
-			.drawLines_(false)
+		massCoordView = MarkerArea.new(win, Rect.new(0, 0, 150, 150))
 			.mouseUpAction_({ |obj| this.updateBuffer; });
 		massWeightView = GUI.multiSliderView.new(win, Rect.new(0, 0, 150, 150))
 			.fillColor_(Color.green.alpha_(0.7))
