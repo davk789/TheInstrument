@@ -1,6 +1,6 @@
 MarkerArea {
-	var uView, <dimensions, markerColor, markerSize=5, <coords, currentMarker,
-		<>mouseDownAction, <>mouseUpAction, <>mouseMoveAction, <>maxSize=8;
+	var uView, <dimensions, markerColor, selectionColor, markerSize=5, prCoords, currentMarker,
+		<>mouseDownAction, <>mouseUpAction, <>mouseMoveAction, <>maxSize=8, currentIndex;
 	*new { |view, dim|
 		^super.new.init_markerarea(view, dim);
 	}
@@ -12,7 +12,8 @@ MarkerArea {
 	init_markerarea { |view, dim|
 		dimensions = dim;
 		markerColor = Color.yellow;
-		coords = Array.new;
+		selectionColor = Color.green;
+		prCoords = Array.new;
 		mouseDownAction = { |obj,x,y,mod| };
 		mouseUpAction = { |obj,x,y,mod| };
 		mouseMoveAction = { |obj,x,y,mod| };
@@ -33,31 +34,42 @@ MarkerArea {
 			.drawFunc_({
 				JPen.use{
 					JPen.color = markerColor;
-					coords.do{ |coord,ind|
+					prCoords.do{ |coord,ind|
+						if(ind == currentIndex){ JPen.color_(selectionColor) };
 						JPen.addArc(coord, markerSize, 0, 2pi);
 						JPen.fill;
+						if(ind == currentIndex){ JPen.color_(markerColor) };
 					};
 				};
 			});
+	}
+	coords_ { |arr|
+		prCoords = arr;
+		uView.refresh;
+	}
+	coords {
+		^prCoords;
 	}
 	moveMarker { |coord,mod|
 		var conf, ind;
 		conf = this.getConflictPoint(coord);
 		conf.isNil.if{ 
-			ind = coords.lastIndex;
+			ind = prCoords.lastIndex;
 		}{ 
 			ind = conf;
 		};
+		currentIndex = ind;
 		// probably not so cool to iterate over all points twice here.
 		if(this.countConflicts(coord) < 2){ 
-			coords.removeAt(ind);
+			prCoords.removeAt(ind);
 			this.addMarker(coord,mod); 
 		};
 	}
 	addMarker { |coord,mod|
 		var add=true;
-		add = this.pointIsUnique(coord) && (coords.size < maxSize);
-		add.if{ coords = coords.add(coord);	};
+		add = this.pointIsUnique(coord) && (prCoords.size < maxSize);
+		add.if{ prCoords = prCoords.add(coord);	};
+		currentIndex = prCoords.lastIndex;
 		uView.refresh;
 	}
 	handleAddEvent { |coord,mod|
@@ -70,13 +82,13 @@ MarkerArea {
 	removeMarker { |coord|
 		var rem;
 		rem = this.getConflictPoint(coord);
-		rem.notNil.if{ coords.removeAt(rem) };
+		rem.notNil.if{ prCoords.removeAt(rem) };
 		uView.refresh;
 	}
 	getConflictPoint { |coord|
 		var hit=nil;
-		if(coords.size > 0){
-			coords.do{ |obj,ind|
+		if(prCoords.size > 0){
+			prCoords.do{ |obj,ind|
 					this.pointCollision(coord,obj).if{ hit = ind;};
 			};
 		};
@@ -84,8 +96,8 @@ MarkerArea {
 	}
 	countConflicts { |coord|
 		var num=0;
-		if(coords.size > 0){
-			coords.do{ |obj,ind|
+		if(prCoords.size > 0){
+			prCoords.do{ |obj,ind|
 				this.pointCollision(coord,obj).if{ num = num + 1; };
 			};
 		};
