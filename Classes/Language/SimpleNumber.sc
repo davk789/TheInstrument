@@ -6,5 +6,11 @@
 		downscale = upscale.rand / ratio;
 		^downscale;
 	}
+	increment { |amt=1|
+		^this.value + amt;
+	}
+	decrement { |amt=1|
+		^this.value - amt;
+	}
 }
 

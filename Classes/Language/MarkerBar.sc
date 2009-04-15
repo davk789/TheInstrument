@@ -1,6 +1,7 @@
 MarkerArea {
-	var uView, <dimensions, markerColor, selectionColor, markerSize=5, prCoords, currentMarker,
-		<>mouseDownAction, <>mouseUpAction, <>mouseMoveAction, <>maxSize=8, currentIndex;
+	var uView, prCoords, prCurrentIndex, updateCurrentIndex=true,
+		<dimensions, markerColor, selectionColor, markerSize=5, currentMarker,
+		<>mouseDownAction, <>mouseUpAction, <>mouseMoveAction, <>maxSize=8;
 	*new { |view, dim|
 		^super.new.init_markerarea(view, dim);
 	}
@@ -35,22 +36,15 @@ MarkerArea {
 				JPen.use{
 					JPen.color = markerColor;
 					prCoords.do{ |coord,ind|
-						if(ind == currentIndex){ JPen.color_(selectionColor) };
+						if(ind == prCurrentIndex){ JPen.color_(selectionColor) };
 						JPen.addArc(coord, markerSize, 0, 2pi);
 						JPen.fill;
-						if(ind == currentIndex){ JPen.color_(markerColor) };
+						if(ind == prCurrentIndex){ JPen.color_(markerColor) };
 					};
 				};
 			});
 	}
-	coords_ { |arr|
-		prCoords = arr;
-		uView.refresh;
-	}
-	coords {
-		^prCoords;
-	}
-	moveMarker { |coord,mod|
+ 	moveMarker { |coord,mod|
 		var conf, ind;
 		conf = this.getConflictPoint(coord);
 		conf.isNil.if{ 
@@ -58,7 +52,8 @@ MarkerArea {
 		}{ 
 			ind = conf;
 		};
-		currentIndex = ind;
+		prCurrentIndex = ind;
+		postln("prCurrentIndex = " ++ prCurrentIndex);
 		// probably not so cool to iterate over all points twice here.
 		if(this.countConflicts(coord) < 2){ 
 			prCoords.removeAt(ind);
@@ -69,7 +64,6 @@ MarkerArea {
 		var add=true;
 		add = this.pointIsUnique(coord) && (prCoords.size < maxSize);
 		add.if{ prCoords = prCoords.add(coord);	};
-		currentIndex = prCoords.lastIndex;
 		uView.refresh;
 	}
 	handleAddEvent { |coord,mod|
@@ -121,6 +115,28 @@ MarkerArea {
 			)
 		);
 	}
+	// getter/setter methods
+	bounds_ { |val|
+		uView.bounds = val;
+	}
+	bounds {
+		^uView.bounds;
+	}
+	coords_ { |arr|
+		prCoords = arr;
+		uView.refresh;
+	}
+	coords {
+		^prCoords;
+	}
+	currentIndex_ { |ind|
+		prCurrentIndex = ind;
+		uView.refresh;
+	}
+	currentIndex {
+		^prCurrentIndex;
+	}
+
 }
 
 MarkerBar {

@@ -63,31 +63,20 @@ TheInstrument {
 	}
 	*launchObjects {
 		~audioBusRegister = Dictionary.new;
-		// this is to be used by the effects classes. using the track name as the key
 		~mixer = Mixer.new;
 		
 		//~sampleLooper = SampleLooper.new;
-		//~audioInChannel = AudioInChannel.new;
 		
 		~eventLooper = EventLooper.new;
-		// preset support
 		
 		~monoInputChannel = MonoInputChannel.new;
 
-		//~polySynth = PolySynthControl.new;
 //		~polySynth = PolySynthControlRLPF.new;
 		~polySynth = PolySynthControl.new;
-		~polySynth.att = 0.001;
-		~polySynth.dec = 0.008;
-		~polySynth.sus = 0.1;
-		~polySynth.rel = 0.5;
-		~polySynth.peakA = 1;
-		~polySynth.peakB = 0.6;
-		~polySynth.peakC = 0.63;
-				
+
 		~drumSynth = DrumSynth.new;
 				
-		~drumSynth.setDrumParam(0, 'gain', 0.1);
+		/*~drumSynth.setDrumParam(0, 'gain', 0.1);
 		~drumSynth.setDrumParam(0, 'curve', -1);
 		~drumSynth.setDrumParam(0, 'rel', 0.2);
 		~drumSynth.setRezParam(0, 'r1', 0.1);
@@ -114,10 +103,9 @@ TheInstrument {
 		~drumSynth.setDrumParam(7, 'outBus', 17);
 		~drumSynth.setDrumParam(7, 'freq', 8000);
 		~drumSynth.setDrumParam(7, 'curve', -10);
-		~drumSynth.setRezParam(7, 'freq', 8000);
+		~drumSynth.setRezParam(7, 'freq', 8000);*/
 		//drumSynth.setDrumParam(2, 'gain', 12);
-		
-		//drumSynth.initLooper;//
+		~gravityGridPlayer = GravityGridPlayer.new;
 		 	}
 	*launchMidiResponders {
 		NoteOnResponder(noteOnFunction);
