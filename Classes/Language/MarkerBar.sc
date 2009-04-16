@@ -61,9 +61,9 @@ MarkerArea {
 		};
 	}
 	addMarker { |coord,mod|
-		var add=true;
-		add = this.pointIsUnique(coord) && (prCoords.size < maxSize);
-		add.if{ prCoords = prCoords.add(coord);	};
+		if(this.getConflictPoint(coord).isNil && (prCoords.size < maxSize)){
+			prCoords = prCoords.add(coord);
+		};
 		uView.refresh;
 	}
 	handleAddEvent { |coord,mod|
@@ -75,8 +75,10 @@ MarkerArea {
 	}
 	removeMarker { |coord|
 		var rem;
-		rem = this.getConflictPoint(coord);
-		rem.notNil.if{ prCoords.removeAt(rem) };
+		rem = this.getConflictPoint(coord)l
+		if(rem.notNil){ 
+			prCoords.removeAt(rem) 
+		};
 		uView.refresh;
 	}
 	getConflictPoint { |coord|
@@ -96,9 +98,6 @@ MarkerArea {
 			};
 		};
 		^num;	
-	}
-	pointIsUnique { |coord|
-		^this.getConflictPoint(coord).isNil;
 	}
 	pointCollision { |currentCoord,prevCoord|
 		^(
