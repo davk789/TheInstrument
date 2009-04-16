@@ -75,7 +75,7 @@ MarkerArea {
 	}
 	removeMarker { |coord|
 		var rem;
-		rem = this.getConflictPoint(coord)l
+		rem = this.getConflictPoint(coord);
 		if(rem.notNil){ 
 			prCoords.removeAt(rem) 
 		};
