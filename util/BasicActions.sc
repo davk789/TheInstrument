@@ -1,6 +1,9 @@
 QuickKeyboard {
-	classvar synthKeys, drumKeys, <>root;
+	var synthKeys, drumKeys, <>root;
 	*new {
+		^super.new.init_quickkeyboard
+	}
+	init_quickkeyboard {
 		synthKeys = Dictionary[
 			$a -> 0,
 			$w -> 1,
@@ -34,15 +37,15 @@ QuickKeyboard {
 		root = 52;
 		GUI.view.globalKeyDownAction = { |src,char,mod,unic,keyc|
 			synthKeys[char].notNil.if{
-				TheInstrument.noteOnFunction.(nil, 0, ~synthKeys[char] + ~root, 90);
+				TheInstrument.noteOnFunction.(nil, 0, synthKeys[char] + root, 90);
 			};
 			drumKeys[char].notNil.if{
-				TheInstrument.noteOnFunction.(nil, 9, ~drumKeys[char], 90);
+				TheInstrument.noteOnFunction.(nil, 9, drumKeys[char], 90);
 			}
 		};
 		GUI.view.globalKeyUpAction = { |obj,char,mod,unic,keyc|
 			synthKeys[char].notNil.if{
-				TheInstrument.noteOffFunction.(nil,0,~synthKeys[char] + ~root,0);
+				TheInstrument.noteOffFunction.(nil,0, synthKeys[char] + root,0);
 			};
 		};
 	}

@@ -1,5 +1,5 @@
 MonoSequencer {
-	var <>duration=0.15, <>length=0.85, <>onsetAction, <>releaseAction,
+	var <>duration=0.15, <>length=0.1, <>onsetAction, <>releaseAction,
 		prSequence, <>index=0, <>durIndex=0, <>lengthIndex=0, clock, isPlaying=false,
 		noteSeqView, velSeqView, durationField, lengthField,
 		noteView, velocityView, playButton, stopButton, pauseButton, tempoSlider;
@@ -12,7 +12,7 @@ MonoSequencer {
 		clock = TempoClock.new;
 		this.makeGUI;
 		prSequence = noteSeqView.value.collect{ |obj,ind|
-			[obj, velSeqView.value[ind]];
+			['midi'.asSpec.map(obj), 'midi'.asSpec.map(velSeqView.value[ind])];
 		};
 
 	}
@@ -28,7 +28,7 @@ MonoSequencer {
 		 		note = param;
 		 	};
 			onsetAction.(note.(), vel.());
-			clock.sched(this.getLength * duration, {
+			clock.sched(this.getLength, {
 				releaseAction.(note.());
 				nil;
 			});
@@ -167,16 +167,16 @@ MonoSequencer {
 			win, 
 			390 @ 20, 
 			"tempo", 
-			[0.001, 8, 'exponential'].asSpec,
+			[1, 8, 'exponential'].asSpec,
 			tempoSliderAction,
-			1,
+			2,
 			false,
 			40);
 		tempoSlider.labelView.stringColor_(Color.green);
 		tempoSlider.numberView.background_(Color.black)
 			.stringColor_(Color.green);
 		tempoSliderAction = { |obj|
-			this.tempo = obj.value;
+			this.tempo = obj.value - 1;
 		};
 		durationField = GUI.textField.new(win, Rect.new(0, 0, 190, 100))
 			.boxColor_(Color.black)
