@@ -1,24 +1,49 @@
 MonoSequencer {
-	var dur=0.15, onsetAction, releaseAction;
+	var <>dur=0.15, <>length=0.1, <>onsetAction, <>releaseAction, prSequence, index=0, <>clock,
+		noteView, velocityView;
 	*new {
 		^super.new.init_monosequencer;
 	}
-	init_monosequencer {
-		onsetAction = { || };
+	init_monosequencer { 
+		onsetAction = { |...args| args.postln; };
+		releaseAction = { |...args| args.postln; };
+		prSequence = Array.new;
+		clock = TempoClock.new;
+		this.makeGUI;
 	}
 	startNew {
-		TempoClock.sched(0, {
-		 var note;
-		 note = ~getNote.();
-		 m.noteOn(1, note, 60.rand + 60);
-		 TempoClock.sched(~length, {
-		  m.noteOff(1, note, 0);
-		  nil;
+		clock.sched(0, {
+		 var dur, params;
+		 params = this.getNext[0];
+		 onsetAction.(params[1], params[2]);
+		 clock.sched(~length, {
+		 	releaseAction.(params[1], 0);
+		 	nil;
 		 });
-		 ~setDur.();
+		 dur = 
 		 ~dur;
 		});
 	}
+	getNext { |sel|
+		 var ret;
+		 ret = prSequence[index % prSequence.size];
+		 index = index + 1;
+		 ^ret;
+	}
+	sequence_ { |seq|
+	
+	}
+	seqence {
+		^prSequence;
+	}
+	makeGUI {
+		var win;
+		win = GUI.window.new("MonoSequencer", Rect.new(0, 0, 400, 300)).front;
+		win.view.background_(Color.black)
+			.decorator_(FlowLayout(win.view.bounds));
+		
+	}
+	
 }
 /*
 
