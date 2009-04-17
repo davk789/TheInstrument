@@ -1,4 +1,4 @@
-QuickKeyboardForTheInstrument {
+QuickKeyboard {
 	classvar synthKeys, drumKeys, <>root;
 	*new {
 		synthKeys = Dictionary[
