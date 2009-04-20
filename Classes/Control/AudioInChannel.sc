@@ -49,7 +49,7 @@ MonoInputChannel : AudioInputChannel {
 		this.startSynth;
 	}
 	addMixerChannel {
-		~mixer.addMonoChannel(instanceName, ~mixer.mixGroup);
+		~mixer.addMonoChannel(instanceName, ~mixer.mixGroup, true);
 		outBus = ~mixer.channels[instanceName].inBus;
 	}
 	startSynth {
@@ -76,7 +76,7 @@ StereoInputChannel : AudioInputChannel {
 		this.startSynth;
 	}
 	addMixerChannel {
-		~mixer.addStereoChannel(instanceName, ~mixer.mixGroup);
+		~mixer.addStereoChannel(instanceName, ~mixer.mixGroup, true);
 		outBus = ~mixer.channels[instanceName].inBus;
 	}
 	startSynth {

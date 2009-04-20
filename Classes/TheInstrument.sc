@@ -76,35 +76,7 @@ TheInstrument {
 
 		~drumSynth = DrumSynth.new;
 				
-		/*~drumSynth.setDrumParam(0, 'gain', 0.1);
-		~drumSynth.setDrumParam(0, 'curve', -1);
-		~drumSynth.setDrumParam(0, 'rel', 0.2);
-		~drumSynth.setRezParam(0, 'r1', 0.1);
-		~drumSynth.setRezParam(0, 'r2', 0.1);
-		~drumSynth.setRezParam(0, 'r3', 0.1);
-		~drumSynth.setRezParam(0, 'f1', 30);
-		~drumSynth.setRezParam(0, 'f2', 31);
-		~drumSynth.setRezParam(0, 'f3', 33);
-		~drumSynth.setRezParam(0, 'a1', 0.2);
-		~drumSynth.setRezParam(0, 'a2', 0.22);
-		~drumSynth.setRezParam(0, 'a3', 0.21);
-		
-		~drumSynth.setDrumParam(1, 'curve', -6);
-		~drumSynth.setDrumParam(1, 'att', 0.001);
-		~drumSynth.setDrumParam(1, 'rel', 1);
-		~drumSynth.setDrumParam(1, 'freq', 60);
-		~drumSynth.setDrumParam(1, 'modFreq', -0.125);
-		~drumSynth.setDrumParam(1, 'modAmt', 12);
-		~drumSynth.setDrumParam(1, 'drive', 0);
-		~drumSynth.setRezParam(1, 'gain', 3);
-		~drumSynth.setRezParam(1, 'freq', 180);
-		~drumSynth.setRezParam(1, 'rez', 7);
-		
-		~drumSynth.setDrumParam(7, 'outBus', 17);
-		~drumSynth.setDrumParam(7, 'freq', 8000);
-		~drumSynth.setDrumParam(7, 'curve', -10);
-		~drumSynth.setRezParam(7, 'freq', 8000);*/
-		//drumSynth.setDrumParam(2, 'gain', 12);
+
 		~gravityGridPlayer = GravityGridPlayer.new;
 		 	}
 	*launchMidiResponders {

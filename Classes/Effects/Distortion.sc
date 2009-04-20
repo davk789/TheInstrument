@@ -1,6 +1,6 @@
 Distortion {
 	var server, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
-		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, 
+		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, tableSize=1024,
 		postMixBuffer,
 		<win, shapeView, curve=1, mix, gain=1;
 	*new { |group,name,ind|
@@ -16,12 +16,12 @@ Distortion {
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
 		bus = ~mixer.channels[inputName].inBus;
 		chebyArr = Array.new;
-		expArr = Array.fill(1024, { |ind| this.calculateExpoCurve(ind, 1024) });
+		expArr = this.getExpoCurve(tableSize);
 		postArr = Array.new;
-		chebyPreBuffer = Buffer.alloc(server, 1024, 1);
-		expPreBuffer  = Buffer.alloc(server, 1024, 1);
-		postMixBuffer  = Buffer.alloc(server, 2048, 1);
-		postSignal = Signal.newClear(1024);
+		chebyPreBuffer = Buffer.alloc(server, tableSize, 1);
+		expPreBuffer  = Buffer.alloc(server, tableSize, 1);
+		postMixBuffer  = Buffer.alloc(server, tableSize * 2, 1);
+		postSignal = Signal.newClear(tableSize);
 		drawFunction = {
 			var displayY=0, displayX=0;
 			JPen.use{
@@ -62,14 +62,14 @@ Distortion {
 		task = Task.new({
 			chebyPreBuffer.cheby(chebyAmps, true, false, true);
 			0.2.wait;
-			expArr.size.do{ |ind| expArr[ind] = this.calculateExpoCurve(ind, expArr.size) };
+			expArr = this.getExpoCurve(tableSize);
 			chebyPreBuffer.loadToFloatArray(action:{ |arr| 
 				chebyArr = arr;
 				expPreBuffer.loadCollection(expArr, action:{ |buf|
 					postArr = ((chebyArr * chebyAmt) + (expArr * expAmt)).clip2(1);
 					postSignal.waveFill({ |xval,ind|
 						postArr[xval];
-					}, 0, 1024);
+					}, 0, tableSize);
 					postMixBuffer.loadCollection(postSignal.asWavetable);
 				});
 			});
@@ -80,7 +80,7 @@ Distortion {
 		task.play;
 
 	}
-	calculateExpoCurve { |index,numPoints|
+	calculateExponent { |index,numPoints|
 		var unscaledLinY=(-1), unscaledCurveY=(-1);
 		unscaledLinY = (index / (numPoints / 2)) - 1;
 		if(unscaledLinY.isPositive){
@@ -90,8 +90,25 @@ Distortion {
 		};
 		^unscaledCurveY;
 	}
+	getExpoCurve { |size|
+		var arr;
+		arr =  Array.fill(size, { |ind|
+			this.calculateExponent(ind,size);
+		});
+		arr = arr.rotate((size / 2).asInt);
+		arr = arr.collect{ |obj,ind|
+			var ret;
+			if(obj.isPositive){
+				ret = obj - 1;
+			}{
+				ret = obj + 1;
+			};
+			ret;
+		};
+		^arr;
+	}
 	setCurve { |val|
-		curve = val.pow(2);
+		curve = val;
 		this.writeBuffers;
 	}
 	setChebyAmt { |val|
@@ -156,7 +173,7 @@ Distortion {
 		expCurveSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(expCurveSlider, Rect.new(0, 0, 200, 0))
 			.value_([1, 0.001, 0.5].asSpec.unmap(curve))
-			.mouseUpAction_({ |obj| this.setCurve([1, 0.001, 0.5].asSpec.map(obj.value)) });
+			.mouseUpAction_({ |obj| this.setCurve([0.01, 10, 0.5].asSpec.map(obj.value)) });
 		
 		expAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(expAmtSlider, Rect.new(0, 0, 200, 0))

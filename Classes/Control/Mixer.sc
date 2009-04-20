@@ -24,33 +24,37 @@ Mixer {
 		this.initGUI;
 		this.addStereoChannel("master", masterGroup, 1);
 	}
-	
 	//// GUI methods
 	initGUI {
 		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, windowHeight)).front;
 		win.view.background = Color.grey(15);
 		//win.view.decorator = FlowLayout(win.view.bounds);
 	}
-	addMonoChannel { |name, group=1, addTarget=0|
-		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1));
+	addMonoChannel { |name, group=1, addTarget=0, noAux=false|
+		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
-	addStereoChannel { |name, group=1, addTarget=0|
-		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 2));
+	addStereoChannel { |name, group=1, addTarget=0, noAux=false|
+		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 2, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 }
 
 MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
-	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName;
-	*new { |name, addTarget, group, channels|
+	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, synthName;
+	*new { |name, addTarget, group, channels, noAux=false|
 		insertList = ["<none>", "MonoDelay", "Distortion", "Compressor", "RingMod", 
 			"EQ", "PitchShift"];
-		^super.new.init_mixerChannel(name, addTarget, group, channels);
+		^super.new.init_mixerChannel(name, addTarget, group, channels, noAux);
 	}
-	init_mixerChannel { |name, addTarget, group, channels|
+	init_mixerChannel { |name, addTarget, group, channels, noAux=false|
 		s = Server.default;
+		if(noAux){
+			synthName = 's_monoMixerChannelNoAuxOut'
+		}{
+			synthName = 's_monoMixerChannel'
+		};
 		volumeSpec = 'amp'.asSpec;
 		panSpec = [-1, 1].asSpec;
 		nodeID = s.nextNodeID;

@@ -1,7 +1,7 @@
 GravityGridPlayer {
 	var <bufnum=75, nodeNum, groupNum, maxSize=16, server, massCoords,
-		outBus=0, resetInBus=22, rate=1, newX=0.5, newY=0.5, bufnum=75,
-		massCoordView, massWeightView, startButton, resetInBusMenu, rateKnob, newXKnob, newYKnob;
+		outBus=0, resetInBus=22, rate=1, newX=0.5, newY=0.5, bufnum=75, resetRate=1,
+		massCoordView, massWeightView, startButton, resetInBusMenu, rateKnob, resetRateKnob, newXKnob, newYKnob;
 	*new {
 		^super.new.init_gravitygridplayer;
 	}
@@ -29,7 +29,7 @@ GravityGridPlayer {
 	start {
 		server.sendMsg('s_new', 's_gravityGrid', nodeNum, 0, groupNum, 
 			'outBus', outBus, 'resetInBus', resetInBus, 'rate', rate, 
-			'newX', newX, 'newY',  newY, 'bufnum', bufnum);
+			'newX', newX, 'newY',  newY, 'bufnum', bufnum, 'resetRate', resetRate);
 	}
 	stop {
 		server.sendMsg('n_free', nodeNum);
@@ -56,6 +56,10 @@ GravityGridPlayer {
 	setNewY { |val| 
 		newY = val;
 		server.sendMsg('n_set', nodeNum, 'newY', newY); 
+	}
+	setResetRate { |val|
+		resetRate = val;
+		server.sendMsg('n_set', nodeNum, 'resetRate', resetRate);
 	}
 	getParamList {
 		var x, y, wgt;
@@ -132,6 +136,12 @@ The massCoordView scrambles its point array when editing the control, so it can'
 			.stringColor_(Color.yellow)
 			.knobColor_([Color.white.alpha_(0.3), Color.yellow, Color.black, Color.yellow])
 			.knobAction_({ |obj| this.setNewY(obj.value); });
+		resetRateKnob = EZJKnob.new(win, Rect.new(0, 0, 37.5, 73), "reset")
+			.spec_([0.01,30].asSpec)
+			.value_(1)
+			.stringColor_(Color.yellow)
+			.knobColor_([Color.white.alpha_(0.3), Color.yellow, Color.black, Color.yellow])
+			.knobAction_({ |obj| this.setResetRate(obj.value); });
 
 	}
 }
