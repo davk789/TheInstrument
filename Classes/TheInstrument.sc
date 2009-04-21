@@ -71,8 +71,8 @@ TheInstrument {
 		
 		~monoInputChannel = MonoInputChannel.new;
 
-//		~polySynth = PolySynthControlRLPF.new;
-		~polySynth = PolySynthControl.new;
+		~polySynth = PolySynthControlRLPF.new;
+//		~polySynth = PolySynthControl.new;
 
 		~drumSynth = DrumSynth.new;
 				
@@ -85,6 +85,11 @@ TheInstrument {
 		CCResponder(ccFunction);
 		TouchResponder(touchFunction);
 		BendResponder(bendFunction);
+	}
+	*loadSynthDefs {
+		var path;
+		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";
+		path.pathMatch.do{ |obj,ind| obj.load; };
 	}
 }
     

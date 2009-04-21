@@ -278,18 +278,19 @@ PolySynthControl {
 			controls.do{ |obj,ind|
 				obj.switch(
 					'xFade', {
+						this.setXFade(value);
 						xfadeKnob.zeroOneValue = value;
-						xfadeKnob.knobValueAction;
 					},
 					'fbMul', {
+						this.setFBMul(value);
 						fbMulKnob.zeroOneValue = value;
-						fbMulKnob.knobValueAction;
 					},
 					'freq2', {
+						this.setFreq2(value);
 						freq2Knob.zeroOneValue = value;
-						freq2Knob.knobValueAction;
 					},
 					'fm2', {
+						this.setFM2(value);
 						fm2Knob.zeroOneValue = value;
 						fm2Knob.knobValueAction;
 					},
@@ -304,16 +305,13 @@ PolySynthControl {
 		};
 	}
 	bend { |src,chan,val|
-		[src,chan,val].postln;
 		this.handleMIDI(modulatorSources['bend'], val / 16384);
 		
 	}
 	afterTouch { |src,chan,val|
-		[src,chan,val].postln;
 		this.handleMIDI(modulatorSources['aftertouch'], val / 127);
 	}
 	cc { |src,chan,num,val|
-		[src,chan,num,val].postln;
 		if(midiCCSources[num].notNil){
 			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
 		};
@@ -520,7 +518,6 @@ PolySynthControlRLPF : PolySynthControl {
 	noteOn { |src,chan,num,vel|
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
-		pitch.postln;
 		activeNotes = activeNotes.add(num -> s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
 			'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
