@@ -44,6 +44,13 @@ EventLooperChannel {
 			waitTime;
 		};
 	}
+	tempo_ { |val|
+		cTempo = val;
+		clock.tempo = cTempo;
+	}
+	tempo {
+		^cTempo;
+	}
 	startRecording {
 		isRecording = true;
 		if(iterator.isNil){

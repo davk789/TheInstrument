@@ -130,7 +130,7 @@ MonoSequencer {
 		length = val;
 	}
 	makeGUI {
-		var win, tempoSliderAction;
+		var win;
 		win = GUI.window.new("MonoSequencer", Rect.new(0, 0, 400, 500)).front;
 		win.view.background_(Color.black)
 			.decorator_(FlowLayout(win.view.bounds));
@@ -168,16 +168,13 @@ MonoSequencer {
 			390 @ 20, 
 			"tempo", 
 			[1, 8, 'exponential'].asSpec,
-			tempoSliderAction,
+			{ |obj|	this.tempo = obj.value - 1; },
 			2,
 			false,
 			40);
 		tempoSlider.labelView.stringColor_(Color.green);
 		tempoSlider.numberView.background_(Color.black)
 			.stringColor_(Color.green);
-		tempoSliderAction = { |obj|
-			this.tempo = obj.value - 1;
-		};
 		durationField = GUI.textField.new(win, Rect.new(0, 0, 190, 100))
 			.boxColor_(Color.black)
 			.stringColor_(Color.green)
