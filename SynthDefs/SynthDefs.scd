@@ -1,12 +1,13 @@
-SynthDef.new("s_gravityGrid", {
-	arg outBus, resetInBus=22, rate=1, newX=(-0.5), newY=0.5, bufnum=75, resetRate=1;
-	var aSig, kReset;
-//	kReset = A2K.kr(In.ar(resetInBus));
-	kReset = Impulse.kr(resetRate);
-	aSig = GravityGrid2.ar(kReset, rate, newX, newY, bufnum);
-	Out.ar(outBus, aSig);
-}).load(s);
-
+Platform.case('osx', {
+	SynthDef.new("s_gravityGrid", {
+		arg outBus, resetInBus=22, rate=1, newX=(-0.5), newY=0.5, bufnum=75, resetRate=1;
+		var aSig, kReset;
+		//	kReset = A2K.kr(In.ar(resetInBus));
+		kReset = Impulse.kr(resetRate);
+		aSig = GravityGrid2.ar(kReset, rate, newX, newY, bufnum);
+		Out.ar(outBus, aSig);
+	}).load(s);
+});
 SynthDef.new("s_dualWavetable", { 
 	arg gate, outBus=20, 
 		curve=(-1.6), lev=1,

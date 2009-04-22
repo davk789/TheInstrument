@@ -76,8 +76,10 @@ TheInstrument {
 
 		~drumSynth = DrumSynth.new;
 				
-
-		~gravityGridPlayer = GravityGridPlayer.new;
+		Platform.case('osx', {
+			~gravityGridPlayer = GravityGridPlayer.new;
+		});
+		
 		 	}
 	*launchMidiResponders {
 		NoteOnResponder(noteOnFunction);
