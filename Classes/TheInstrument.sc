@@ -71,8 +71,8 @@ TheInstrument {
 		
 		~monoInputChannel = MonoInputChannel.new;
 
-		~polySynth = PolySynthControlRLPF.new;
-//		~polySynth = PolySynthControl.new;
+//		~polySynth = PolySynthControlRLPF.new;
+		~polySynth = PolySynthControl.new;
 
 		~drumSynth = DrumSynth.new;
 				

@@ -31,6 +31,9 @@ PolySynthControl {
 		];
 		tuning = 'centaur';
 		tunings = Dictionary[
+			'partch1' -> [0, 1.5063705850064, 2.0391000173078, 3.1564128700056, 
+				4.1750796410438, 4.9804499913462, 6.1748780739572, 7.019550008654, 
+				8.1368628613517, 9.3312909439627, 10.175962878659, 10.493629414994],
 			'centaur' -> [0, 0.844671934697, 2.039100017308, 2.668709056037, 
 				3.863137138648, 4.980449991346, 5.825121926043, 7.019550008654, 
 				7.649159047383, 8.843587129994, 9.688259064691, 10.882687147302],
@@ -260,14 +263,12 @@ PolySynthControl {
 			lastNote = activeNotes[noteNum];
 			activeNotes[noteNum] = lastNote ++ id;
 		}{
-			postln("in activeNote function conditional");
 			activeNotes = activeNotes.add(noteNum -> id.asArray);
 		};
 	}
 	noteOn { |src,chan,num,vel|
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
-		("shit goes wrong with the addActiveNote").postln;
 		this.addActiveNote(num, s.nextNodeID);
 		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num].last, 0, instGroup,
 			'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
@@ -277,7 +278,7 @@ PolySynthControl {
 			'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
 			'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
 			'envScale', envScale, 'bend', pitchBend);
-		s.sendMsg('n_set', activeNotes[num], 'gate', 1);
+		s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 	}
 	noteOff { |src,chan,num,vel|
 		var lastNote;
