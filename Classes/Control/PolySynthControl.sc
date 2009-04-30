@@ -176,7 +176,6 @@ PolySynthControl {
 	    };
 	}
 	setTuning { |choice|
-		choice.postln;
 		tuning = choice;
 	}
 	generatePartials { |freqs, amps, buffer|
@@ -255,11 +254,22 @@ PolySynthControl {
 		~mixer.addMonoChannel("WavetableSynth", ~mixer.mixGroup);
 		outBus = ~mixer.channels["WavetableSynth"].inBus;
 	}
+	addActiveNote { |noteNum,id|
+		var lastNote;
+		if(activeNotes[noteNum].notNil){
+			lastNote = activeNotes[noteNum];
+			activeNotes[noteNum] = lastNote ++ id;
+		}{
+			postln("in activeNote function conditional");
+			activeNotes = activeNotes.add(noteNum -> id.asArray);
+		};
+	}
 	noteOn { |src,chan,num,vel|
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
-		activeNotes = activeNotes.add(num -> s.nextNodeID);
-		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num], 0, instGroup,
+		("shit goes wrong with the addActiveNote").postln;
+		this.addActiveNote(num, s.nextNodeID);
+		s.sendMsg('s_new', 's_dualWavetable', activeNotes[num].last, 0, instGroup,
 			'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 			'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
 			'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
@@ -270,8 +280,14 @@ PolySynthControl {
 		s.sendMsg('n_set', activeNotes[num], 'gate', 1);
 	}
 	noteOff { |src,chan,num,vel|
-		s.sendMsg('n_set', activeNotes[num], 'gate', 0);
-		activeNotes.removeAt(num);
+		var lastNote;
+		lastNote = activeNotes[num];
+		s.sendMsg('n_set', lastNote[0], 'gate', 0);
+		if(lastNote.size == 1){
+			activeNotes.removeAt(num);
+		}{
+			activeNotes[num].removeAt(0);
+		};
 	}
 	handleMIDI { |controls,value|
 		if(controls.size > 0){

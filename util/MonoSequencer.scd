@@ -1,17 +1,18 @@
 //MIDIClient.init;
 s.waitForBoot{
+	TheInstrument.loadSynthDefs;
 	TheInstrument.new;
-	m = MIDIOut.new(0,MIDIClient.destinations[6].uid);
+	//m = MIDIOut.new(0,MIDIClient.destinations[6].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
-		m.noteOn(1, num, vel);
+		("monoseq onset action " ++ num).postln;
+		TheInstrument.noteOnFunction.(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
-		m.noteOff(1, num, 0);
+		TheInstrument.noteOffFunction.(nil, 0, num, 0);
 	};
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
-TheInstrument.loadSynthDefs;
 // seq 1
 ~monoSeq.sequence = (Array.fill(3, { |ind|
  var rnd, rnd2;
@@ -35,3 +36,4 @@ TheInstrument.loadSynthDefs;
 }).flatten;
 ~monoSeq.duration = [0.1,0.1,0.15,0.09];
 ~monoSeq.length = [0.08, 0.07, 0.13, 0.07];
+TheInstrument.noteOnFunction.(0, 0,25,30)
