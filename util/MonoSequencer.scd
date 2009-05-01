@@ -48,4 +48,4 @@ s.queryAllNodes
 
 /*-- make MonoSeqencer handle functions again
 -- fix MonoSequencer GUI bug
--- implement the new voice structure on PolySynthControlRLPF*/
+*/
