@@ -1,5 +1,5 @@
 MonoSequencer {
-	var <>duration=0.15, <>length=0.1, <>onsetAction, <>releaseAction,
+	var <>duration=0.15, prLength=0.1, <>onsetAction, <>releaseAction,
 		prSequence, <>index=0, <>durIndex=0, <>lengthIndex=0, clock, isPlaying=false,
 		noteSeqView, velSeqView, durationField, lengthField,
 		noteView, velocityView, playButton, stopButton, pauseButton, tempoSlider;
@@ -21,15 +21,15 @@ MonoSequencer {
 		clock.sched(0, {
 			var param, note, vel=70;
 			param = this.getNextParam;
-			if(param.isArray){
-				note = param[0];
-		 		vel = param[1];
+			if(param.size > 1){
+				note = param[0].();
+		 		vel = param[1].();
 			}{
-		 		note = param;
+		 		note = param.();
 		 	};
-			onsetAction.(note.(), vel.());
+			onsetAction.(note, vel);
 			clock.sched(this.getLength, {
-				releaseAction.(note.());
+				releaseAction.(note);
 				nil;
 			});
 		 	this.getDur;
@@ -69,13 +69,19 @@ MonoSequencer {
 	}
 	getLength {
 		var ret;
-		if(length.isArray){
-			ret = length[lengthIndex.min(length.size)];
-			lengthIndex = (lengthIndex + 1) % length.size;
+		if(prLength.isArray){
+			ret = prLength[lengthIndex.min(prLength.size)];
+			lengthIndex = (lengthIndex + 1) % prLength.size;
 		}{
-			ret = length;
+			ret = prLength;
 		};
 		^ret.();
+	}
+	length_ { |val|
+		prLength = val;
+	}
+	length {
+		^prLength;
 	}
 	sequence_ { |seq|
 		prSequence = seq;
@@ -127,7 +133,7 @@ MonoSequencer {
 		duration = val;
 	}
 	setLength { |val|
-		length = val;
+		prLength = val;
 	}
 	makeGUI {
 		var win;
@@ -183,7 +189,7 @@ MonoSequencer {
 		lengthField = GUI.textField.new(win, Rect.new(0, 0, 190, 100))
 			.boxColor_(Color.black)
 			.stringColor_(Color.green)
-			.string_(length.asInfString)
+			.string_(prLength.asInfString)
 			.action_({ |obj| this.setLength(obj.string.interpret) });
 	}
 	

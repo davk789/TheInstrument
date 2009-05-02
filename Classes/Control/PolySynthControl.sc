@@ -6,7 +6,7 @@ PolySynthControl {
 		pitchBend=1, <>outBus=19, <recorderID="czSynth", pitchBend=1,
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0,
  		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
-		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob
+		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob,
 		noteOnCommand, noteOffCommand;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -98,7 +98,7 @@ PolySynthControl {
 		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil, 'cutoff' -> nil, 'cutoffMod' -> nil];
 		midiCCSources = Dictionary[1 -> 'mod wheel', 72 ->  'knob 1', 8 -> 'knob 2', 74 -> 'knob 3', 71 -> 'knob 4', 20 -> 'knob 5', 22 -> 'knob 6', 86 -> 'knob 7', 73 -> 'knob 8'];
 		midiListMenu = ['<none>', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8'];
-		noteOnCommand = {
+		noteOnCommand = { |num,vel,pitch|
 			s.sendMsg('s_new', 's_dualWavetable', activeNotes[num].last, 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
@@ -109,8 +109,8 @@ PolySynthControl {
 				'envScale', envScale, 'bend', pitchBend);
 			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 		};
-		noteOffCommand = {
-			s.sendMsg('n_set', lastNote[0], 'gate', 0);
+		noteOffCommand = { |id|
+			s.sendMsg('n_set', id, 'gate', 0);
 		};
 
 		s.sendMsg('g_new', classGroup, 0, 1);
@@ -285,12 +285,12 @@ PolySynthControl {
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
 		this.addActiveNote(num, s.nextNodeID);
-		noteOnCommand.();
+		noteOnCommand.(num, vel, pitch);
 	}
 	noteOff { |src,chan,num,vel|
 		var lastNote;
 		lastNote = activeNotes[num];
-		noteOffCommand.();
+		noteOffCommand.(lastNote[0]);
 		if(lastNote.size == 1){
 			activeNotes.removeAt(num);
 		}{
@@ -537,7 +537,7 @@ PolySynthControlRLPF : PolySynthControl {
 	}
 	init_polysynthcontrolrlpf {
 		"PolySynthControlRLPF initializing".postln;
-		noteOnCommand = {
+		noteOnCommand = { |num,vel,pitch|
 			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,

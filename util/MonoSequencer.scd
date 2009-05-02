@@ -13,7 +13,6 @@ s.waitForBoot{
 	};
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
-TheInstrument.loadSynthDefs;
 // seq 1
 ~monoSeq.sequence = (Array.fill(3, { |ind|
  var rnd, rnd2;
@@ -46,6 +45,7 @@ TheInstrument.loadSynthDefs;
 
 s.queryAllNodes
 
-/*-- make MonoSeqencer handle functions again
+/*
+-- .length does not work
 -- fix MonoSequencer GUI bug
 */
