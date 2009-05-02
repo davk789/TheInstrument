@@ -1,5 +1,5 @@
 MonoSequencer {
-	var <>duration=0.15, prLength=0.1, <>onsetAction, <>releaseAction,
+	var <>prDuration=0.15, prLength=0.1, <>onsetAction, <>releaseAction,
 		prSequence, <>index=0, <>durIndex=0, <>lengthIndex=0, clock, isPlaying=false,
 		noteSeqView, velSeqView, durationField, lengthField,
 		noteView, velocityView, playButton, stopButton, pauseButton, tempoSlider;
@@ -56,11 +56,11 @@ MonoSequencer {
 	}
 	getDur {
 		var ret;
-		if(duration.isArray){
-			ret = duration[durIndex.min(duration.size)];
-			durIndex = (durIndex + 1) % duration.size;
+		if(prDuration.isArray){
+			ret = prDuration[durIndex.min(prDuration.size)];
+			durIndex = (durIndex + 1) % prDuration.size;
 		}{
-			ret = duration;
+			ret = prDuration;
 		};
 		if(isPlaying.not){
 			ret = nil;
@@ -79,9 +79,17 @@ MonoSequencer {
 	}
 	length_ { |val|
 		prLength = val;
+		lengthField.string = val.asInfString;
 	}
 	length {
 		^prLength;
+	}
+	duration_ { |val|
+		prDuration = val;
+		durationField.string = prDuration.asInfString;
+	}
+	duration {
+		^prDuration;
 	}
 	sequence_ { |seq|
 		prSequence = seq;
@@ -130,7 +138,7 @@ MonoSequencer {
 		prSequence[slider.index] = [noteVal, velVal];
 	}
 	setDuration { |val|
-		duration = val;
+		prDuration = val;
 	}
 	setLength { |val|
 		prLength = val;
@@ -184,7 +192,7 @@ MonoSequencer {
 		durationField = GUI.textField.new(win, Rect.new(0, 0, 190, 100))
 			.boxColor_(Color.black)
 			.stringColor_(Color.green)
-			.string_(duration.asInfString)
+			.string_(prDuration.asInfString)
 			.action_({ |obj| this.setDuration(obj.string.interpret) });
 		lengthField = GUI.textField.new(win, Rect.new(0, 0, 190, 100))
 			.boxColor_(Color.black)

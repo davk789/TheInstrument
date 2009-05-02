@@ -1,4 +1,9 @@
+/*
+-- fix MonoSequencer GUI bug
+*/
+
 //MIDIClient.init;
+
 s.waitForBoot{
 	TheInstrument.new;
 	//m = MIDIOut.new(0,MIDIClient.destinations[6].uid);
@@ -28,7 +33,7 @@ s.waitForBoot{
 	r2 = (4.rand * 7) + 60;
 	[55, r1, {(5.rand * 6) + 60}, {r1 + (3.rand * 2)}, 95, {86 + (3.rand * 2)}, 75, 64,
 	 68, {(4.rand * 7) + 60}, r2, 82, {r2 + (3.rand * 2)}, 82, {72 + (3.rand * 2)}, 55]
-}).flatten- 24;
+}).flatten - 24;
 ~monoSeq.duration = [0.1, 0.11, 0.15, 0.09] + 0.1;
 // seq 3
 ~monoSeq.sequence = Array.fill(4, { |ind|
@@ -40,12 +45,8 @@ s.waitForBoot{
 	{49 + rand1 + ((4.rand - 2) * 4)}, {65 + rand2 + ((4.rand - 2) * 4)}, {76 + rand1 + ((4.rand - 2) * 4)}, {85 + rand2 + ((4.rand - 2) * 4)},
 	{49 + rand1 + ((4.rand - 2) * 4)}, {65 + rand2 + ((4.rand - 2) * 4)}, {76 + rand1 + ((4.rand - 2) * 4)}, {85 + rand2 + ((4.rand - 2) * 4)}];
 }).flatten.clip(45,95) - 28;
-~monoSeq.duration = [0.1,0.1,0.15,0.09];
-~monoSeq.length = [0.08, 0.07, 0.13, 0.07] * 1.1;
+~monoSeq.duration = [0.1,0.1,0.15,0.09] * 2;
+~monoSeq.length = [0.08, 0.07, 0.13, 0.07] * 0.9;
 
 s.queryAllNodes
 
-/*
--- .length does not work
--- fix MonoSequencer GUI bug
-*/
