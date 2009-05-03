@@ -1,7 +1,12 @@
 ConwayLife {
-	var tempField, field, <>fieldSize=64, <>bounds, fieldView;
+	var tempField, field, <>fieldSize=64, <>bounds, fieldView, drawAction, drawFunction;
 	*new { |parentArg, boundsArg|
 		^super.new.init_conwaylife(parentArg, boundsArg);
+	}
+	*test {
+		var testWin;
+		testWin = GUI.window.new("test life", Rect.new(500.rand, 500.rand, 150, 150)).front;
+		^super.new.init_conwaylife(testWin, Rect.new(0, 0, 140, 140));
 	}
 	init_conwaylife { |parent, boundsArg|
 		bounds = boundsArg ? Rect.new(0, 0, 100, 100);
@@ -9,8 +14,12 @@ ConwayLife {
 			Array.fill(fieldSize, { 0; });
 		});
 		field = tempField;
+		drawAction = { |x,y|
+			[x,y].postln;
+		};
 		drawFunction = {
 			JPen.use{
+				JPen.color = Color.black;
 				field.do{ |rowObj,rowInd|
 					rowObj.do{ |colObj,colInd|
 						if(colObj == 1){
@@ -75,9 +84,16 @@ ConwayLife {
 		field = tempField;
 	}
 	makeGUI { |parent, bounds|
-		fieldView = GUI.userView.new(parent, bounds)			.background_(Color.black.alpha_(0.8))
+		fieldView = GUI.userView.new(parent, bounds)			
+            .background_(Color.white)
 			.relativeOrigin_(false)
-			.drawFunc_(drawFunction);
+			.drawFunc_(drawFunction)
+		    .mouseDownAction_({ |obj,x,y,mod| 
+				this.setDrawAction(x,y);
+				drawAction.(x,y)
+			})
+		    .mouseUpAction_({ |obj,x,y,mod| drawAction.(x,y) })
+		    .mouseMoveAction_({ |obj,x,y,mod| drawAction.(x,y)});
 	}
 	
 }
