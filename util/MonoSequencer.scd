@@ -18,6 +18,10 @@ s.waitForBoot{
 	};
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
+// seq 4
+~monoSeq.sequence = Array.fill(2, {
+	[55,55, 56, 55, 56, 56, 55, 55, 56, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55];
+}).flatten;
 // seq 1
 ~monoSeq.sequence = (Array.fill(3, { |ind|
  var rnd, rnd2;
@@ -44,9 +48,9 @@ s.waitForBoot{
 	{55 + rand1 + ((4.rand - 2) * 4)}, {65 + rand2 + ((4.rand - 2) * 4)}, {75 + rand1 + ((4.rand - 2) * 4)}, {82 + rand2 + ((4.rand - 2) * 4)}, 
 	{49 + rand1 + ((4.rand - 2) * 4)}, {65 + rand2 + ((4.rand - 2) * 4)}, {76 + rand1 + ((4.rand - 2) * 4)}, {85 + rand2 + ((4.rand - 2) * 4)},
 	{49 + rand1 + ((4.rand - 2) * 4)}, {65 + rand2 + ((4.rand - 2) * 4)}, {76 + rand1 + ((4.rand - 2) * 4)}, {85 + rand2 + ((4.rand - 2) * 4)}];
-}).flatten.clip(45,95) - 28;
+}).flatten.clip(45,95) - 22;
 ~monoSeq.duration = [0.1,0.1,0.15,0.09] * 2;
-~monoSeq.length = [0.08, 0.07, 0.13, 0.07] * 0.9;
+~monoSeq.length = [0.08, 0.07, 0.13, 0.07] * 0.2;
 
 s.queryAllNodes
 
