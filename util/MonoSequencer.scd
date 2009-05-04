@@ -19,9 +19,15 @@ s.waitForBoot{
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
 // seq 4
-~monoSeq.sequence = Array.fill(2, {
-	[55,55, 56, 55, 56, 56, 55, 55, 56, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55, 59, 55];
-}).flatten;
+~monoSeq.sequence = (Array.fill(64, {
+	{[0,0,0,0,1,1,-2].choose}
+}).flatten + 3) + 25;
+~monoSeq.duration = Array.fill(64, {
+	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
+});
+~monoSeq.length = Array.fill(64, {
+	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
+});
 // seq 1
 ~monoSeq.sequence = (Array.fill(3, { |ind|
  var rnd, rnd2;

@@ -15,6 +15,7 @@ ConwayLife {
 		});
 		field = tempField;
 		drawAction = { |x,y|
+			
 			[x,y].postln;
 		};
 		drawFunction = {
@@ -22,8 +23,8 @@ ConwayLife {
 				JPen.color = Color.black;
 				field.do{ |rowObj,rowInd|
 					rowObj.do{ |colObj,colInd|
+						var x, y, width, height;
 						if(colObj == 1){
-							var x, y, width, height;
 							x = (colInd / fieldSize) * bounds.bounds.width;
 							y = (rowInd / fieldSize) * bounds.bounds.height;
 							width = fieldSize / bounds.bounds.width;
@@ -35,6 +36,27 @@ ConwayLife {
 			};
 		};
 		this.makeGUI(parent, bounds);
+	}
+	setDrawAction { |col,row|
+		var scaledColIndex, scaledRowIndex;
+		scaledColIndex = ((col / bounds.bounds.width) * fieldSize).floor;
+		scaledRowIndex = ((row / bounds.bounds.height) * fieldSize).floor;
+
+		if(field[row][col] == 1){
+			drawAction = { |posX,posY|
+				var scaledColIndex, scaledRowIndex;
+				scaledColIndex = ((col / bounds.bounds.width) * fieldSize).floor;
+				scaledRowIndex = ((row / bounds.bounds.height) * fieldSize).floor;
+				tempField[scaledRowIndex][scaledColIndex] = 0;
+			}
+		}{
+			drawAction = { |posX,posY|
+				var scaledColIndex, scaledRowIndex;
+				scaledColIndex = ((col / bounds.bounds.width) * fieldSize).floor;
+				scaledRowIndex = ((row / bounds.bounds.height) * fieldSize).floor;
+				tempField[scaledRowIndex][scaledColIndex] = 1;
+			}
+		};
 	}
 /*
 	1.	Any live cell with fewer than two live neighbours dies, as if caused by underpopulation.
@@ -84,7 +106,7 @@ ConwayLife {
 		field = tempField;
 	}
 	makeGUI { |parent, bounds|
-		fieldView = GUI.userView.new(parent, bounds)			
+		fieldView = GUI.userView.new(parent, bounds)
             .background_(Color.white)
 			.relativeOrigin_(false)
 			.drawFunc_(drawFunction)
