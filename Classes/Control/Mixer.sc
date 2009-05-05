@@ -107,10 +107,13 @@ MixerChannel {
 		insertMenus = Array.fill(4, { |ind|
 			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
 				.items_(insertList)
-				.allowsReselection_(true)
 				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
 		});
-
+		Platform.case('osx', {
+			insertMenus.do{ |obj,ind|
+				obj.allowsReselection_(true)
+			};
+		});
 		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
 			.background_(Color.white.alpha_(0.95));
 

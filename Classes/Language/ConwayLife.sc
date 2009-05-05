@@ -1,5 +1,5 @@
 ConwayLife {
-	var tempField, field, <>fieldSize=256, <>bounds, fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1;
+	var <tempField, <field, <>fieldSize=256, <>bounds, <fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1;
 	*new { |parentArg, boundsArg|
 		^super.new.init_conwaylife(parentArg, boundsArg);
 	}
@@ -18,18 +18,18 @@ ConwayLife {
 			[x,y].postln;
 		};
 		drawFunction = {
-			JPen.use{
+			Pen.use{
 				field.do{ |rowObj,rowInd|
 					rowObj.do{ |colObj,colInd|
 						var x, y, width=10, height=10;
 						if(colObj == 1){
-							JPen.color = Color.black;
-							JPen.fill;
+							Pen.color = Color.black;
+							Pen.fill;
 							x = (colInd / fieldSize) * bounds.bounds.width;
 							y = (rowInd / fieldSize) * bounds.bounds.height;
 							width = bounds.bounds.width / fieldSize;
 							height = bounds.bounds.height / fieldSize;
-							JPen.addRect(Rect.new(x, y, width, height));
+							Pen.addRect(Rect.new(x, y, width, height));
 						};
 					};
 				};

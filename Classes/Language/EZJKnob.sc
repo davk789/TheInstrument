@@ -17,7 +17,7 @@ EZJKnob { // uses JKnob. this is might become obsolete.
         label = GUI.staticText.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 4.2))
             .string_(labelText)
 			.align_('center');
-        knob = JKnob.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 2.1))
+        knob = Knob.new(knobView, Rect.new(0, 0, 0, knobView.bounds.height / 2.1))
             .action_({|obj|
 				if(controlSpec.isKindOf(ControlSpec)){
 					prValue = controlSpec.map(obj.value);

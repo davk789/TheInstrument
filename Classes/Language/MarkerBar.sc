@@ -33,13 +33,13 @@ MarkerArea {
 				mouseUpAction.(obj,x,y,mod);
 			})
 			.drawFunc_({
-				JPen.use{
-					JPen.color = markerColor;
+				Pen.use{
+					Pen.color = markerColor;
 					prCoords.do{ |coord,ind|
-						if(ind == prCurrentIndex){ JPen.color_(selectionColor) };
-						JPen.addArc(coord, markerSize, 0, 2pi);
-						JPen.fill;
-						if(ind == prCurrentIndex){ JPen.color_(markerColor) };
+						if(ind == prCurrentIndex){ Pen.color_(selectionColor) };
+						Pen.addArc(coord, markerSize, 0, 2pi);
+						Pen.fill;
+						if(ind == prCurrentIndex){ Pen.color_(markerColor) };
 					};
 				};
 			});
@@ -155,13 +155,13 @@ MarkerBar {
 				this.markerUpdate(x);
 			})
 			.drawFunc_({
-				JPen.use{
-					JPen.width = 3;
-					JPen.color = markerColor;
+				Pen.use{
+					Pen.width = 3;
+					Pen.color = markerColor;
 					visibleMarkers.do{ |val,ind|
-						JPen.moveTo(val @ 0);
-						JPen.lineTo(val @ (dimensions.height + 10));
-						JPen.stroke;
+						Pen.moveTo(val @ 0);
+						Pen.lineTo(val @ (dimensions.height + 10));
+						Pen.stroke;
 					};
 				};
 			});

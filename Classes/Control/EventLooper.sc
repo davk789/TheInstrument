@@ -247,8 +247,10 @@ EventLooperChannel {
 		seqMenu = GUI.popUpMenu.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 2, 0))
 			.background_(Color.new255(0, 30, 30, 180))
 			.enabled_(false)
-			.allowsReselection_(true)
 			.action_({ |obj|	this.load(obj.value); });
+		Platform.case('osx', {
+			seqMenu.allowsReselection_(true);
+		});
 		incseqButtonUp = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))
 			.enabled_(false)
 			.states_([["^", Color.green, Color.black]])
@@ -265,8 +267,10 @@ EventLooperChannel {
 			.background_(Color.new255(70, 100, 100, 180));
 		presetListMenu = GUI.popUpMenu.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 1.2, 0))
 			.background_(Color.new255(0, 30, 30, 180))
-			.allowsReselection_(true)
 			.action_({ |obj| this.setCurrentGroupPreset(obj.item); });
+		Platform.case('osx', {
+			presetListMenu.allowsReselection_(true);
+		});
 		this.populatePresetListMenu;
 		presetSaveButton = GUI.button.new(presets, Rect.new(0, 0, (presets.bounds.width - 50) / 4, 0));
 		presetSaveButton.states = [["save", Color.green, Color.black]];
