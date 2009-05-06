@@ -24,24 +24,24 @@ Distortion {
 		postSignal = Signal.newClear(tableSize);
 		drawFunction = {
 			var displayY=0, displayX=0;
-			JPen.use{
-				JPen.width = 1;
+			Pen.use{
+				Pen.width = 1;
 				
-				JPen.color = Color.white;
-				JPen.moveTo(0 @ 125);
-				JPen.lineTo(250 @ 125);
-				JPen.moveTo(125 @ 0);
-				JPen.lineTo(125 @ 250);
-				JPen.stroke;
+				Pen.color = Color.white;
+				Pen.moveTo(0 @ 125);
+				Pen.lineTo(250 @ 125);
+				Pen.moveTo(125 @ 0);
+				Pen.lineTo(125 @ 250);
+				Pen.stroke;
 				
-				JPen.color = Color.yellow;
-				JPen.moveTo(0 @ 250);
+				Pen.color = Color.yellow;
+				Pen.moveTo(0 @ 250);
 				postArr.do { |val,ind|
 					displayX = ind * 0.244140625;
 					displayY = 250 - ((val + 1) * 125);
-					JPen.lineTo(displayX @ displayY);
+					Pen.lineTo(displayX @ displayY);
 				};
-				JPen.stroke;
+				Pen.stroke;
 			};
 		};
 		this.writeBuffers;

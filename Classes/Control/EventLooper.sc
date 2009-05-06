@@ -248,7 +248,7 @@ EventLooperChannel {
 			.background_(Color.new255(0, 30, 30, 180))
 			.enabled_(false)
 			.action_({ |obj|	this.load(obj.value); });
-		Platform.case('osx', {
+		Platform.case('linux', {
 			seqMenu.allowsReselection_(true);
 		});
 		incseqButtonUp = GUI.button.new(groups, Rect.new(0, 0, (groups.bounds.width - 50) / 8, 0))

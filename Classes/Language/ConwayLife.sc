@@ -1,5 +1,5 @@
 ConwayLife {
-	var <tempField, <field, <>fieldSize=256, <>bounds, <fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1;
+	var <tempField, <field, <>fieldSize=8, <>bounds, <fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1;
 	*new { |parentArg, boundsArg|
 		^super.new.init_conwaylife(parentArg, boundsArg);
 	}
@@ -88,30 +88,14 @@ ConwayLife {
 		field.do{ |rowObj, rowInd|
 			rowObj.do{ |colObj, colInd|
 				var count=0;
-				if(tempField[(rowInd - 1) % fieldSize][(colInd - 1) % fieldSize] == 1){
-					count = count + 1;
-				};
-				if(tempField[(rowInd - 1) % fieldSize][colInd] == 1){
-					count = count + 1;
-				};
-				if(tempField[(rowInd - 1) % fieldSize][(colInd + 1) % fieldSize] == 1){
-					count = count + 1;
-				};
-				if(tempField[rowInd][(colInd - 1) % fieldSize] == 1){
-					count = count + 1;
-				};
-				if(tempField[rowInd][(colInd + 1) % fieldSize] == 1){
-					count = count + 1;
-				};
-				if(tempField[(rowInd + 1) % fieldSize][(colInd - 1) % fieldSize] == 1){
-					count = count + 1;
-				};
-				if(tempField[(rowInd + 1) % fieldSize][colInd] == 1){
-					count = count + 1;
-				};
-				if(tempField[(rowInd + 1) % fieldSize][(colInd + 1) % fieldSize] == 1){
-					count = count + 1;
-				};
+				count = tempField[(rowInd - 1) % fieldSize][(colInd - 1) % fieldSize] + 
+					tempField[(rowInd - 1) % fieldSize][colInd] + 
+					tempField[(rowInd - 1) % fieldSize][(colInd + 1) + 
+					tempField[rowInd][(colInd - 1) % fieldSize] + 
+					tempField[rowInd][(colInd + 1) % fieldSize] + 
+					tempField[(rowInd + 1) % fieldSize][(colInd - 1) % fieldSize] + 
+					tempField[(rowInd + 1) % fieldSize][colInd] + 
+					tempField[(rowInd + 1) % fieldSize][(colInd + 1) % fieldSize];
 				case{count < 2}{
 					tempField[rowInd][colInd] = 0;
 				}

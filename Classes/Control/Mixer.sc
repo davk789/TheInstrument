@@ -26,9 +26,9 @@ Mixer {
 	}
 	//// GUI methods
 	initGUI {
-		win = GUI.window.new("Output Mix / Plugins", Rect.new(0, 90, 0, windowHeight)).front;
+		win = GUI.window.new("Output Mix / Plugins", Rect.new(500.rand, 500.rand, 555, windowHeight)).front;
 		win.view.background = Color.grey(15);
-		//win.view.decorator = FlowLayout(win.view.bounds);
+		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	addMonoChannel { |name, group=1, addTarget=0, noAux=false|
 		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1, noAux));
@@ -92,8 +92,9 @@ MixerChannel {
 	makeChannelGUI { |win, groups|
 		var channel, inserts, insertMenus, label, labelText, 
 		faders, panFaderView, panFader, levelFader;
+		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + channelWidth + 10, channelHeight);
 
-		channel = GUI.vLayoutView.new(win, Rect.new(win.bounds.width, 0, channelWidth, channelHeight))
+		channel = GUI.vLayoutView.new(win, Rect.new(0, 0, channelWidth, channelHeight))
 			.background_(Color.red);
 		
 		label = GUI.hLayoutView.new(channel, Rect.new(0, 0, channelWidth, 25))
@@ -109,7 +110,7 @@ MixerChannel {
 				.items_(insertList)
 				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
 		});
-		Platform.case('osx', {
+		Platform.case('linux', {
 			insertMenus.do{ |obj,ind|
 				obj.allowsReselection_(true)
 			};
@@ -127,7 +128,6 @@ MixerChannel {
 		levelFader.action = { |obj|
 			this.setVolume(obj.value);
 		};
-		win.bounds = Rect.new(0, 90, win.bounds.width + channelWidth + 10, channelHeight);
 	}
 	launchFXWindow { |menu, ind, group|
 		if(menu.value > 0){
