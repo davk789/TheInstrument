@@ -1,5 +1,5 @@
 MonoSequencer {
-	var <>prDuration=0.15, prLength=0.1, <>onsetAction, <>releaseAction,
+	var <>prDuration=0.15, prLength=0.1, <>onsetAction, <>releaseAction, <>doneAction,
 		prSequence, <>index=0, <>durIndex=0, <>lengthIndex=0, clock, isPlaying=false,
 		noteSeqView, velSeqView, durationField, lengthField,
 		noteView, velocityView, playButton, stopButton, pauseButton, tempoSlider;
@@ -22,14 +22,18 @@ MonoSequencer {
 			var param, note, vel=70;
 			param = this.getNextParam;
 			if(param.size > 1){
-				note = param[0].();
-		 		vel = param[1].();
+				note = param[0].value();
+		 		vel = param[1].value();
 			}{
-		 		note = param.();
+		 		note = param.value();
 		 	};
-			onsetAction.(note, vel);
+			onsetAction.value(note, vel);
+			// callback?
+			if((doneAction.notNil) && (index == prSequence.lastIndex)){
+				{ doneAction.value(note, vel); }.defer;
+			};
 			clock.sched(this.getLength, {
-				releaseAction.(note);
+				releaseAction.value(note);
 				nil;
 			});
 		 	this.getDur;
@@ -65,7 +69,7 @@ MonoSequencer {
 		if(isPlaying.not){
 			ret = nil;
 		};
-		^ret.();
+		^ret.value();
 	}
 	getLength {
 		var ret;
@@ -75,7 +79,7 @@ MonoSequencer {
 		}{
 			ret = prLength;
 		};
-		^ret.();
+		^ret.value();
 	}
 	length_ { |val|
 		prLength = val;
@@ -93,31 +97,34 @@ MonoSequencer {
 	}
 	sequence_ { |seq|
 		prSequence = seq;
-		noteSeqView.value = prSequence.collect{ |obj,ind|
-			var ret;
-			if(obj.isArray){
-				postln(obj);
-				ret = obj[0].();
-			}{
-				ret = obj.();
-			};
-			ret = obj.();
-			'midi'.asSpec.unmap(ret);
-		};
+		noteSeqView.value = this.sequenceToGUI(0);
 		noteSeqView.indexThumbSize_(noteSeqView.bounds.width / noteSeqView.value.size);
-		velSeqView.value = prSequence.collect{ |obj,ind|
+		velSeqView.value = this.sequenceToGUI(1);
+		velSeqView.indexThumbSize_(velSeqView.bounds.width / velSeqView.value.size);
+	}
+	sequenceToGUI { |paramFlag=0|
+		^prSequence.collect{ |obj,ind|
 			var ret;
 			if(obj.isArray){
-				ret = obj[1].();
+				ret = obj[paramFlag].value;
 			}{
-				ret = 80;
+				if(paramFlag == 0){
+					ret = obj.value;
+				}{
+					ret = 80;
+				};
 			};
 			'midi'.asSpec.unmap(ret);
-		};
-		velSeqView.indexThumbSize_(velSeqView.bounds.width / velSeqView.value.size);
+		};	
 	}
 	sequence {
 		^prSequence;
+	}
+	setSeqVelocities { |velocities,start=0|
+		velocities.do{ |obj,ind|
+			prSequence[ind + start] = [prSequence[ind + start], obj];
+		};
+		velSeqView.value = this.sequenceToGUI(1);
 	}
 	tempo_ { |val|
 		clock.tempo = val;
