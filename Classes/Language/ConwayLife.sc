@@ -1,5 +1,5 @@
 ConwayLife {
-	var <tempField, <field, <>fieldSize=8, <>bounds, <fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1;
+	var <tempField, <field, <>fieldSize=8, <>bounds, <fieldView, drawAction, drawFunction, rate=10, <>waitTime=0.1, <>rule;
 	*new { |parentArg, boundsArg|
 		^super.new.init_conwaylife(parentArg, boundsArg);
 	}
@@ -13,6 +13,7 @@ ConwayLife {
 		tempField = Array.fill(fieldSize, {
 			Array.fill(fieldSize, { 0; });
 		});
+		rule = [[2,3],[3]];
 		field = tempField;
 		drawAction = { |x,y|
 			[x,y].postln;
@@ -88,22 +89,22 @@ ConwayLife {
 		field.do{ |rowObj, rowInd|
 			rowObj.do{ |colObj, colInd|
 				var count=0;
-				count = tempField[(rowInd - 1) % fieldSize][(colInd - 1) % fieldSize] + 
-					tempField[(rowInd - 1) % fieldSize][colInd] + 
-					tempField[(rowInd - 1) % fieldSize][(colInd + 1) + 
-					tempField[rowInd][(colInd - 1) % fieldSize] + 
-					tempField[rowInd][(colInd + 1) % fieldSize] + 
-					tempField[(rowInd + 1) % fieldSize][(colInd - 1) % fieldSize] + 
-					tempField[(rowInd + 1) % fieldSize][colInd] + 
-					tempField[(rowInd + 1) % fieldSize][(colInd + 1) % fieldSize];
-				case{count < 2}{
-					tempField[rowInd][colInd] = 0;
-				}
-				{ count > 3 }{
-					tempField[rowInd][colInd] = 0;
-				}
-				{ (count == 3) && (colObj == 0)}{
-					tempField[rowInd][colInd] = 1;
+				count = field[(rowInd - 1) % fieldSize][(colInd - 1) % fieldSize] + 
+					field[(rowInd - 1) % fieldSize][colInd] + 
+					field[(rowInd - 1) % fieldSize][(colInd + 1) % fieldSize] + 
+					field[rowInd][(colInd - 1) % fieldSize] + 
+					field[rowInd][(colInd + 1) % fieldSize] + 
+					field[(rowInd + 1) % fieldSize][(colInd - 1) % fieldSize] + 
+					field[(rowInd + 1) % fieldSize][colInd] + 
+					field[(rowInd + 1) % fieldSize][(colInd + 1) % fieldSize];
+				if(colObj == 0){
+					if(rule[1].includes(count)){
+						tempField[rowInd][colInd] = 1;
+					};
+				}{
+					if(rule[0].includes(count).not){
+						tempField[rowInd][colInd] = 0;
+					};
 				};
 			};
 		};
