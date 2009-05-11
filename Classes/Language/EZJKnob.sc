@@ -14,7 +14,7 @@ KnobWrapper {
 	}
 }
 
-EZJKnob { // uses JKnob. this is might become obsolete.
+EZJKnob { // no longer with JKnob on OS X
     var <knobView, <label, <knob, <numberBox, labelText, >knobAction, controlSpec,
 		prValue=0;
     *new { |parent, dimensions, lab|
@@ -60,6 +60,9 @@ EZJKnob { // uses JKnob. this is might become obsolete.
 			knob.value = prValue;
 		};
 		numberBox.value = prValue;
+	}
+	value {
+		^knob.value;
 	}
 	stringColor_ { |color|
 		label.stringColor_(color);

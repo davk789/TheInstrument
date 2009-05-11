@@ -1,26 +1,27 @@
-/*
--- fix MonoSequencer GUI bug
-*/
+// SETUP //////////////////////////////////////////////////////////////////
 
 //MIDIClient.init;
-
 s.waitForBoot{
 	TheInstrument.new;
 	//m = MIDIOut.new(0,MIDIClient.destinations[6].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
 		//m.noteOn(1, num, vel);
-		TheInstrument.noteOnFunction.(nil, 0, num, vel);
+		TheInstrument.noteOnFunction.value(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
 		//m.noteOff(1, num, 0);
-		TheInstrument.noteOffFunction.(nil, 0, num, 0)
+		TheInstrument.noteOffFunction.value(nil, 0, num, 0)
 	};
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
-// seq 5
+
+// SEQUENCES ///////////////////////////////////////////////////////////////
+// seq 5 ///////////////////////////////////////////////////////////////////
 ~life = ConwayLife.new(8, GUI.window.new("dsf", Rect.new(500.rand, 500.rand, 150, 150)).front, Rect.new(0,0,140,140));
+~life.rule_('Coagulations');
 ~lifeVel = ConwayLife.new(8, GUI.window.new("vel", Rect.new(500.rand, 500.rand, 150, 150)).front, Rect.new(0,0,140,140));
+~lifeVel.rule_('Coagulations');
 ~monoSeq.doneAction = { |note,vel|
 	postln("doneAction " ++ note ++ " " ++ vel);
 	~monoSeq.sequence = 

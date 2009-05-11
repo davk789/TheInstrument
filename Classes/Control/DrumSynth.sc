@@ -385,7 +385,7 @@ DSSnare  : DSBase {
 DrumSynth {
 	classvar <lastNote;
 	var win, <drums, <>noteOns, <>drumXGroup=999, drumSynthGroup=400, outBus=0,
-		drumCCCommands, drumParams, rezParams, <recorderID="drumSynth", server;
+		drumCCCommands, drumParams, rezParams, <recorderID="drumSynth", server, saveRoot, sep;
 	*new { |name|
 		^super.new.init_drumsynth(name);
 	}
@@ -395,6 +395,8 @@ DrumSynth {
 		server.sendMsg('g_new', drumXGroup, 0, drumSynthGroup);
 		if(name.notNil){ recorderID = name; };
 		noteOns = [50, 45, 51, 49, 36, 38, 46, 42];
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "DrumSynth";
 		this.addMixerChannel;
 		this.initGUI;
 		drums = [
@@ -462,6 +464,14 @@ DrumSynth {
 	}
 	looper {
 		^~eventLooper.channels[recorderID];
+	}
+	savePreset {
+		var params;
+		drums.do{ |obj, ind|
+			params = params.add([obj.drumParams, obj.rezParams]);
+		};
+		
+	
 	}
 	initLooper {
 		~eventLooper.addChannel(0, recorderID);

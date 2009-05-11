@@ -7,7 +7,8 @@ PolySynthControl {
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0,
  		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob,
-		noteOnCommand, noteOffCommand;
+		noteOnCommand, noteOffCommand, <>saveRoot, sep, 
+		presetRow, presetNameField, saveButton, presetMenu, modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
 	*new { |name|
@@ -16,6 +17,8 @@ PolySynthControl {
 	init_polysynthcontrol { |buf, name|
 		s = Server.default;
 		activeNotes = Dictionary.new;
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControl";
 		if(name.notNil){ recorderID = name; };
 		modulatorSources = Dictionary[
 			'mod wheel'-> [], 
@@ -110,6 +113,7 @@ PolySynthControl {
 			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 		};
 		noteOffCommand = { |id|
+			("noteOffID " ++ id).postln;
 			s.sendMsg('n_set', id, 'gate', 0);
 		};
 
@@ -125,6 +129,84 @@ PolySynthControl {
 		this.initGUI;
 		
 
+	}
+	getParams  {
+		^[instGroup, outBus, peakA, peakB, peakC, bufferA, bufferB, att, dec, sus, rel, trigMode, xfade, fbLag, fbMul, freq2, fmAmt, fbMulEnvFlag, freq2EnvFlag, envScale, pitchBend, partialAFreqs.value, partialAAmps.value, partialBFreqs.value, partialBAmps.value, waveformDraw.value, targetAButton.value, targetBButton.value, xFadeMenu.value, fbMulMenu.value, freq2Menu.value, fm2Menu.value, syncModeMenu.value, xfadeKnob.value, fbLagKnob.value, fbMulKnob.value, freq2Knob.value, fm2Knob.value, envelopeView.value, bendButton.value, fbMulEnvButton.value, freq2EnvButton.value, fm2EnvButton.value, envScaleSlider.value];
+	}
+	setParams { |values|
+		instGroup = values[0];
+		outBus = values[1];
+		peakA = values[2];
+		peakB = values[3];
+		peakC = values[4];
+		bufferA = values[5];
+		bufferB = values[6];
+		att = values[7];
+		dec = values[8];
+		sus = values[9];
+		rel = values[10];
+		trigMode = values[11];
+		xfade = values[12];
+		fbLag = values[13];
+		fbMul = values[14];
+		freq2 = values[15];
+		fmAmt = values[16];
+		fbMulEnvFlag = values[17];
+		freq2EnvFlag = values[18];
+		envScale = values[19];
+		pitchBend = values[20];
+		partialAFreqs.value = values[21];
+		partialAAmps.value = values[22];
+		this.generatePartials(partialAFreqs.value, partialAAmps.value, bufferA);
+		partialBFreqs.value = values[23];
+		partialBAmps.value = values[24];
+		this.generatePartials(partialBFreqs.value, partialBAmps.value, bufferB);
+		waveformDraw.value = values[25];
+		targetAButton.value = values[26];
+		targetBButton.value = values[27];
+		xFadeMenu.value = values[28];
+		fbMulMenu.value = values[29];
+		freq2Menu.value = values[30];
+		fm2Menu.value = values[31];
+		syncModeMenu.value = values[32];
+		xfadeKnob.value = values[33];
+		fbLagKnob.value = values[34];
+		fbMulKnob.value = values[35];
+		freq2Knob.value = values[36];
+		fm2Knob.value = values[37];
+		envelopeView.value = values[38];
+		bendButton.value = values[39];
+		fbMulEnvButton.value = values[40];
+		freq2EnvButton.value = values[41];
+		fm2EnvButton.value = values[42];
+		envScaleSlider.value = values[43];
+	}
+	savePreset { |name|
+		var fileName, filePath, fh, pipe;
+		fileName = name ? Date.localtime.stamp;
+		filePath = saveRoot ++ sep ++ fileName;
+		fh = File.new(filePath, "w");
+		if(fh.isOpen){
+			fh.write(this.getParams.asInfString);
+			fh.close;
+		}{
+			postln("creating save directory " ++ saveRoot);
+			pipe = Pipe.new("mkdir -p \"" ++ saveRoot ++ "\"", "w");
+			pipe.close;
+			fh = File.new(filePath, "w");
+			if(fh.isOpen){
+				fh.write(this.getParams.asInfString);
+				fh.close
+			}{
+				postln("preset save operation failed");
+			};
+			
+		};
+	}
+	loadPreset { |presetName|
+		var preset;
+		preset = (saveRoot ++ sep ++ presetName).load;
+		this.setParams(preset);
 	}
 	initLooper {
 		~eventLooper.addChannel(1, recorderID);
@@ -192,6 +274,15 @@ PolySynthControl {
 	             { this.looper.recordButton.value = 0; }.defer;
 	         };
 	    };
+	}
+	setSave { |name|
+		if((name.isNil) || (name == "<>") || ((saveRoot ++ sep ++ "*").pathMatch.includes(saveRoot ++ name))){
+			this.savePreset;
+		}{
+			this.savePreset(name);
+		};
+		presetNameField.string_("<>");
+		presetMenu.items = (saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; }
 	}
 	setTuning { |choice|
 		tuning = choice;
@@ -341,7 +432,6 @@ PolySynthControl {
 		};
 	}
 	initGUI {
-		var modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 340)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		
@@ -353,6 +443,17 @@ PolySynthControl {
 			.items_(tunings.keys.asArray)
 			.action_({ |obj| this.setTuning(obj.item); });
 		modeMenu.value_(modeMenu.items.indexOf('centaur'));
+		
+		presetRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
+			.background_(Color.blue(0.1, alpha:0.2));
+		saveButton = GUI.button.new(presetRow, Rect.new(0, 0, 75, 0))
+			.states_([["save", Color.black, Color.green]])
+			.action_({ |obj| this.setSave(presetNameField.string); });
+		presetNameField = GUI.textField.new(presetRow, Rect.new(0, 0, 75, 0))
+			.action_({ |obj| this.savePreset(obj.string); });
+		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 230, 0))
+			.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; })
+			.action_({ |obj| this.loadPreset(obj.item) });
 			
 		// controls row 1
 		partialRow1 = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 75))
@@ -531,14 +632,26 @@ PolySynthControl {
 }
 
 PolySynthControlRLPF : PolySynthControl {
-	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=0, modSource=0, cutoffKnob, cutoffModKnob;
+	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, rezKnob, cutoffModSourceButton;
 	*new {
 		^super.new.init_polysynthcontrolrlpf;
 	}
 	init_polysynthcontrolrlpf {
 		"PolySynthControlRLPF initializing".postln;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControlRLPF";
 		noteOnCommand = { |num,vel,pitch|
-			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
+			saveRoot.postln;
+			postln(['s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
+				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
+				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
+				'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
+				'trigMode', trigMode, 'xfade', xfade, 
+				'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
+				'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
+				'envScale', envScale, 'bend', pitchBend,
+				'cutoff', cutoff, 'cutoffMod', cutoffMod, 'cutoffFlag', cutoffFlag, 'cutoffModFlag', cutoffModFlag, 
+				'resonance', resonance, 'modSource', modSource]);
+			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num].last, 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
 				'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
@@ -548,10 +661,31 @@ PolySynthControlRLPF : PolySynthControl {
 				'envScale', envScale, 'bend', pitchBend,
 				'cutoff', cutoff, 'cutoffMod', cutoffMod, 'cutoffFlag', cutoffFlag, 'cutoffModFlag', cutoffModFlag, 
 				'resonance', resonance, 'modSource', modSource);
-			s.sendMsg('n_set', activeNotes[num], 'gate', 1);
+			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
+
 		};
 
 		this.addGUI;
+	}
+	getParams  {
+		^super.getParams ++ [cutoff, cutoffMod, cutoffFlag, cutoffModFlag, resonance, modSource, cutoffMenu.value, cutoffModSourceButton.value, cutoffKnob.value, cutoffModKnob.value, rezKnob.value, cutoffEnvButton.value, cutoffModEnvButton.value];
+	}
+	setParams { |values|
+		super.setParams(values);
+		cutoff = values[44];
+		cutoffMod = values[45];
+		cutoffFlag = values[46];
+		cutoffModFlag = values[47];
+		resonance = values[48];
+		modSource = values[49];
+		cutoffMenu.value = values[50];
+		cutoffModSourceButton = values[51];
+		cutoffKnob.value = values[52];
+		cutoffModKnob.value = values[53];
+		rezKnob.value = values[54];
+		cutoffEnvButton.value = values[55];
+		cutoffModEnvButton.value = values[56];
+		
 	}
 	setCutoff { |val|
 		cutoff = this.octaveToRatio(val);
@@ -616,9 +750,8 @@ PolySynthControlRLPF : PolySynthControl {
 		};
 	}
 	addGUI {
-		var filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, rezKnob, cutoffModSourceButton;
 		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 135);
-		
+		presetMenu.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; });
 		filterMidiRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
 		cutoffMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 37.5, 0))
@@ -645,6 +778,7 @@ PolySynthControlRLPF : PolySynthControl {
 			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
 		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
 			.spec_([1, 100].asSpec)
+			.value_(1)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setResonance(obj.value); });
 		
