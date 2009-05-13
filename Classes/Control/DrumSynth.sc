@@ -465,13 +465,38 @@ DrumSynth {
 	looper {
 		^~eventLooper.channels[recorderID];
 	}
-	savePreset {
-		var params;
+	savePreset { |name|
+		var params, fileName, filePath, fh, pipe;
 		drums.do{ |obj, ind|
 			params = params.add([obj.drumParams, obj.rezParams]);
 		};
-		
-	
+		fileName = name ? Date.localtime.stamp;
+		filePath = saveRoot ++ sep ++ fileName;
+		fh = File.new(filePath, "w");
+		if(fh.isOpen){
+			fh.write(params.asInfString);
+			fh.close;
+		}{
+			postln("creating save directory " ++ saveRoot);
+			pipe = Pipe.new("mkdir -p \"" ++ saveRoot ++ "\"", "w");
+			pipe.close;
+			fh = File.new(filePath, "w");
+			if(fh.isOpen){
+				fh.write(params.asInfString);
+				fh.close
+			}{
+				postln("preset save operation failed");
+			};
+			
+		};
+	}
+	loadPreset { |presetName|
+		var preset;
+		preset = (saveRoot ++ sep ++ presetName).load;
+		preset.do{ |obj,ind|
+			drums[ind].drumParams = obj[0];
+			drums[ind].rezParams = obj[1];
+		};
 	}
 	initLooper {
 		~eventLooper.addChannel(0, recorderID);

@@ -1,17 +1,17 @@
 // SETUP //////////////////////////////////////////////////////////////////
 
-//MIDIClient.init;
+MIDIClient.init;
 s.waitForBoot{
-	TheInstrument.new;
-	//m = MIDIOut.new(0,MIDIClient.destinations[6].uid);
+	//TheInstrument.new;
+	m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
-		//m.noteOn(1, num, vel);
-		TheInstrument.noteOnFunction.value(nil, 0, num, vel);
+		m.noteOn(1, num, vel);
+		//TheInstrument.noteOnFunction.value(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
-		//m.noteOff(1, num, 0);
-		TheInstrument.noteOffFunction.value(nil, 0, num, 0)
+		m.noteOff(1, num, 0);
+		//TheInstrument.noteOffFunction.value(nil, 0, num, 0)
 	};
 	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
