@@ -1,7 +1,7 @@
 
 DSBase {
 	var <drumID, <rezID, drumName, rezName, groupID=999, server, 
-		<>drumParams, <>rezParams, knobColors, view;
+		<>drumParams, <>rezParams, knobColors, view, <>drumControls, <>rezControls;
 	*new {
 		^super.new.init_dsbase;
 	}
@@ -28,19 +28,26 @@ DSBase {
 	}
 	setRezParam { |key,val|
 		rezParams[key] = val;
-		['n_set', rezID, key, rezParams[key]].postln;
 		server.sendMsg('n_set', rezID, key, rezParams[key]);
 	}
 	setDrumParam { |key,val|
 		drumParams[key] = val;
 	}
+	refreshValues {
+		rezParams.keysValuesDo{ |key,val,ind|
+			if(rezControls[key].notNil){
+				rezControls[key].value = val;
+				server.sendMsg('n_set', rezID, key, val);
+			};
+		};
+		drumParams.keysValuesDo{ |key,val,ind|
+			if(drumControls[key].notNil){
+				drumControls[key].value = val;
+			};
+		};
+	}
 }
 DSKlunk : DSBase {
-	var rFreqKnob, rResKnob, 
-		f1Knob, f2Knob, f3Knob, 
-		r1Knob, r2Knob, r3Knob, 
-		a1Knob, a2Knob, a3Knob, rLevKnob, 
-		xAttKnob, xRelKnob, xLevKnob, xCurveKnob;
 	*new { |parent,dParams,rParams|
 		^super.new.init_dsosc(parent,dParams,rParams);
 	}
@@ -58,90 +65,94 @@ DSKlunk : DSBase {
 		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
-		f1Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f1")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['f1'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('f1', obj.value); });
-		f2Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f2")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['f2'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('f2', obj.value); });
-		f3Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f3")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['f3'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('f3', obj.value); });
-		r1Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r1")
-			.spec_([0.001, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['r1'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('r1', obj.value); });
-		r2Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r2")
-			.spec_([0.001, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['r2'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('r2', obj.value); });
-		r3Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r3")
-			.spec_([0.001, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['r3'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('r3', obj.value); });
-		a1Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a1")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['a1'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('a1', obj.value); });
-		a2Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a2")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['a2'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('a2', obj.value); });
-		a3Knob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a3")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['a3'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('a3', obj.value); });
-		rLevKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rLev")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['lev'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('lev', obj.value); });
-		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
-			.spec_([0.0001, 0.3, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['att'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('att', obj.value); });
-		xRelKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
-			.spec_([0.0001, 1, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['rel'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('rel', obj.value); });		
-		xLevKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xLev")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['lev'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('lev', obj.value); });
-		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-10, 10].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['curve'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('curve', obj.value); });
+		rezControls = Dictionary[
+			'f1' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f1")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['f1'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('f1', obj.value); }),
+			'f2' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f2")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['f2'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('f2', obj.value); }),
+			'f3' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "f3")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['f3'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('f3', obj.value); }),
+			'r1' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r1")
+				.spec_([0.001, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['r1'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('r1', obj.value); }),
+			'r2' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r2")
+				.spec_([0.001, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['r2'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('r2', obj.value); }),
+			'r3' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "r3")
+				.spec_([0.001, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['r3'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('r3', obj.value); }),
+			'a1' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a1")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['a1'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('a1', obj.value); }),
+			'a2' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a2")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['a2'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('a2', obj.value); }),
+			'a3' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "a3")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['a3'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('a3', obj.value); }),
+			'lev' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rLev")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['lev'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('lev', obj.value); })
+		];
+		drumControls = Dictionary[
+			'att' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
+				.spec_([0.0001, 0.3, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['att'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('att', obj.value); }),
+			'rel' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
+				.spec_([0.0001, 1, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['rel'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('rel', obj.value); }),
+			'lev' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xLev")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['lev'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('lev', obj.value); }),
+			'curve' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
+				.spec_([-10, 10].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['curve'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('curve', obj.value); })
+		];
 	}
 }
 
@@ -166,73 +177,76 @@ DSOsc : DSBase {
 		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
-		rFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['freq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('freq', obj.value); });
-		rResKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
-			.spec_([1, 100].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['res'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('res', obj.value); });
-		rGainKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
-			.spec_([0.001, 2, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['gain'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('gain', obj.value); });
-		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
-			.spec_([0.0001, 0.5, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['att'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('att', obj.value); });
-		xRelKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
-			.spec_([0.0001, 2, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['rel'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('rel', obj.value); });
-		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-10, 10].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['curve'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('curve', obj.value); });
-		xFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "freq")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['freq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('freq', obj.value); });
-		xModPhaseKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mPhase")
-			.spec_([0, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['modPhase'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('modPhase', obj.value); });
-		xModFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mFreq")
-			.spec_([0, 20, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['modFreq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('modFreq', obj.value); });
-		xModAmtKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mAmt")
-			.spec_([0, 20, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['modAmt'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('modAmt', obj.value); });
-		xDriveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "drive")
-			.spec_([0.0001, 3, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['drive'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('drive', obj.value); });
-		
+		rezControls = Dictionary[
+			'freq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['freq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('freq', obj.value); }),
+			'res' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
+				.spec_([1, 100].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['res'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('res', obj.value); }),
+			'gain' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
+				.spec_([0.001, 2, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['gain'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('gain', obj.value); })
+		];
+		drumControls = Dictionary[
+			'att' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
+				.spec_([0.0001, 0.5, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['att'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('att', obj.value); }),
+			'rel' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
+				.spec_([0.0001, 2, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['rel'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('rel', obj.value); }),
+			'curve' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
+				.spec_([-10, 10].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['curve'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('curve', obj.value); }),
+			'freq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "freq")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['freq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('freq', obj.value); }),
+			'modPhase' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mPhase")
+				.spec_([0, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['modPhase'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('modPhase', obj.value); }),
+			'modFreq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mFreq")
+				.spec_([0, 20, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['modFreq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('modFreq', obj.value); }),
+			'modAmt' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "mAmt")
+				.spec_([0, 20, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['modAmt'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('modAmt', obj.value); }),
+			'drive' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "drive")
+				.spec_([0.0001, 3, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['drive'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('drive', obj.value); })
+		];
 	}
 }
 
@@ -255,48 +269,52 @@ DSHiHat : DSBase {
 		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
-		rFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['freq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('freq', obj.value); });
-		rResKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
-			.spec_([1, 150].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['res'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('res', obj.value); });
-		rGainKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
-			.spec_([0.001, 2, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['gain'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('gain', obj.value); });	
-		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
-			.spec_([0.0001, 0.3, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['att'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('att', obj.value); });
-		xRelKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
-			.spec_([0.001, 1, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['rel'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('rel', obj.value); });
-		xLevKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "lev")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			//.value_(drumParams['lev'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('lev', obj.value); });
-		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-10, 10].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['curve'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('curve', obj.value); });
+		rezControls = Dictionary[
+			'freq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['freq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('freq', obj.value); }),
+			'res' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
+				.spec_([1, 150].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['res'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('res', obj.value); }),
+			'gain' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
+				.spec_([0.001, 2, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['gain'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('gain', obj.value); })
+		];
+		drumControls = Dictionary[
+			'att' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
+				.spec_([0.0001, 0.3, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['att'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('att', obj.value); }),
+			'rel' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
+				.spec_([0.001, 1, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['rel'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('rel', obj.value); }),
+			'lev' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "lev")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				//.value_(drumParams['lev'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('lev', obj.value); }),
+			'curve' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
+				.spec_([-10, 10].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['curve'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('curve', obj.value); })
+		];
 	}
 }
  // x_whiteSnare r_lpf
@@ -319,66 +337,69 @@ DSSnare  : DSBase {
 		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
-		rFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['freq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('freq', obj.value); });
-		rResKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
-			.spec_([1, 150].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['res'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('res', obj.value); });
-		rGainKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
-			.spec_([0.001, 2, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(rezParams['gain'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setRezParam('gain', obj.value); });
-		xFreqKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xFreq")
-			.spec_('freq'.asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['freq'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('freq', obj.value); });
-		xRezKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xRez")
-			.spec_([1, 150].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['rez'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('rez', obj.value); });
-		xGainKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xGain")
-			.spec_([0.001, 2, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['gain'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('gain', obj.value); });
-		xAttKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
-			.spec_([0.0001, 0.3, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['att'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('att', obj.value); });
-		xRelKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
-			.spec_([0.001, 1, 2].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['rel'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('rel', obj.value); });
-		xLevKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "lev")
-			.spec_('amp'.asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['lev'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('lev', obj.value); });
-		xCurveKnob = EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-			.spec_([-3, 3].asSpec)
-			.knobColor_(knobColors)
-			.value_(drumParams['curve'])
-			.stringColor_(Color.yellow)
-			.knobAction_({ |obj| this.setDrumParam('curve', obj.value); });
+		rezControls = Dictionary[
+			'freq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "cut")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['freq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('freq', obj.value); }),
+			'res' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "res")
+				.spec_([1, 150].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['res'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('res', obj.value); }),
+			'gain' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rGain")
+				.spec_([0.001, 2, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(rezParams['gain'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setRezParam('gain', obj.value); })		];
+		drumControls = Dictionary[
+			'freq' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xFreq")
+				.spec_('freq'.asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['freq'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('freq', obj.value); }),
+			'rez' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xRez")
+				.spec_([1, 150].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['rez'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('rez', obj.value); }),
+			'gain' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xGain")
+				.spec_([0.001, 2, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['gain'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('gain', obj.value); }),
+			'att' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")
+				.spec_([0.0001, 0.3, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['att'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('att', obj.value); }),
+			'rel' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "rel")
+				.spec_([0.001, 1, 2].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['rel'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('rel', obj.value); }),
+			'lev' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "lev")
+				.spec_('amp'.asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['lev'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('lev', obj.value); }),
+			'curve' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
+				.spec_([-3, 3].asSpec)
+				.knobColor_(knobColors)
+				.value_(drumParams['curve'])
+				.stringColor_(Color.yellow)
+				.knobAction_({ |obj| this.setDrumParam('curve', obj.value); })
+		];
 	}
 }
 
@@ -465,11 +486,30 @@ DrumSynth {
 	looper {
 		^~eventLooper.channels[recorderID];
 	}
+	getParams {
+		var ret, drumDict, rezDict;
+		drumDict = Dictionary.new;
+		rezDict = Dictionary.new;
+		drums.do{ |obj, ind|
+			ret = ret.add([
+				this.formatParams(obj.drumParams), 
+				this.formatParams(obj.rezParams)
+			]);
+		};
+		^ret;
+	}
+	formatParams { |params|
+		var ret;
+		ret = Dictionary.new;
+		params.keysValuesDo{ |key,val,ind|
+			ret = ret.add('\'' ++ key ++ '\'' -> val);
+		}
+		^ret;
+	}
 	savePreset { |name|
 		var params, fileName, filePath, fh, pipe;
-		drums.do{ |obj, ind|
-			params = params.add([obj.drumParams, obj.rezParams]);
-		};
+
+		params = this.getParams;
 		fileName = name ? Date.localtime.stamp;
 		filePath = saveRoot ++ sep ++ fileName;
 		fh = File.new(filePath, "w");
@@ -496,6 +536,7 @@ DrumSynth {
 		preset.do{ |obj,ind|
 			drums[ind].drumParams = obj[0];
 			drums[ind].rezParams = obj[1];
+			drums[ind].refreshValues;
 		};
 	}
 	initLooper {
@@ -505,9 +546,21 @@ DrumSynth {
 		};
 	}
 	initGUI {
-		win = GUI.window.new("DrumSynth", Rect.new(500.rand, 500.rand, 550, 600)).front;
+		var presetRow, saveButton, presetNameField, presetMenu;
+		win = GUI.window.new("DrumSynth", Rect.new(500.rand, 500.rand, 550, 625)).front;
 		win.view.background_(Color.black)
 			.decorator_(FlowLayout(win.view.bounds));
+		presetRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 20))
+			.background_(Color.white.alpha_(0.8));
+		saveButton = GUI.button.new(presetRow, Rect.new(0, 0, 75, 0))
+			.states_([["save", Color.black, Color.green]])
+			.action_({ |obj| this.setSave(presetNameField.string); });
+		presetNameField = GUI.textField.new(presetRow, Rect.new(0, 0, 75, 0))
+			.action_({ |obj| this.savePreset(obj.string); });
+		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 230, 0))
+			.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; })
+			.action_({ |obj| this.loadPreset(obj.item) });
+
 	}
 }
 
