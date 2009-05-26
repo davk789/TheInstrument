@@ -95,7 +95,7 @@ SynthDef.new("s_dualWavetableRLPF", {
 	
 	aLPFreqMod = freq1 * asLPFModSources * cutoffMod * asCutoffModEnv;
 	aLPFreq = (freq1 + (cutoff * freq1 * asCutoffFreqEnv)) + aLPFreqMod;
- 	aFilt = RLPF.ar(aSig.softclip, aLPFreq, resonance.reciprocal);
+ 	aFilt = MoogVCF.ar(aSig.softclip, aLPFreq, resonance/*.reciprocal*/);
  
 	Out.ar(outBus, aFilt * aEnv);
 }, [nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 1, nil, 1, 1, 1, nil, 1, 1, 1, nil, nil, nil, nil, nil, nil, 1, 1]).load(s);

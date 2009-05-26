@@ -2,15 +2,17 @@ EventLooperChannel {
 	classvar <>root;
 	var <>clock, <totalTime, index, nextTime, <eventValue, lastEvent, iterator, >action, 
 		waitTime=0, firstEvent=true, <>isRecording=false, <eventCollection, <metaSeq,
-		<>seqMenu, <>playButton, <>recordButton, incseqButtonDown, incseqButtonUp, presetListMenu,
+		<>seqMenu, <>playButton, <>recordButton, incseqButtonDown, incseqButtonUp, presetListMenu, 
+		presetListSubfolder, gate=false,
 		currSeq=0, cTempo=1, sep;
 	*new { |name, win|
 		^super.new.init_eventLooperChannel(name, win);
 	}
 	init_eventLooperChannel { |name,win|
 		sep = Platform.pathSeparator;
+		presetListSubfolder = "trig";
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
-		totalTime = 256;
+		totalTime = 32;
 		index = 0;
 		nextTime = [totalTime];
 		eventValue = [nil];
@@ -68,6 +70,7 @@ EventLooperChannel {
 		clock.schedAbs(waitTime + clock.beats, iterator);
 	}
 	stop {
+		if(gate){ this.freeAllVoices; };
 		isRecording = false;
 		//clock.tempo = 0;
 		clock.stop;
@@ -98,7 +101,7 @@ EventLooperChannel {
 	loadGroup { |name|
 		var fh;
 		if(name != nil){	
-			fh = File.new(root ++ sep ++ "trig" ++ sep ++ name, "r");
+			fh = File.new(root ++ sep ++ presetListSubfolder ++ sep ++ name, "r");
 		}{
 			"need to provide a filename".postln;
 		};
@@ -114,9 +117,9 @@ EventLooperChannel {
 	saveGroup { |name|
 		var fh, fullName;
 		if(name.notNil){
-			fullName = root ++ sep ++ "trig" ++ sep ++ name;
+			fullName = root ++ sep ++ presetListSubfolder ++ sep ++ name;
 		}{
-			fullName = root ++ sep ++ "trig" ++ sep ++ Date.localtime.stamp;			
+			fullName = root ++ sep ++ presetListSubfolder ++ sep ++ Date.localtime.stamp;			
 		};
 		fh = File.new(fullName, "w");
 		if(fh.isOpen){
@@ -131,6 +134,7 @@ EventLooperChannel {
 		eventCollection = eventCollection.add([nextTime, eventValue]);
 	}
 	clear {
+		if(gate){ this.freeAllVoices; };
 		clock.stop;
 		firstEvent = true;
 		nextTime = [totalTime];
@@ -138,6 +142,7 @@ EventLooperChannel {
 	}
 	load { |sel|
 		var lastChoice=0;
+		if(gate){ this.freeAllVoices; };
 		lastChoice = currSeq;
 		if(sel != nil){
 			currSeq = sel.min(eventCollection.lastIndex);
@@ -214,6 +219,9 @@ EventLooperChannel {
 			presetListMenu.items = presetListMenu.items.add(fileName);
 		};
 	}
+	freeAllVoices {
+		postln("this is kind of like a virtual function i guess");
+	}
 	makeGUI { |id,parent|
 		var idDisplay, idText, transport, clearButton, groups,
 		addSeqGroupButton, presets, 
@@ -284,7 +292,7 @@ EventLooperChannel {
 		);
 	}
 	populatePresetListMenu {
-		pathMatch(root ++ sep ++ "trig" ++ sep ++ "*").do{ |obj|
+		pathMatch(root ++ sep ++ presetListSubfolder ++ sep ++ "*").do{ |obj|
 			presetListMenu.items = presetListMenu.items.add(
 				obj.split(Platform.pathSeparator).last
 			);
@@ -301,70 +309,12 @@ SynthEventLooperChannel : EventLooperChannel {
 		if(group.notNil){
 			synthGroup = group;
 		};
+		presetListSubfolder = "gate";
+		gate = true;
 	}
-	load { |sel|
+	freeAllVoices {
 		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
-		if(sel != nil){
-			currSeq = sel.min(eventCollection.lastIndex);
-			nextTime = eventCollection[sel][0];
-			eventValue = eventCollection[sel][1];
-		};
-		metaSeq.loopSize = eventValue.size;
-		metaSeq.record(sel);
-
 	}
-	clear {
-		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
-		clock.stop;
-		firstEvent = true;
-		nextTime = [totalTime];
-		eventValue = [nil];		
-	}
-	stop {
-		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
-		isRecording = false;
-		clock.stop;
-	}
-	populatePresetListMenu {
-		pathMatch(root ++ sep ++ "gate" ++ sep ++ "*").do{ |obj|
-			presetListMenu.items = presetListMenu.items.add(
-				obj.split(Platform.pathSeparator).last
-			);
-		};
-	}
-	loadGroup { |name|
-		var fh;
-		if(name != nil){	
-			fh = File.new(root ++ sep ++ "gate" ++ sep ++ name, "r");
-		}{
-			"need to provide a filename".postln;
-		};
-		if(fh.isOpen){
-			eventCollection = fh.readAllString.interpret;
-			eventCollection.do{ |o,i| o.postln};
-			eventCollection.postln;
-		}{
-			"invalid filename".postln;
-		};
-		fh.close;
-	}
-	saveGroup { |name|
-		var fh, fullName;
-		if(name.notNil){
-			fullName = root ++ sep ++ "gate" ++ sep ++ name;
-		}{
-			fullName = root ++ sep ++ "gate" ++ sep ++ Date.localtime.stamp;			
-		};
-		fh = File.new(fullName, "w");
-		if(fh.isOpen){
-			fh.write(eventCollection.asInfString);
-			fh.close;
-		}{
-			postln("please create this directory manually to save loop set:\n"++root);
-		}; 
-		^fullName;
-	}
-
 }
 
 EventLooper {

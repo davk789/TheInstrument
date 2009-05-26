@@ -554,7 +554,7 @@ DrumSynth {
 			.background_(Color.white.alpha_(0.8));
 		saveButton = GUI.button.new(presetRow, Rect.new(0, 0, 75, 0))
 			.states_([["save", Color.black, Color.green]])
-			.action_({ |obj| this.setSave(presetNameField.string); });
+			.action_({ |obj| this.savePreset(presetNameField.string); });
 		presetNameField = GUI.textField.new(presetRow, Rect.new(0, 0, 75, 0))
 			.action_({ |obj| this.savePreset(obj.string); });
 		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 230, 0))

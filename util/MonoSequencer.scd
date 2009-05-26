@@ -1,10 +1,9 @@
 // SETUP //////////////////////////////////////////////////////////////////
-
-MIDIClient.init;
+//MIDIClient.init;
 s.waitForBoot{
-	//TheInstrument.new;
+	TheInstrument.new;
 	m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
-	~monoSeq = MonoSequencer.new;
+	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
 		m.noteOn(1, num, vel);
 		//TheInstrument.noteOnFunction.value(nil, 0, num, vel);
@@ -29,7 +28,7 @@ s.waitForBoot{
 		Array.fill(64, { |ind| 
 			[0, 0, 0, 0, 2, 2, 0].choose
 		}) + 
-		43;
+		63;
 	~monoSeq.setSeqVelocities(
 		(~lifeVel.getNextGeneration * 90).flatten + 
 		Array.fill(64, { |ind| 
@@ -42,7 +41,7 @@ s.waitForBoot{
 	Array.fill(64, { |ind| 
 		[0, 0, 0, 0, 2, 2, 0, 0].choose
 	}) + 
-	43;
+	63;
 }.value;
 ~monoSeq.duration = Array.fill(64, {
 	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
@@ -51,7 +50,7 @@ s.waitForBoot{
 	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
 });
 
-
+-
 // seq 4
 ~monoSeq.sequence = (Array.fill(64, {
 	{[0,0,0,0,1,1,-2].choose}

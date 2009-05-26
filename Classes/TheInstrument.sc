@@ -1,6 +1,6 @@
 TheInstrument {
 	classvar <>noteOnFunction, <>noteOffFunction, <>bendFunction, <>ccFunction, <touchFunction, lastChannel=0;
-	*new {
+	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
 		this.launchObjects;
