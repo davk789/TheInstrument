@@ -411,9 +411,6 @@ PolySynthControl {
 					},
 					'pitchBend', {
 						this.setPitchBend(value);
-					},
-					{
-						"no param assigned to this control".postln;
 					}
 				);
 			}
@@ -574,8 +571,8 @@ PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFM2(obj.value); });
 		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 150, 0))
-			.value_([[0, 0.05, 0.15, 0.8, 1], [0, 1, 0.5, 0.65, 0]])
-			.thumbSize_(3)
+			.value_([[0.0, 0.05, 0.15, 0.8, 1.0], [0.0, 0.99, 0.5, 0.65, 0.0]])
+			.thumbSize_(5)
 			.fillColor_(Color.green)
 			.strokeColor_(Color.green)
 			.background_(Color.black.alpha_(0.9))
@@ -641,16 +638,6 @@ PolySynthControlRLPF : PolySynthControl {
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControlRLPF";
 		noteOnCommand = { |num,vel,pitch|
 			saveRoot.postln;
-			postln(['s_new', 's_dualWavetableRLPF', activeNotes[num], 0, instGroup,
-				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
-				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
-				'att', att, 'dec', dec, 'sus', sus, 'rel', rel, 
-				'trigMode', trigMode, 'xfade', xfade, 
-				'fbLag', fbLag, 'fbMul', fbMul, 'freq2', freq2, 'fmAmt', fmAmt, 
-				'fbMulEnvFlag', fbMulEnvFlag, 'freq2EnvFlag', freq2EnvFlag, 'fmEnvFlag', fmEnvFlag, 
-				'envScale', envScale, 'bend', pitchBend,
-				'cutoff', cutoff, 'cutoffMod', cutoffMod, 'cutoffFlag', cutoffFlag, 'cutoffModFlag', cutoffModFlag, 
-				'resonance', resonance, 'modSource', modSource]);
 			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num].last, 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,
@@ -712,28 +699,10 @@ PolySynthControlRLPF : PolySynthControl {
 		s.sendMsg('n_set', instGroup, 'modSource', modSource);
 	}
 	handleMIDI { |controls,value|
+		super.handleMIDI(controls, value);
 		if(controls.size > 0){
 			controls.do{ |obj,ind|
 				obj.switch(
-					'xFade', {
-						xfadeKnob.zeroOneValue = value;
-						xfadeKnob.knobValueAction;
-					},
-					'fbMul', {
-						fbMulKnob.zeroOneValue = value;
-						fbMulKnob.knobValueAction;
-					},
-					'freq2', {
-						freq2Knob.zeroOneValue = value;
-						freq2Knob.knobValueAction;
-					},
-					'fm2', {
-						fm2Knob.zeroOneValue = value;
-						fm2Knob.knobValueAction;
-					},
-					'pitchBend', {
-						this.setPitchBend(value);
-					},
 					'cutoff', {
 						cutoffKnob.zeroOneValue = value;
 						cutoffKnob.knobValueAction;
@@ -741,9 +710,6 @@ PolySynthControlRLPF : PolySynthControl {
 					'cutoffMod', {
 						cutoffModKnob.zeroOneValue = value;
 						cutoffModKnob.knobValueAction;
-					},
-					{
-						"no param assigned to this control".postln;
 					}
 				);
 			}
@@ -777,7 +743,7 @@ PolySynthControlRLPF : PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
 		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
-			.spec_([1, 100].asSpec)
+			.spec_([1, 10].asSpec) // icky
 			.value_(1)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setResonance(obj.value); });

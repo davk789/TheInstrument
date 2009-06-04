@@ -2,17 +2,16 @@
 //MIDIClient.init;
 s.waitForBoot{
 	TheInstrument.new;
-	m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
+	//m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
-		m.noteOn(1, num, vel);
-		//TheInstrument.noteOnFunction.value(nil, 0, num, vel);
+		//m.noteOn(1, num, vel);
+		TheInstrument.noteOnFunction.value(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
-		m.noteOff(1, num, 0);
-		//TheInstrument.noteOffFunction.value(nil, 0, num, 0)
+		//m.noteOff(1, num, 0);
+		TheInstrument.noteOffFunction.value(nil, 0, num, 0)
 	};
-	~monoSeq.sequence = Array.fill(32, { 24.rand + 60 })
 };
 
 // SEQUENCES ///////////////////////////////////////////////////////////////
@@ -22,13 +21,12 @@ s.waitForBoot{
 ~lifeVel = ConwayLife.new(8, GUI.window.new("vel", Rect.new(500.rand, 500.rand, 150, 150)).front, Rect.new(0,0,140,140));
 ~lifeVel.rule_('Coagulations');
 ~monoSeq.doneAction = { |note,vel|
-	postln("doneAction " ++ note ++ " " ++ vel);
 	~monoSeq.sequence = 
 		(~life.getNextGeneration * 7).flatten + 
 		Array.fill(64, { |ind| 
 			[0, 0, 0, 0, 2, 2, 0].choose
 		}) + 
-		63;
+		43;
 	~monoSeq.setSeqVelocities(
 		(~lifeVel.getNextGeneration * 90).flatten + 
 		Array.fill(64, { |ind| 
@@ -41,7 +39,7 @@ s.waitForBoot{
 	Array.fill(64, { |ind| 
 		[0, 0, 0, 0, 2, 2, 0, 0].choose
 	}) + 
-	63;
+	43;
 }.value;
 ~monoSeq.duration = Array.fill(64, {
 	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
@@ -50,7 +48,6 @@ s.waitForBoot{
 	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
 });
 
--
 // seq 4
 ~monoSeq.sequence = (Array.fill(64, {
 	{[0,0,0,0,1,1,-2].choose}

@@ -31,7 +31,7 @@ SynthDef.new("x_crackle", {
 	var aNoise, aEnv;
 	aNoise = Crackle.ar(crackle);
 	aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
-	Out.ar(outBus, (aNoise * aEnv).tanh);//RLPF.ar(aNoise * aEnv, 200, 1));
+	Out.ar(outBus, (aNoise * aEnv).softclip);//RLPF.ar(aNoise * aEnv, 200, 1));
 }).load(s);
 
 SynthDef.new("x_clip", { 
@@ -67,7 +67,7 @@ SynthDef.new("r_formlet", { |freq=1600, attTime=0.01, decTime=0.1,
 SynthDef.new("r_lpf", { |freq=1600, res=10,
 						 outBus=0, inBus=12, lev=1, gain=1|
 	var aRez, aIn;
-	aIn = (In.ar(inBus) * gain).tanh;
+	aIn = (In.ar(inBus) * gain).softclip;
 	aRez = RLPF.ar(aIn, freq, 1 / res);
 	Out.ar(outBus, Pan2.ar(aRez) * lev);
 }).load(s);	
@@ -75,7 +75,7 @@ SynthDef.new("r_lpf", { |freq=1600, res=10,
 SynthDef.new("r_hpf", { |freq=1600, res=10,
 						 outBus=0, inBus=13, lev=1, gain=1|
 	var aRez, aIn;
-	aIn = (In.ar(inBus) * gain).tanh;
+	aIn = (In.ar(inBus) * gain).softclip;
 	aRez = RHPF.ar(aIn, freq, 1 / res);
 	Out.ar(outBus, Pan2.ar(aRez) * lev);
 }).load(s);	
@@ -89,7 +89,7 @@ SynthDef.new("r_klank", { |outBus=0, inBus=10, lev=1,
 		`[[f1, f2, f3],
 		  [a1, a2, a3],
 		  [r1, r2, r3]], 
-		Limiter.ar(In.ar(inBus), 0.5, 0.02).tanh
+		Limiter.ar(In.ar(inBus), 0.5, 0.02).softclip
 	);
 	Out.ar(outBus, Pan2.ar(aRez) * lev);
 }).load(s);

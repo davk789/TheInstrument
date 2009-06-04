@@ -80,7 +80,7 @@ TheInstrument {
 			~gravityGridPlayer = GravityGridPlayer.new;
 		});
 		
-		 	}
+	}
 	*launchMidiResponders {
 		NoteOnResponder(noteOnFunction);
 		NoteOffResponder(noteOffFunction);
