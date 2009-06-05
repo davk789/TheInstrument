@@ -1,5 +1,19 @@
+/**
+	BUGS:
+	DrumSynth - mixer volume does not affect this instrument
+	EventLooper -- probably a lot still not functioning
+	PolySynthControl 
+		- MIDI -> GUI control broken, no midi control over GUI should be the rule
+			instead, modulation amounts should add to the visible params
+		- envelope modulators mostly don't work, must be cleaned up
+	TODO:
+	add a sample looper to the project
+	improve PolySynthControl class structure to accomodate several different filters
+	remove the global variables from this project
+	
+ */
 TheInstrument {
-	classvar <>noteOnFunction, <>noteOffFunction, <>bendFunction, <>ccFunction, <touchFunction, lastChannel=0;
+	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0;
 	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
@@ -61,6 +75,27 @@ TheInstrument {
 			};
 		};
 	}
+	
+	*noteOn { |src,chan,num,vel|
+		noteOnFunction.value(src,chan,num,vel);
+	}
+	
+	*noteOff { |src,chan,num,vel|
+		noteOffFunction.value(src,chan,num,vel);
+	}
+	
+	*bend { |src,chan,val|
+		bendFunction.value(src, chan, val);
+	}
+	
+	*cc { |src,chan,num,val|
+		ccFunction.value(src, chan, num, val);
+	}
+	
+	*touch { |src,chan,val|
+		touchFunction.value(src,chan.val);
+	}
+	
 	*launchObjects {
 		~audioBusRegister = Dictionary.new;
 		~mixer = Mixer.new;

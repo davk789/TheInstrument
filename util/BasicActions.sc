@@ -1,9 +1,10 @@
-QuickKeyboard {
-	var synthKeys, drumKeys, <>root;
+QuickKeyboard { // quick and dirty replacement for my Axiom25 keyboard
+	var <>synthKeys, <>drumKeys, <>root, repeat;
 	*new {
 		^super.new.init_quickkeyboard
 	}
 	init_quickkeyboard {
+		repeat = Array.new;
 		synthKeys = Dictionary[
 			$a -> 0,
 			$w -> 1,
@@ -35,17 +36,34 @@ QuickKeyboard {
 			$, -> 42
 		];
 		root = 52;
+		this.setGlobalKeyActions;
+	}
+	setGlobalKeyActions {
 		GUI.view.globalKeyDownAction = { |src,char,mod,unic,keyc|
-			synthKeys[char].notNil.if{
-				TheInstrument.noteOnFunction.(nil, 0, synthKeys[char] + root, 90);
+			if(repeat.includes(char).not){
+				repeat = repeat.add(char);
+				if(synthKeys[char].notNil){
+					TheInstrument.noteOn(nil, 0, synthKeys[char] + root, 90);
+				};
+				if(drumKeys[char].notNil){
+					TheInstrument.noteOn(nil, 9, drumKeys[char], 90);
+				};
+				keyc.switch(
+					123, {
+						root = root - 12;
+					},
+					124, {
+						root = root + 12;
+					}
+				);
 			};
-			drumKeys[char].notNil.if{
-				TheInstrument.noteOnFunction.(nil, 9, drumKeys[char], 90);
-			}
 		};
 		GUI.view.globalKeyUpAction = { |obj,char,mod,unic,keyc|
-			synthKeys[char].notNil.if{
-				TheInstrument.noteOffFunction.(nil,0, synthKeys[char] + root,0);
+			if(repeat.includes(char)){
+				repeat.remove(char);
+			};
+			if(synthKeys[char].notNil){
+				TheInstrument.noteOff(nil,0, synthKeys[char] + root,0);
 			};
 		};
 	}

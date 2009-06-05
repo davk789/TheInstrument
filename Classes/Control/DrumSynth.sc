@@ -364,7 +364,7 @@ DSSnare  : DSBase {
 				.stringColor_(Color.yellow)
 				.knobAction_({ |obj| this.setDrumParam('freq', obj.value); }),
 			'rez' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "xRez")
-				.spec_([1, 150].asSpec)
+				.spec_([1, 5].asSpec)
 				.knobColor_(knobColors)
 				.value_(drumParams['rez'])
 				.stringColor_(Color.yellow)
@@ -394,7 +394,7 @@ DSSnare  : DSBase {
 				.stringColor_(Color.yellow)
 				.knobAction_({ |obj| this.setDrumParam('lev', obj.value); }),
 			'curve' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "curve")
-				.spec_([-3, 3].asSpec)
+				.spec_([-10, 10].asSpec)
 				.knobColor_(knobColors)
 				.value_(drumParams['curve'])
 				.stringColor_(Color.yellow)
@@ -406,7 +406,8 @@ DSSnare  : DSBase {
 DrumSynth {
 	classvar <lastNote;
 	var win, <drums, <>noteOns, <>drumXGroup=999, drumSynthGroup=400, outBus=0,
-		drumCCCommands, drumParams, rezParams, <recorderID="drumSynth", server, saveRoot, sep;
+		drumCCCommands, drumParams, rezParams, <recorderID="drumSynth", server, saveRoot, sep,
+		presetNameField, presetMenu;
 	*new { |name|
 		^super.new.init_drumsynth(name);
 	}
@@ -475,7 +476,6 @@ DrumSynth {
 	noteOn { |src,chan,num,vel|
 		var voice;
 		voice = noteOns.indexOf(num);
-		voice.postln;
 		if(voice.notNil){
 			drums[voice].hit(vel / 127);
 		};
@@ -510,7 +510,12 @@ DrumSynth {
 		var params, fileName, filePath, fh, pipe;
 
 		params = this.getParams;
-		fileName = name ? Date.localtime.stamp;
+		if(name == "<>"){
+			fileName = Date.localtime.stamp;
+		}{
+			fileName = name;
+		};
+		
 		filePath = saveRoot ++ sep ++ fileName;
 		fh = File.new(filePath, "w");
 		if(fh.isOpen){
@@ -529,6 +534,8 @@ DrumSynth {
 			};
 			
 		};
+		presetMenu.items_(this.getPresetList);
+		presetNameField.string_("<>");
 	}
 	loadPreset { |presetName|
 		var preset;
@@ -545,8 +552,11 @@ DrumSynth {
 			this.noteOn(nil, nil, values[0], values[1]);
 		};
 	}
+	getPresetList {
+		^(saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; };
+	}
 	initGUI {
-		var presetRow, saveButton, presetNameField, presetMenu;
+		var presetRow, saveButton;
 		win = GUI.window.new("DrumSynth", Rect.new(500.rand, 500.rand, 550, 625)).front;
 		win.view.background_(Color.black)
 			.decorator_(FlowLayout(win.view.bounds));
@@ -556,9 +566,10 @@ DrumSynth {
 			.states_([["save", Color.black, Color.green]])
 			.action_({ |obj| this.savePreset(presetNameField.string); });
 		presetNameField = GUI.textField.new(presetRow, Rect.new(0, 0, 75, 0))
-			.action_({ |obj| this.savePreset(obj.string); });
+			.action_({ |obj| this.savePreset(obj.string); })
+			.string_("<>");
 		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 230, 0))
-			.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; })
+			.items_(this.getPresetList)
 			.action_({ |obj| this.loadPreset(obj.item) });
 
 	}

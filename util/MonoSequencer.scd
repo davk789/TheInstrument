@@ -2,15 +2,16 @@
 //MIDIClient.init;
 s.waitForBoot{
 	TheInstrument.new;
+	q = QuickKeyboard.new;
 	//m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
 		//m.noteOn(1, num, vel);
-		TheInstrument.noteOnFunction.value(nil, 0, num, vel);
+		TheInstrument.noteOn(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
 		//m.noteOff(1, num, 0);
-		TheInstrument.noteOffFunction.value(nil, 0, num, 0)
+		TheInstrument.noteOff(nil, 0, num, 0)
 	};
 };
 
