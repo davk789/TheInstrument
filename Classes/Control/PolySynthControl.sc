@@ -376,7 +376,7 @@ PolySynthControl {
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
 		this.addActiveNote(num, s.nextNodeID);
-		noteOnCommand.(num, vel, pitch);
+		noteOnCommand.value(num, vel, pitch);
 	}
 	noteOff { |src,chan,num,vel|
 		var lastNote;
@@ -394,20 +394,19 @@ PolySynthControl {
 				obj.switch(
 					'xFade', {
 						this.setXFade(value);
-						xfadeKnob.zeroOneValue = value;
+						defer{ xfadeKnob.zeroOneValue = value };
 					},
 					'fbMul', {
 						this.setFBMul(value);
-						fbMulKnob.zeroOneValue = value;
+						defer{ fbMulKnob.zeroOneValue = value };
 					},
 					'freq2', {
 						this.setFreq2(value);
-						freq2Knob.zeroOneValue = value;
+						defer{ freq2Knob.zeroOneValue = value };
 					},
 					'fm2', {
 						this.setFM2(value);
-						fm2Knob.zeroOneValue = value;
-						fm2Knob.knobValueAction;
+						defer{ fm2Knob.zeroOneValue = value };
 					},
 					'pitchBend', {
 						this.setPitchBend(value);
@@ -704,12 +703,12 @@ PolySynthControlRLPF : PolySynthControl {
 			controls.do{ |obj,ind|
 				obj.switch(
 					'cutoff', {
-						cutoffKnob.zeroOneValue = value;
-						cutoffKnob.knobValueAction;
+						this.setCutoff(value);
+						defer{ cutoffKnob.zeroOneValue = value; };
 					},
 					'cutoffMod', {
-						cutoffModKnob.zeroOneValue = value;
-						cutoffModKnob.knobValueAction;
+						this.setCutoff(value);
+						defer{ cutoffModKnob.zeroOneValue = value; };
 					}
 				);
 			}
