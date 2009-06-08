@@ -1,12 +1,13 @@
 Distortion {
-	var server, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
+	var parent, server, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
 		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, tableSize=1024,
 		postMixBuffer,
 		<win, shapeView, curve=1, mix, gain=1;
-	*new { |group,name,ind|
-		^super.new.init_distortion(group, name, ind);
+	*new { |par, group, name, ind|
+		^super.new.init_distortion(par, group, name, ind);
 	}
-	init_distortion { |group,name,ind|
+	init_distortion { |par, group, name, ind|
+		parent = par;
 		server = Server.default;
 		nodeID = server.nextNodeID;
 		groupID = group;
@@ -14,7 +15,7 @@ Distortion {
 		inputNumber = ind;
 		mix = -1;
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
-		bus = ~mixer.channels[inputName].inBus;
+		bus = parent.mixer.channels[inputName].inBus;
 		chebyArr = Array.new;
 		expArr = this.getExpoCurve(tableSize);
 		postArr = Array.new;

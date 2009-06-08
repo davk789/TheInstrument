@@ -1,6 +1,6 @@
 PolySynthControl {
 	classvar  classGroup=102;
-	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71, tunings, tuning,
+	var parent, activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71, tunings, tuning,
 		<>att=0.001, <>dec=0.008, <>sus=0.1, <>rel=0.5, 
 		<>peakA=1, <>peakB=0.6, <>peakC=0.63, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
 		pitchBend=1, <>outBus=19, <recorderID, pitchBend=1,
@@ -11,11 +11,12 @@ PolySynthControl {
 		presetRow, presetNameField, saveButton, presetMenu, modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
-	*new { |name|
-		^super.new.init_polysynthcontrol(name);
+	*new { |par, name|
+		^super.new.init_polysynthcontrol(par, name);
 	}
-	init_polysynthcontrol { |name|
+	init_polysynthcontrol { |par, name|
 		s = Server.default;
+		parent = par;
 		activeNotes = Dictionary.new;
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControl";
@@ -210,8 +211,8 @@ PolySynthControl {
 		this.setParams(preset);
 	}
 	initLooper {
-		~eventLooper.addChannel(1, recorderID);
-		~eventLooper.channels[recorderID].action = { |values,index|
+		parent.eventLooper.addChannel(1, recorderID);
+		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				0, {
 					this.noteOn(values[1], values[2], values[3], values[4]);
@@ -232,7 +233,7 @@ PolySynthControl {
 		};
 	}
 	looper {
-		^~eventLooper.channels[recorderID];
+		^parent.eventLooper.channels[recorderID];
 	}
 	looperHandleCC { |src,chan,num,val|
 	    case{[1, 72, 8, 74, 71, 20, 22, 86, 73].includes(num)}{
@@ -361,8 +362,8 @@ PolySynthControl {
 	setPitchBendFlag { |flag|
 		this.addModulator(flag, 'bend', 'pitchBend');	}
 	addMixerChannel {
-		~mixer.addMonoChannel("WavetableSynth", ~mixer.mixGroup);
-		outBus = ~mixer.channels["WavetableSynth"].inBus;
+		parent.mixer.addMonoChannel("WavetableSynth", parent.mixer.mixGroup);
+		outBus = parent.mixer.channels["WavetableSynth"].inBus;
 	}
 	addActiveNote { |noteNum,id|
 		var lastNote;
@@ -630,9 +631,10 @@ PolySynthControl {
 
 PolySynthControlRLPF : PolySynthControl {
 	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, rezKnob, cutoffModSourceButton;
-	*new {
-		^super.new.init_polysynthcontrolrlpf;
+	*new { |par, name|
+		^super.new(par, name).init_polysynthcontrolrlpf;
 	}
+	
 	init_polysynthcontrolrlpf {
 		"PolySynthControlRLPF initializing".postln;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControlRLPF";
@@ -743,7 +745,7 @@ PolySynthControlRLPF : PolySynthControl {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
 		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
-			.spec_([1, 10].asSpec) // icky
+			.spec_([1, 10].asSpec) // this spec needs to be changed with different filter types
 			.value_(1)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setResonance(obj.value); });

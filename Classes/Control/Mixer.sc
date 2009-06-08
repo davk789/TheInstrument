@@ -1,11 +1,12 @@
 
 Mixer {
-	var s, <channels, win, windowHeight=530,
+	var s, <channels, win, windowHeight=530, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
-	*new {
-		^super.new.init_mixer;
+	*new { |par|
+		^super.new.init_mixer(par);
 	}
-	init_mixer {
+	init_mixer { |par|
+		parent = par;
 		s = Server.default;
 		s.sendMsg('g_new', 500, 1, 1);
 		channels = Dictionary.new;
@@ -31,25 +32,26 @@ Mixer {
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	addMonoChannel { |name, group=1, addTarget=0, noAux=false|
-		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 1, noAux));
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, group, 1, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 	addStereoChannel { |name, group=1, addTarget=0, noAux=false|
-		channels = channels.add(name -> MixerChannel.new(name, addTarget, group, 2, noAux));
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, group, 2, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 }
 
 MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
-	var s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, synthName;
-	*new { |name, addTarget, group, channels, noAux=false|
+	var parent, s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, synthName, parent;
+	*new { |par, name, addTarget, group, channels, noAux=false|
 		insertList = ["<none>", "MonoDelay", "Distortion", "Compressor", "RingMod", 
 			"EQ", "PitchShift"];
-		^super.new.init_mixerChannel(name, addTarget, group, channels, noAux);
+		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
 	}
-	init_mixerChannel { |name, addTarget, group, channels, noAux=false|
+	init_mixerChannel { |par, name, addTarget, group, channels, noAux=false|
 		s = Server.default;
+		parent = par;
 		if(noAux){
 			synthName = 's_monoMixerChannelNoAuxOut'
 		}{
@@ -65,7 +67,7 @@ MixerChannel {
 			outBus = 20;
 		};
 		inBus = lastInBus;
-		~audioBusRegister = ~audioBusRegister.add(name -> inBus);
+		parent.audioBusRegister = parent.audioBusRegister.add(name -> inBus);
 		effects = [nil, nil, nil, nil];
 		lastInBus = inBus + channels;
 		this.startChannel(addTarget, group, channels);
@@ -136,7 +138,7 @@ MixerChannel {
 						effects[ind].releaseSynth;
 						effects[ind] = nil;
 					};
-					effects[ind] = menu.item.interpret.new(group, channelName, ind);
+					effects[ind] = menu.item.interpret.new(parent, group, channelName, ind);
 					effects[ind].makeGUI(menu.item);
 				};
 				if(effects[ind].win.isClosed){

@@ -1,12 +1,13 @@
 GravityGridPlayer {
-	var <bufnum=75, nodeNum, groupNum, maxSize=16, server, massCoords,
+	var <bufnum=75, parent, nodeNum, groupNum, maxSize=16, server, massCoords,
 		outBus=0, resetInBus=22, rate=1, newX=0.5, newY=0.5, bufnum=75, resetRate=1,
 		massCoordView, massWeightView, startButton, resetInBusMenu, rateKnob, resetRateKnob, newXKnob, newYKnob;
-	*new {
-		^super.new.init_gravitygridplayer;
+	*new { |par|
+		^super.new.init_gravitygridplayer(par);
 	}
-	init_gravitygridplayer {
+	init_gravitygridplayer { |par|
 		server = Server.default;
+		parent = par;
 		nodeNum = server.nextNodeID;
 		groupNum = server.nextNodeID;
 		massCoords = Array.fill(5, { |ind| (150.rand @ 150.rand); });
@@ -16,8 +17,8 @@ GravityGridPlayer {
 		this.initBuffer;
 	}
 	addMixerChannel {
-		~mixer.addMonoChannel("GravityGrid", ~mixer.mixGroup);
-		outBus = ~mixer.channels["GravityGrid"].inBus;
+		parent.mixer.addMonoChannel("GravityGrid", parent.mixer.mixGroup);
+		outBus = parent.mixer.channels["GravityGrid"].inBus;
 	}
 	initBuffer {
 		server.sendMsg('b_alloc', bufnum, 1 + (maxSize * 3));
@@ -116,8 +117,8 @@ The massCoordView scrambles its point array when editing the control, so it can'
 				["stop", Color.black, Color.yellow]])
 			.action_({ |obj| this.setPlay(obj.value); });
 		resetInBusMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 165, 20))
-			.items_(~audioBusRegister.keys.asArray)
-			.action_({ |obj| this.setResetInBus(~audioBusRegister[obj.item]) });
+			.items_(parent.audioBusRegister.keys.asArray)
+			.action_({ |obj| this.setResetInBus(parent.audioBusRegister[obj.item]) });
 		rateKnob = EZJKnob.new(win, Rect.new(0, 0, 37.5, 73), "rate")
 			.spec_([0.01, 1, 'exponential'].asSpec)
 			.value_(1)

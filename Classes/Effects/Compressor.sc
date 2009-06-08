@@ -2,11 +2,11 @@ Compressor : EffectBase {
 	var	bus=20, controlBus=20, mix=1, synthdefName,
 		threshold=0.6, slopeBelow=1, slopeAbove=0.2, 
 		clampTime=0.005, relaxTime=0.01, mix=1;
-	*new { |group, name, ind|
-		^super.new(group, name, ind).init_compressor;
+	*new { |par, group, name, ind|
+		^super.new(par, group, name, ind).init_compressor;
 	}
 	init_compressor {
-		bus = ~mixer.channels[inputName].inBus;
+		bus = parent.mixer.channels[inputName].inBus;
 		controlBus = bus;
 		synthdefName = 'fx_compressor';
 		this.updateStartParams;
@@ -65,9 +65,9 @@ Compressor : EffectBase {
 		controlMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 130, 20))
 			.background_(Color.clear)
 			.stringColor_(Color.yellow)
-			.items_(~audioBusRegister.keys.asArray)
-			.action_({ |obj| this.setControlBus(~audioBusRegister[obj.item]); });
-		controlMenu.value = controlMenu.items.indexOf(~audioBusRegister.findKeyForValue(controlBus));
+			.items_(parent.audioBusRegister.keys.asArray)
+			.action_({ |obj| this.setControlBus(parent.audioBusRegister[obj.item]); });
+		controlMenu.value = controlMenu.items.indexOf(parent.audioBusRegister.findKeyForValue(controlBus));
 		GUI.button.new(win, Rect.new(0, 0, 40, 20))
 			.states_([
 				["bypass", Color.black, Color.white(0.6).alpha_(0.6)],

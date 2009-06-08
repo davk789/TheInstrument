@@ -1,13 +1,14 @@
 AudioInputChannel {
 	classvar classGroup=102, id=0;
-	var <numChannels=8, instGroup=104,
+	var parent, <numChannels=8, instGroup=104, synthDefName, addCommand,
 		win, inputMenu, windowName="Input Channel", server, nodeID, groupID, 
 		inputChannel=0, outBus=20, instanceNum, instanceName;
-	*new {
+	*new { |par|
 		id = id + 1;
-		^super.new.init_audioinchannel;
+		^super.new.init_audioinchannel(par);
 	}
-	init_audioinchannel {
+	init_audioinchannel { |par|
+		parent = par;
 		server = Server.default;
 		numChannels = server.options.numInputBusChannels;
 		nodeID = server.nextNodeID;
@@ -30,17 +31,30 @@ AudioInputChannel {
 	releaseSynth {
 		server.sendMsg('n_free', nodeID);
 	}
+	startSynth {
+		server.sendMsg('s_new', synthDefName, nodeID, 0, instGroup,
+			'outBus', outBus, 'channel', inputChannel);
+	}
+	addMixerChannel {
+		addCommand.value;
+		outBus = parent.mixer.channels[instanceName].inBus;
+	}
+
 }
 
 MonoInputChannel : AudioInputChannel {
 	var instanceNum;
-	*new {
-		^super.new.init_monoinchannel(id);
+	*new { |par|
+		^super.new(par).init_monoinchannel(id);
 	}
 	init_monoinchannel { |id|
 		instanceNum = id;
 		instanceName = "MonoInput" ++ id;
 		windowName = "Mono Input Channel";
+		synthDefName = 's_monoInputChannel';
+		addCommand = { 
+			parent.mixer.addMonoChannel(instanceName, parent.mixer.mixGroup, true) 
+		};
 		this.makeGUI;
 		numChannels.do{ |ind|
 			inputMenu.items = inputMenu.items.add("in " ++ ind);
@@ -48,24 +62,20 @@ MonoInputChannel : AudioInputChannel {
 		this.addMixerChannel;
 		this.startSynth;
 	}
-	addMixerChannel {
-		~mixer.addMonoChannel(instanceName, ~mixer.mixGroup, true);
-		outBus = ~mixer.channels[instanceName].inBus;
-	}
-	startSynth {
-		server.sendMsg('s_new', 's_monoInputChannel', nodeID, 0, instGroup,
-			'outBus', outBus, 'channel', inputChannel);
-	}
 }
 
 StereoInputChannel : AudioInputChannel {
-	*new {
-		^super.new.init_stereoinchannel(id);
+	*new { |par|
+		^super.new(par).init_stereoinchannel(id);
 	}
 	init_stereoinchannel { |id|
 		instanceNum = id;
 		instanceName = "StereoInput" ++ id;
 		windowName = "Stereo Input Channel";
+		synthDefName = 's_stereoInputChannel';
+		addCommand = {
+			parent.mixer.addStereoChannel(instanceName, parent.mixer.mixGroup, true);
+		};
 		this.makeGUI;
 		numChannels.do{ |ind|
 			if(ind < (server.options.numInputBusChannels - 1)){
@@ -75,14 +85,5 @@ StereoInputChannel : AudioInputChannel {
 		this.addMixerChannel;
 		this.startSynth;
 	}
-	addMixerChannel {
-		~mixer.addStereoChannel(instanceName, ~mixer.mixGroup, true);
-		outBus = ~mixer.channels[instanceName].inBus;
-	}
-	startSynth {
-		server.sendMsg('s_new', 's_stereoInputChannel', nodeID, 0, instGroup,
-			'outBus', outBus, 'channel', inputChannel);
-	}
-
 }
    

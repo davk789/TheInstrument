@@ -1,10 +1,11 @@
 EffectBase {
-	var server, inputName, inputNumber, groupID, <nodeID, startParams, synthdefName,
+	var parent, server, inputName, inputNumber, groupID, <nodeID, startParams, synthdefName,
 		win;
-	*new { |group, name, ind|
-		^super.new.init_effectbase(group, name, ind);
+	*new { |par, group, name, ind|
+		^super.new.init_effectbase(par, group, name, ind);
 	}
-	init_effectbase { |group, name, ind|
+	init_effectbase { |par, group, name, ind|
+		parent = par;
 		server = Server.default;
 		nodeID = server.nextNodeID;
 		groupID = group;

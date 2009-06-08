@@ -2,7 +2,7 @@
 //MIDIClient.init;
 s.waitForBoot{
 	TheInstrument.new;
-	//q = QuickKeyboard.new;
+	q = QuickKeyboard.new;
 	//m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|

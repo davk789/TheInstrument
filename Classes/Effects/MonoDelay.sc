@@ -1,17 +1,18 @@
 MonoDelay {
-	var s, <win, inputName, inputNumber, groupID, <nodeID,
+	var parent, s, <win, inputName, inputNumber, groupID, <nodeID,
 		bus=20, mix=0.5, delayTime=0.1, feedback=0, 
 		modBus=23, modAmt=0, modLag=1;
-	*new { |group, name, ind|
-		^super.new.init_monoDelay(group, name, ind);
+	*new { |par, group, name, ind|
+		^super.new.init_monoDelay(par, group, name, ind);
 	}
-	init_monoDelay { |group, name, ind|
+	init_monoDelay { |par, group, name, ind|
+		parent = par;
 		s = Server.default;
 		groupID = group;
 		nodeID = s.nextNodeID;
 		inputName = name;
 		inputNumber = ind;
-		bus = ~mixer.channels[name].inBus;
+		bus = parent.mixer.channels[name].inBus;
 		modBus = bus;
 		postln("initializing the Mono Delay with node ID " ++ nodeID);
 		this.startSynth;
@@ -40,12 +41,12 @@ MonoDelay {
 		GUI.staticText.new(labelRow, Rect.new(0, 0, labelRow.bounds.width / 2.1, 0))
 			.string_(inputName ++ " channel, slot " ++ inputNumber);
 		modSourceMenu = GUI.popUpMenu.new(labelRow, Rect.new(0, 0, labelRow.bounds.width / 2.1, 0))
-			.items_(~audioBusRegister.keys.asArray)
+			.items_(parent.audioBusRegister.keys.asArray)
 			.action_({ |obj|
-				modBus = ~audioBusRegister[obj.item];
+				modBus = parent.audioBusRegister[obj.item];
 				s.sendMsg('n_set', nodeID, 'modBus', modBus);
 			});
-		modSourceMenu.value = modSourceMenu.items.indexOf(~audioBusRegister.findKeyForValue(modBus));
+		modSourceMenu.value = modSourceMenu.items.indexOf(parent.audioBusRegister.findKeyForValue(modBus));
 
 		mixKnob = EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
 			.value_(mix)

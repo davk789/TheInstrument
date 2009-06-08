@@ -7,30 +7,15 @@
 	TODO:
 	add a sample looper to the project
 	improve PolySynthControl class structure to accomodate several different filters
-
+	make all the effects inherit from an EffectsBase
 
 	PolySynthControl - no midi control over GUI should be the rule 
         instead, modulation amounts should add to the visible params
-	remove the global variables from this project:
-./util/MonoSequencer.scd
-./Classes/Effects/Compressor.sc
-./Classes/Effects/Distortion.sc
-./Classes/Effects/MonoDelay.sc
-./Classes/TheInstrument.sc
-./Control/AudioInChannel.sc
-./Classes/Control/PolySynthControl.sc
-./Classes/Control/DrumSynth.sc
-./Classes/Control/GravityGridPlayer.sc
-./Classes/Control/PolySynthControl.sc
-/Control/Mixer.sc
-./Classes/Control/DrumSynth.sc
-./Classes/TheInstrument.sc
-
 
  */
 TheInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        audioBusRegister, mixer, eventLooper, monoInputChannel, polySynth, drumSynth, gravitGridPlayer;
+        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer;
 	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
@@ -49,50 +34,50 @@ TheInstrument {
 			lastChannel = chan;
 			switch(chan,
 				0, {
-					~polySynth.noteOn(src, chan, num, vel);
-					if(~polySynth.looper.notNil){
-						~polySynth.looper.addEvent([0,src,chan,num,vel]);
+					polySynth.noteOn(src, chan, num, vel);
+					if(polySynth.looper.notNil){
+						polySynth.looper.addEvent([0,src,chan,num,vel]);
 					};
 				},
 				9, {
-					~drumSynth.noteOn(src, chan, num, vel);
-					if(~drumSynth.looper.notNil){
-						~drumSynth.looper.addEvent([num, vel]);
+					drumSynth.noteOn(src, chan, num, vel);
+					if(drumSynth.looper.notNil){
+						drumSynth.looper.addEvent([num, vel]);
 					};
 				}
 			);
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			if(chan == 0){
-				~polySynth.noteOff(src,chan,num,vel);
-				if(~polySynth.looper.notNil){
-					~polySynth.looper.addEvent([1,src,chan,num,0]);
+				polySynth.noteOff(src,chan,num,vel);
+				if(polySynth.looper.notNil){
+					polySynth.looper.addEvent([1,src,chan,num,0]);
 				};
 			};
 		};
 		bendFunction = { |src,chan,val|
-			~polySynth.bend(src,chan,val);
-			if(~polySynth.looper.notNil){
-				~polySynth.looper.addEvent([4,src,chan,val]);
+			polySynth.bend(src,chan,val);
+			if(polySynth.looper.notNil){
+				polySynth.looper.addEvent([4,src,chan,val]);
 			};
 		};
 		ccFunction = { |src,chan,num,val|
 			switch(lastChannel,
 				0, {
-					~polySynth.cc(src,chan,num,val);
-					if(~polySynth.looper.notNil){
-						~polySynth.looperHandleCC(src,chan,num,val);
+					polySynth.cc(src,chan,num,val);
+					if(polySynth.looper.notNil){
+						polySynth.looperHandleCC(src,chan,num,val);
 					};
 				},
 				9, {
-					~drumSynth.cc(src, chan, num, val);	
+					drumSynth.cc(src, chan, num, val);	
 				}
 			);
 		};
 		touchFunction = { |src,chan,val|
-			~polySynth.afterTouch(src,chan,val);
-			if(~polySynth.looper.notNil){
-				~polySynth.looper.addEvent([3,src,chan,val]);
+			polySynth.afterTouch(src,chan,val);
+			if(polySynth.looper.notNil){
+				polySynth.looper.addEvent([3,src,chan,val]);
 			};
 		};
 	}
@@ -118,22 +103,22 @@ TheInstrument {
 	}
 	
 	*launchObjects {
-		~audioBusRegister = Dictionary.new;
-		~mixer = Mixer.new;
+		audioBusRegister = Dictionary.new;
+		mixer = Mixer.new(this);
 		
-		//~sampleLooper = SampleLooper.new;
+		//sampleLooper = SampleLooper.new(this);
 		
-		~eventLooper = EventLooper.new;
+		eventLooper = EventLooper.new(this);
 		
-		~monoInputChannel = MonoInputChannel.new;
+		monoInputChannel = MonoInputChannel.new(this);
 
-		~polySynth = PolySynthControlRLPF.new;
-//		~polySynth = PolySynthControl.new;
+		polySynth = PolySynthControlRLPF.new(this);
+//		polySynth = PolySynthControl.new(this);
 
-		~drumSynth = DrumSynth.new;
+		drumSynth = DrumSynth.new(this);
 				
 		Platform.case('osx', {
-			~gravityGridPlayer = GravityGridPlayer.new;
+			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 		
 	}

@@ -405,13 +405,14 @@ DSSnare  : DSBase {
 
 DrumSynth {
 	classvar <lastNote;
-	var win, <drums, <>noteOns, <>drumXGroup=999, drumSynthGroup=400, outBus=0,
+	var win, parent, <drums, <>noteOns, <>drumXGroup=999, drumSynthGroup=400, outBus=0,
 		drumCCCommands, drumParams, rezParams, <recorderID="drumSynth", server, saveRoot, sep,
 		presetNameField, presetMenu;
-	*new { |name|
-		^super.new.init_drumsynth(name);
+	*new { |par, name|
+		^super.new.init_drumsynth(par, name);
 	}
-	init_drumsynth { |name|
+	init_drumsynth { |par, name|
+		parent = par;
 		server = Server.default;
 		server.sendMsg('g_new', drumSynthGroup, 0, 1);
 		server.sendMsg('g_new', drumXGroup, 0, drumSynthGroup);
@@ -470,8 +471,8 @@ DrumSynth {
 
 	}
 	addMixerChannel {
-		~mixer.addMonoChannel("DrumSynth", ~mixer.mixGroup);
-		outBus = ~mixer.channels["DrumSynth"].inBus;
+		parent.mixer.addMonoChannel("DrumSynth", parent.mixer.mixGroup);
+		outBus = parent.mixer.channels["DrumSynth"].inBus;
 	}
 	noteOn { |src,chan,num,vel|
 		var voice;
@@ -484,7 +485,7 @@ DrumSynth {
 		postln("does nothing");
 	}
 	looper {
-		^~eventLooper.channels[recorderID];
+		^parent.eventLooper.channels[recorderID];
 	}
 	getParams {
 		var ret, drumDict, rezDict;
@@ -547,8 +548,8 @@ DrumSynth {
 		};
 	}
 	initLooper {
-		~eventLooper.addChannel(0, recorderID);
-		~eventLooper.channels[recorderID].action = { |values, index|
+		parent.eventLooper.addChannel(0, recorderID);
+		parent.eventLooper.channels[recorderID].action = { |values, index|
 			this.noteOn(nil, nil, values[0], values[1]);
 		};
 	}
