@@ -2,18 +2,35 @@
 	BUGS:
 	DrumSynth - mixer volume does not affect this instrument
 	EventLooper -- probably a lot still not functioning
-	PolySynthControl 
-		- MIDI -> GUI control broken, no midi control over GUI should be the rule
-			instead, modulation amounts should add to the visible params
-		- envelope modulators mostly don't work, must be cleaned up
+	PolySynthControl: envelope modulators mostly don't work, must be cleaned up
+
 	TODO:
 	add a sample looper to the project
 	improve PolySynthControl class structure to accomodate several different filters
-	remove the global variables from this project
-	
+
+
+	PolySynthControl - no midi control over GUI should be the rule 
+        instead, modulation amounts should add to the visible params
+	remove the global variables from this project:
+./util/MonoSequencer.scd
+./Classes/Effects/Compressor.sc
+./Classes/Effects/Distortion.sc
+./Classes/Effects/MonoDelay.sc
+./Classes/TheInstrument.sc
+./Control/AudioInChannel.sc
+./Classes/Control/PolySynthControl.sc
+./Classes/Control/DrumSynth.sc
+./Classes/Control/GravityGridPlayer.sc
+./Classes/Control/PolySynthControl.sc
+/Control/Mixer.sc
+./Classes/Control/DrumSynth.sc
+./Classes/TheInstrument.sc
+
+
  */
 TheInstrument {
-	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0;
+	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
+        audioBusRegister, mixer, eventLooper, monoInputChannel, polySynth, drumSynth, gravitGridPlayer;
 	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
@@ -23,6 +40,10 @@ TheInstrument {
 		Platform.case('osx', {
 			MIDIClient.init(3, 2);
 			MIDIIn.connect(1, MIDIClient.sources[1]);
+		},
+		'linux', {
+			MIDIClient.init;
+			MIDIIn.connect(1, MIDIClient.sources[3]);
 		});
 		noteOnFunction = { |src,chan,num,vel|
 			lastChannel = chan;

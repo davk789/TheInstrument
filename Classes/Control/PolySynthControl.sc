@@ -3,7 +3,7 @@ PolySynthControl {
 	var activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71, tunings, tuning,
 		<>att=0.001, <>dec=0.008, <>sus=0.1, <>rel=0.5, 
 		<>peakA=1, <>peakB=0.6, <>peakC=0.63, <>mul=4, <>feedback=0, touch=0, <>lag=0.1, 
-		pitchBend=1, <>outBus=19, <recorderID="czSynth", pitchBend=1,
+		pitchBend=1, <>outBus=19, <recorderID, pitchBend=1,
 		trigMode=0, xfade=0, fbLag=0, fbMul=0, freq2=0, fmAmt=0, fbMulEnvFlag=0, freq2EnvFlag=0,
  		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob,
@@ -14,11 +14,12 @@ PolySynthControl {
 	*new { |name|
 		^super.new.init_polysynthcontrol(name);
 	}
-	init_polysynthcontrol { |buf, name|
+	init_polysynthcontrol { |name|
 		s = Server.default;
 		activeNotes = Dictionary.new;
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "PolySynthControl";
+		recorderID = name ? "Wavetable Synth";
 		if(name.notNil){ recorderID = name; };
 		modulatorSources = Dictionary[
 			'mod wheel'-> [], 
