@@ -631,7 +631,7 @@ WavetableSynth {
 }
 
 WavetableSynthFilter : WavetableSynth {
-	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, filterTypesList;
+	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, filterTypesList, filterUGen, filterUGenList;
 	*new { |par, name|
 		^super.new(par, name).init_wavetablesynthfilter;
 	}
@@ -639,11 +639,6 @@ WavetableSynthFilter : WavetableSynth {
 	init_wavetablesynthfilter {
 		"WavetableSynthFilter initializing".postln;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "WavetableSynthFilter";
-		filterTypesList = [
-			"RLPF",
-			"RHPF",
-			"MoogVCF"
-		];
 		noteOnCommand = { |num,vel,pitch|
 			saveRoot.postln;
 			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num].last, 0, instGroup,
@@ -659,8 +654,24 @@ WavetableSynthFilter : WavetableSynth {
 			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 
 		};
+		filterTypesList = [
+			"RLPF",
+			"RHPF",
+			"MoogVCF"
+		];
+		filterUGenList = [
+			{ |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
+			{ |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
+			{ |in, freq, rez| MoogVCF.ar(in, freq, rez); }
+		];
+		filterUGen = { |in, freq, rez| MoogVCF.ar(in, freq, rez/*.reciprocal*/); };
 
 		this.addGUI;
+	}
+
+	setFilterType { |sel|
+		filterUGen = filterUGenList[sel];
+		this.loadSynthDef;
 	}
 	
 	getParams  {
@@ -750,7 +761,7 @@ WavetableSynthFilter : WavetableSynth {
 			.action_({ |obj| this.setModSource(obj.value); });
 		filterTypeMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 100, 0))
 			.items_(filterTypesList)
-			.action_({ |obj| this.setFilterType(obj.item); });
+			.action_({ |obj| this.setFilterType(obj.value); });
 		
 		filterControlRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 75))
 			.background_(Color.blue(0.1, alpha:0.2));
@@ -825,7 +836,8 @@ WavetableSynthFilter : WavetableSynth {
 			aLPFreqMod = freq1 * asLPFModSources * cutoffMod * asCutoffModEnv;
 			aLPFreq = (freq1 + (cutoff * freq1 * asCutoffFreqEnv)) + aLPFreqMod;
 			
-		 	aFilt = MoogVCF.ar(aSig.softclip, aLPFreq, resonance/*.reciprocal*/);
+			aFilt = SynthDef.wrap(filterUGen, [0, 0, 0], [aSig.softClip, aLPFreq, resonance]);
+		 	//
 		 
 			Out.ar(outBus, aFilt * aEnv);
 		}, [nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 1, nil, 1, 1, 1, nil, 1, 1, 1, nil, nil, nil, nil, nil, nil, 1, 1]).load(s);
