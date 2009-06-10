@@ -2,14 +2,14 @@
 	BUGS:
 	DrumSynth - mixer volume does not affect this instrument
 	EventLooper -- probably a lot still not functioning
-	PolySynthControl: envelope modulators mostly don't work, must be cleaned up
+	WavetableSynth: envelope modulators mostly don't work, must be cleaned up
 
 	TODO:
 	add a sample looper to the project
-	improve PolySynthControl class structure to accomodate several different filters
+	improve WavetableSynth class structure to accomodate several different filters
 	make all the effects inherit from an EffectsBase
 
-	PolySynthControl - no midi control over GUI should be the rule 
+	WavetableSynth - no midi control over GUI should be the rule 
         instead, modulation amounts should add to the visible params
 
  */
@@ -112,8 +112,8 @@ TheInstrument {
 		
 		monoInputChannel = MonoInputChannel.new(this);
 
-		polySynth = PolySynthControlRLPF.new(this);
-//		polySynth = PolySynthControl.new(this);
+		polySynth = WavetableSynthFilter.new(this);
+//		polySynth = WavetableSynth.new(this);
 
 		drumSynth = DrumSynth.new(this);
 				
