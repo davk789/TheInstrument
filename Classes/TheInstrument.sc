@@ -1,21 +1,21 @@
 /**
 	BUGS:
 	DrumSynth - mixer volume does not affect this instrument
-	EventLooper -- probably a lot still not functioning
-	WavetableSynth: envelope modulators mostly don't work, must be cleaned up
+	WavetableSynth:
+		envelope modulators mostly don't work, must be cleaned up
+		the filter type menu does not update when the paramters are 
+			changed automatically (preset loading/initialization)
 
 	TODO:
 	add a sample looper to the project
-	improve WavetableSynth class structure to accomodate several different filters
 	make all the effects inherit from an EffectsBase
-
 	WavetableSynth - no midi control over GUI should be the rule 
         instead, modulation amounts should add to the visible params
 
  */
 TheInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer;
+        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, keyControl;
 	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
@@ -133,6 +133,15 @@ TheInstrument {
 		var path;
 		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";
 		path.pathMatch.do{ |obj,ind| obj.load; };
+	}
+	
+	*useComputerKeyboard { |create=true|
+		if(create){
+			keyControl = QuickKeyboard.new;
+		}{
+			keyControl = nil;
+		};
+		
 	}
 }
     
