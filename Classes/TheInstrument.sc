@@ -5,6 +5,8 @@
 		envelope modulators mostly don't work, must be cleaned up
 		the filter type menu does not update when the paramters are 
 			changed automatically (preset loading/initialization)
+		some of the filters need extra parameters/different settings
+			-- should I creates subclasses here?
 
 	TODO:
 	add a sample looper to the project

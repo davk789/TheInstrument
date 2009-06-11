@@ -658,6 +658,11 @@ WavetableSynthFilter : WavetableSynth {
 	and so all keys must match between these two Dictionaries
 */
 		filterUGens = Dictionary[
+			"RLPFD" -> { |in, freq, rez| RLPF.ar(in, freq, rez, 0.8); }, // this needs a subclass with a distortion parameter. for now it is hard wired.
+			"MoogLadder" -> { |in, freq, rez| MoogLadder.ar(in, freq, rez); },
+			"BMoogLPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 0, 0.5); }, // saturation is hardwired here. needs a subclass as well
+			"BMoogHPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 1, 0.5); }, // saturation is hardwired here. needs a subclass as well
+			"IIRFilter" -> { |in, freq, rez| IIRFilter.ar(in, freq, rez.reciprocal); },
 			"RLPF" -> { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
 			"RHPF" -> { |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
 			"MoogVCF" -> { |in, freq, rez| MoogVCF.ar(in, freq, rez); },
@@ -671,6 +676,11 @@ WavetableSynthFilter : WavetableSynth {
 			"Resonz" -> { |in, freq, rez| Resonz.ar(in, freq, rez.reciprocal); }			
 		];
 		filterSpecs = Dictionary[ 
+			"RLPFD" -> [0,1].asSpec,
+			"MoogLadder" -> [0,1].asSpec,
+			"BMoogLPF" -> [0, 1].asSpec,
+			"BMoogHPF" -> [0, 1].asSpec,
+			"IIRFilter" -> [1, 100].asSpec,
 			"RLPF" -> [1,100].asSpec,
 			"RHPF" -> [1,100].asSpec,
 			"MoogVCF" -> [0.1, 10].asSpec,
@@ -679,7 +689,7 @@ WavetableSynthFilter : WavetableSynth {
 			"BLowPass" -> [1, 100].asSpec,
 			"BHiPass4" -> [1,100].asSpec,
 			"BHiPass" -> [1,100].asSpec,
-			"BBandPass" -> [0.1, 100].asSpec,
+			"BBandPass" -> [0.1, 10].asSpec,
 			"BAllPass" -> [1,100].asSpec,
 			"Resonz" -> [1,100].asSpec
 		];

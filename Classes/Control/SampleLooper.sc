@@ -1,19 +1,27 @@
 
 SampleLooper {
-	var win, sampleView, markerBar, zoomSlider, soundFile;
-	*new {
-		^super.new.init_samplelooper;	
+	var win, parent, buffers, s, sampleView, markerBar, zoomSlider, soundFile;
+	*new { |par|
+		^super.new.init_samplelooper(par);
 	}
-	init_samplelooper {
+	init_samplelooper { |par|
+		parent = par;
 		soundFile = SoundFile.new;
-		this.initGUI;
-		this.loadSoundFile;
+		s = Server.default;
+		//this.initGUI;
+		//this.loadSoundFile;
 	}
+	
+	loadBufferFromFile { |file|
+		s.sendMsg('b_allocRead', s.nextNodeID, file);
+	}
+	
 	loadSoundFile {
 		soundFile.openRead("/Applications/SC3/sounds/a11wlk01.wav");
 		sampleView.soundfile = soundFile;
 		sampleView.read(0, soundFile.numFrames);
 	}
+	
 	zoomView { |lo,hi,range|
 		if(range.isNil){ range = hi - lo; };
 		sampleView.zoomToFrac(range.max( sampleView.bounds.width / sampleView.numFrames.max( 1 )));
@@ -22,6 +30,7 @@ SampleLooper {
 		};
 		markerBar.zoom(lo, hi);
 	}
+	
 	initGUI {
 		var winWidth, sampleViewRow, vZoomSlider;
 		win = GUI.window.new("Sample Looper", Rect.new(50, 500, 600, 200))
