@@ -1,5 +1,85 @@
-
+// starting again from scratch here
 SampleLooper {
+	classvar <buffers, <groupNum=55;
+	var parent, s, <nodeNum, params, paused=false;
+	
+	*new { |par|
+		^super.new.init_samplelooper(par);
+	}
+	
+	init_samplelooper { |par|
+		parent  = par;
+		s       = Server.default;
+		nodeNum = s.nextNodeID;
+		buffers = Array.new;
+		// synth parameters should be kept in a dict
+		// for all classes, in general. I could add getter/setter
+		// methods if necessary
+		params  = Dictionary[
+			'bufnum'    -> buffers[0].bufnum, 
+			'speed'     -> 1,
+			'start'     -> 0, 
+			'end'       -> 1, 
+			'outBus'    -> 22, 
+			'inBus'     -> 20, 
+			'delayTime' -> 0.1
+		];
+		// 
+	}
+	
+	addMixerChannel {
+		parent.mixer.addMonoChannel("SampleLooper");
+		params['outBus'] = parent.mixer.channels["SampleLooper"].inBus;
+	}
+	
+	addBuffer { |length=16|
+		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate));
+	}
+	
+	addSoundFile { |filename|
+		if(filename.notNil){
+			buffers = buffers.add(Buffer.read(s, filename));
+		}{
+			buffers = buffers.add(Buffer.loadDialog(s));
+		};
+	}
+	
+	start {
+		s.sendMsg('s_new', 'SampleLooperPlayer', 1, 0, nodeNum);
+		s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
+	}
+
+	pause {
+		if(paused.not){
+			s.sendMsg('n_set', nodeNum, 'speed', 0);
+			paused = true;
+		}{
+			s.sendMsg('n_set', nodeNum, 'speed', params['speed']);
+			paused = false;
+		};
+	}
+	
+	stop {
+		s.sendMsg('n_free', nodeNum);
+	}
+		
+	loadSynthDef { |numChannels=1|
+		SynthDef.new( "SampleLooperPlayer", {
+			arg bufnum, speed, start, end, outBus, inBus, delayTime=0.1;
+			
+			var inPhase, outPhase, outSig, inSig;
+			
+			inPhase = Phasor.ar(speed, start * BufFrames.kr(bufnum), end * BufFrames.kr(bufnum));
+			outPhase = DelayC.ar(inPhase, 1, delayTime); // max 1 sec delay
+			BufWr.ar(inSig, bufnum, inPhase);
+			outSig = BufRd.ar(numChannels, bufnum, outPhase); // numChannels needs to be hardwired to the SynthDef
+			Out.ar(outBus, outSig)
+		}).load(s);
+	}
+	
+}
+
+SampleLooper_old {
 	var win, parent, buffers, s, sampleView, markerBar, zoomSlider, soundFile;
 	*new { |par|
 		^super.new.init_samplelooper(par);

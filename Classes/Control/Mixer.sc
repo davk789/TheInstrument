@@ -31,12 +31,12 @@ Mixer {
 		win.view.background = Color.grey(15);
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
-	addMonoChannel { |name, group=1, addTarget=0, noAux=false|
-		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, group, 1, noAux));
+	addMonoChannel { |name, addTarget=0, noAux=false|
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 1, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
-	addStereoChannel { |name, group=1, addTarget=0, noAux=false|
-		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, group, 2, noAux));
+	addStereoChannel { |name, addTarget=0, noAux=false|
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 2, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 }

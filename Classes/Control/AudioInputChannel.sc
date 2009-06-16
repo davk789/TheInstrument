@@ -53,7 +53,7 @@ MonoInputChannel : AudioInputChannel {
 		windowName = "Mono Input Channel";
 		synthDefName = 's_monoInputChannel';
 		addCommand = { 
-			parent.mixer.addMonoChannel(instanceName, parent.mixer.mixGroup, true) 
+			parent.mixer.addMonoChannel(instanceName, true) 
 		};
 		this.makeGUI;
 		numChannels.do{ |ind|
@@ -74,7 +74,7 @@ StereoInputChannel : AudioInputChannel {
 		windowName = "Stereo Input Channel";
 		synthDefName = 's_stereoInputChannel';
 		addCommand = {
-			parent.mixer.addStereoChannel(instanceName, parent.mixer.mixGroup, true);
+			parent.mixer.addStereoChannel(instanceName, true);
 		};
 		this.makeGUI;
 		numChannels.do{ |ind|
