@@ -17,7 +17,7 @@
  */
 TheInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, keyControl;
+        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl;
 	*new { 
 		this.initializeMIDI;
 		this.launchMidiResponders;
@@ -107,9 +107,7 @@ TheInstrument {
 	*launchObjects {
 		audioBusRegister = Dictionary.new;
 		mixer = Mixer.new(this);
-		
-		//sampleLooper = SampleLooper.new(this);
-		
+				
 		eventLooper = EventLooper.new(this);
 		
 		monoInputChannel = MonoInputChannel.new(this);
@@ -122,8 +120,11 @@ TheInstrument {
 		Platform.case('osx', {
 			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
+
+		sampler = Sampler.new(this, 2);
 		
 	}
+	
 	*launchMidiResponders {
 		NoteOnResponder(noteOnFunction);
 		NoteOffResponder(noteOffFunction);
@@ -131,6 +132,7 @@ TheInstrument {
 		TouchResponder(touchFunction);
 		BendResponder(bendFunction);
 	}
+	
 	*loadSynthDefs {
 		var path;
 		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";

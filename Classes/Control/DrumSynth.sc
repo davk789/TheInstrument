@@ -471,7 +471,7 @@ DrumSynth {
 
 	}
 	addMixerChannel {
-		parent.mixer.addMonoChannel("DrumSynth");
+		parent.mixer.addMonoChannel("DrumSynth", drumSynthGroup);
 		outBus = parent.mixer.channels["DrumSynth"].inBus;
 	}
 	noteOn { |src,chan,num,vel|

@@ -362,7 +362,7 @@ WavetableSynth {
 	setPitchBendFlag { |flag|
 		this.addModulator(flag, 'bend', 'pitchBend');	}
 	addMixerChannel {
-		parent.mixer.addMonoChannel("WavetableSynth");
+		parent.mixer.addMonoChannel("WavetableSynth", instGroup);
 		outBus = parent.mixer.channels["WavetableSynth"].inBus;
 	}
 	addActiveNote { |noteNum,id|

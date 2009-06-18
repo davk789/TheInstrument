@@ -23,7 +23,7 @@ Mixer {
 			s.sendMsg('g_new', masterSubGroups[ind], 1, masterGroup);
 		};
 		this.initGUI;
-		this.addStereoChannel("master", masterGroup, 1);
+		this.addStereoChannel("master", masterGroup, true);
 	}
 	//// GUI methods
 	initGUI {
@@ -57,10 +57,10 @@ MixerChannel {
 		}{
 			synthName = 's_monoMixerChannel'
 		};
+		channelName = name ? "master"; // i shouldn't need to set a default value here
 		volumeSpec = 'amp'.asSpec;
 		panSpec = [-1, 1].asSpec;
 		nodeID = s.nextNodeID;
-		channelName = name;
 		if(channelName == "master"){
 			outBus = 0; // MAIN OUTPUT CHANNEL
 		}{
