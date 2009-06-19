@@ -23,7 +23,7 @@ Mixer {
 			s.sendMsg('g_new', masterSubGroups[ind], 1, masterGroup);
 		};
 		this.initGUI;
-		this.addStereoChannel("master", masterGroup, true);
+		this.addStereoChannel("master", 0, true);
 	}
 	//// GUI methods
 	initGUI {

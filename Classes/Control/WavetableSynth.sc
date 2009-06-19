@@ -115,7 +115,6 @@ WavetableSynth {
 			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 		};
 		noteOffCommand = { |id|
-			("noteOffID " ++ id).postln;
 			s.sendMsg('n_set', id, 'gate', 0);
 		};
 
@@ -362,7 +361,7 @@ WavetableSynth {
 	setPitchBendFlag { |flag|
 		this.addModulator(flag, 'bend', 'pitchBend');	}
 	addMixerChannel {
-		parent.mixer.addMonoChannel("WavetableSynth", instGroup);
+		parent.mixer.addMonoChannel("WavetableSynth", 0, true);
 		outBus = parent.mixer.channels["WavetableSynth"].inBus;
 	}
 	addActiveNote { |noteNum,id|
@@ -640,7 +639,6 @@ WavetableSynthFilter : WavetableSynth {
 		"WavetableSynthFilter initializing".postln;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "WavetableSynthFilter";
 		noteOnCommand = { |num,vel,pitch|
-			saveRoot.postln;
 			s.sendMsg('s_new', 's_dualWavetableRLPF', activeNotes[num].last, 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
 				'peakA', peakA, 'peakB', peakB, 'peakC', peakC,  'bufferA', bufferA, 'bufferB', bufferB,

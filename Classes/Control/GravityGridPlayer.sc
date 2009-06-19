@@ -17,7 +17,7 @@ GravityGridPlayer {
 		this.initBuffer;
 	}
 	addMixerChannel {
-		parent.mixer.addMonoChannel("GravityGrid", groupNum);
+		parent.mixer.addMonoChannel("GravityGrid", 0, true);
 		outBus = parent.mixer.channels["GravityGrid"].inBus;
 	}
 	initBuffer {
