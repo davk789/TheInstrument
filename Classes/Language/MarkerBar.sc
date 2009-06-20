@@ -139,7 +139,7 @@ MarkerArea {
 }
 
 MarkerBar {
-	var visibleMarkers, markers, <>markerColor, values, dimensions, uView, <start=0, <end=1;
+	var visibleMarkers, markers, <>markerColor, values, dimensions, uView, <start=0, <end=1, >mouseDownAction, >mouseUpAction, >mouseMoveAction;
 	*new { |view, dim|
 		^super.new.init_markerbar(view, dim);
 	}
@@ -147,12 +147,23 @@ MarkerBar {
 		dimensions = dim;
 		markers = Array.new;
 		values = Array.new;
+		mouseDownAction = { |obj,x,y,mod| };
+		mouseUpAction = { |obj,x,y,mod| };
+		mouseMoveAction = { |obj,x,y,mod| };
 		markerColor = Color.black.alpha_(0.8);
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
-			.relativeOrigin_(false)
+			.relativeOrigin_(true)
+			.mouseMoveAction_({ |obj,x,y,mod| 
+				mouseMoveAction.value(obj,x,y,mod); 
+			})
+			.mouseDownAction_({ |obj,x,y,mod| 
+				mouseDownAction.value(obj,x,y,mod); 
+			})
 			.mouseUpAction_({ |obj,x,y,mod|
+				mouseUpAction.value(obj,x,y,mod);
 				this.markerUpdate(x);
+				uView.refresh;
 			})
 			.drawFunc_({
 				Pen.use{
