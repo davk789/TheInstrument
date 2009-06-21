@@ -17,8 +17,10 @@
  */
 TheInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl;
-	*new { 
+        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont;
+	*new {
+		controlFont = Font.new("Helvetica", 10);
+		strongFont = Font.new("Arial Black", 12);
 		this.initializeMIDI;
 		this.launchMidiResponders;
 		this.launchObjects;
@@ -121,7 +123,7 @@ TheInstrument {
 		//	gravityGridPlayer = GravityGridPlayer.new(this);
 		//});
 
-		sampler = Sampler.new(this, 2);
+		sampler = Sampler.new(this, 1);
 		
 	}
 	

@@ -111,10 +111,10 @@ SampleLooper {
 			inPhase = (outPhase + (recordOffset * SampleRate.ir)) % kNumFrames;
 
 			sRecordHead = Select.ar(record, [DC.ar(0), inPhase]);
-			BufWr.ar(inSig, bufnum, sRecordHead);
+			BufWr.ar(inSig.softclip, bufnum, sRecordHead);
 
 			// numChannels needs to be hardwired to the SynthDef
-			outSig = BufRd.ar(numChannels, bufnum, outPhase); 
+			outSig = BufRd.ar(numChannels, bufnum, outPhase);
 			Out.ar(outBus, outSig);
 			
 			LocalOut.ar(outSig);
@@ -122,11 +122,11 @@ SampleLooper {
 	}
 	
 	makeGUI { |container|
-		var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileMenu, setFolderButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu;
+		var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileMenu, setFolderButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 		
-		controlBackgroundColor = Color.new255(25,25,25);
+		controlBackgroundColor = Color.grey(0.3);
 		
-		topView = GUI.compositeView.new(container, Rect.new(0, 0, 600, 385));
+		topView = GUI.compositeView.new(container, Rect.new(0, 0, 600, 345));
 		topView.decorator = FlowLayout(topView.bounds);
 		
 		presetRow = GUI.hLayoutView.new(topView, Rect.new(0, 0, topView.bounds.width, 25))
@@ -134,12 +134,15 @@ SampleLooper {
 		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 200, 0))
 			.items_(["this will have the presets listed", "some day"])
 			.background_(Color.blue.alpha_(0.2))
-			.stringColor_(Color.white); // does stringColor_() not work in SwingOSC?
+		    .font_(parent.controlFont)
+			.stringColor_(Color.white);
 		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 85, 0))
+		    .font_(parent.controlFont)
 			.states_([["save preset", Color.white, Color.blue.alpha_(0.2)]]);
 			
 		waveformControlView = GUI.compositeView.new(topView, Rect.new(0, 0, topView.bounds.width, 180))
 			.background_(Color.black);
+
 		waveformControlView.decorator_(FlowLayout(waveformControlView.bounds));
 		
 		waveformMarkerBar = MarkerBar.new(waveformControlView, Rect.new(0, 0, 565, 20))
@@ -147,59 +150,89 @@ SampleLooper {
 			.background_(Color.blue(0.5, alpha:0.9))
 			.mouseDownAction_({|obj,x,y,mod| [obj,x,y,mod].postln; });
 		waveformMarkerClearButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 20, 20))
-			.states_([["X", Color.black, Color.yellow]]);
+			.states_([["X", Color.black, Color.yellow]])
+		    .font_(parent.controlFont);
 		
 		waveformView = GUI.soundFileView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.background_(Color.white.alpha_(0.3));
 		
-		// this slider is broken in swingOSC i think. Use VLayoutView as a workaround if needed.
-		//waveformViewVZoomView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 20, 100));
-		waveformViewVZoom = GUI.slider.new(waveformControlView/*waveformViewVZoomView*/, Rect.new(0, 0, 20, 125));
+
+		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125));
 		
 		waveformViewZoom = GUI.rangeSlider.new(waveformControlView, Rect.new(0, 0, 565, 20))
 			.knobColor_(Color.new255(109, 126, 143))
 			.background_(Color.white.alpha_(0.3));
 		
 		// transport section
-		transportView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 158))
+		transportView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
 			.background_(Color.black);
 		transportView.decorator_(FlowLayout(transportView.bounds));
 		
 		recordButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([["o", Color.red, Color.new255(25,25,25)]]);
+			.states_([["o", Color.red, Color.new255(25,25,25)]])
+		    .font_(parent.strongFont);
 		playButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([[">", Color.green, controlBackgroundColor]]);
+			.states_([[">", Color.green, controlBackgroundColor]])
+		    .font_(parent.strongFont);
 		pauseButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([["||", Color.yellow, controlBackgroundColor]]);
+			.states_([["||", Color.yellow, controlBackgroundColor]])
+		    .font_(parent.strongFont);
 		stopButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([["[]", Color.white(0.8), controlBackgroundColor]]);
-		playbackSpeedSlider = GUI.slider.new(transportView, Rect.new(0, 0, 280, 25))
-			.background_(controlBackgroundColor)
-			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5));
+			.states_([["[]", Color.white(0.8), controlBackgroundColor]])
+		    .font_(parent.strongFont);
+		
+
+		playbackSpeedSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
+		    .font_(parent.controlFont);
+		if(thisProcess.platform.name == 'osx'){
+			playbackSpeedSlider
+				.background_(controlBackgroundColor)
+				.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5));
+		};
+		inputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
+		    .font_(parent.controlFont);
+		if(thisProcess.platform.name == 'osx'){
+			inputLevelSlider
+				.background_(Color.green(0.3))
+				.knobColor_(HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5));
+		};
+		outputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
+		    .font_(parent.controlFont);
+		if(thisProcess.platform.name == 'osx'){
+			outputLevelSlider
+				.background_(Color.green(0.3))
+				.knobColor_(HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5));
+		};
 
 		
 		// buffer control section
-		bufferView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 158))
+		bufferView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
 			.background_(Color.black);
 		bufferView.decorator_(FlowLayout(bufferView.bounds));
 		
 		addFileMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 210, 25))
 			.background_(controlBackgroundColor)
-			.stringColor_(Color.white);
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont);
 		setFolderButton = GUI.button.new(bufferView, Rect.new(0, 0, 65, 25))
-			.states_([["set folder", Color.white, controlBackgroundColor]]);
+			.states_([["set folder", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont);
 		
 		clearBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
-			.states_([["clear buffer", Color.white, controlBackgroundColor]]);
+			.states_([["clear buffer", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont);
 		
-		addEmptyBufferBox = GUI.numberBox.new(bufferView, Rect.new(0, 0, 30, 25));
+		addEmptyBufferBox = GUI.numberBox.new(bufferView, Rect.new(0, 0, 30, 25))
+		    .font_(parent.controlFont);
 		
 		addEmptyBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 100, 25))
-			.states_([["add empty buffer", Color.white, controlBackgroundColor]]);
+			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont);
 		
 		bufferSelectMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 280, 25))
 			.background_(controlBackgroundColor)
-			.stringColor_(Color.white);
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont);
 
 		
 		//var controlView, viewWidth, sampleViewRow, vZoomSlider, offset, markerBar, sampleView, zoomSlider;
