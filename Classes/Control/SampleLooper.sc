@@ -38,6 +38,9 @@ Sampler {
 SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <nodeNum, params, paused=false;
+	// GUI objects
+	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
+
 	
 	*new { |par|
 		^super.new.init_samplelooper(par);
@@ -63,7 +66,7 @@ SampleLooper {
 			'record'      -> 0,
 			'mix'         -> 0
 		];
-		// initialization functions
+
 	}
 		
 	addBuffer { |length=16|
@@ -96,7 +99,38 @@ SampleLooper {
 	stop {
 		s.sendMsg('n_free', nodeNum);
 	}
-		
+	
+	addBufferFromFile {
+		Dialog.getPaths({ |paths|
+			paths.do{ |obj,ind|
+				buffers = buffers.add(Buffer.read(s, obj));
+			};
+			// just updating the GUI "later"
+			AppClock.sched(1, {this.updateBufferMenu; nil; });
+		});
+	}
+	
+	addEmptyBuffer {
+		// only can add empty mono buffers for now.
+		// multi-channel support should come later.
+		buffers = buffers.add(Buffer.alloc(s, addEmptyBufferBox.string.interpret * s.sampleRate, 1));
+		AppClock.sched(1, {this.updateBufferMenu; nil;});
+	}
+	
+	updateBufferMenu {
+		var ret;
+		ret = Array.new;
+		buffers.do{ |obj,ind|
+			if(obj.path.notNil){
+				ret = ret.add(obj.path.basename);
+			}{
+				ret = ret.add(obj.bufnum);
+			}
+		};
+		bufferSelectMenu.items = ret;
+	}
+
+	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed, start, end, outBus, inBus, delayTime=0.1, recordOffset, record, mix;
@@ -122,7 +156,6 @@ SampleLooper {
 	}
 	
 	makeGUI { |container|
-		var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileMenu, setFolderButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 		
 		controlBackgroundColor = Color.grey(0.3);
 		
@@ -183,51 +216,49 @@ SampleLooper {
 		
 
 		playbackSpeedSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont);
-		if(thisProcess.platform.name == 'osx'){
-			playbackSpeedSlider
-				.background_(controlBackgroundColor)
-				.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5));
-		};
-		inputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont);
-		if(thisProcess.platform.name == 'osx'){
-			inputLevelSlider
-				.background_(Color.green(0.3))
-				.knobColor_(HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5));
-		};
-		outputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont);
-		if(thisProcess.platform.name == 'osx'){
-			outputLevelSlider
-				.background_(Color.green(0.3))
-				.knobColor_(HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5));
-		};
+		    .font_(parent.controlFont)
+		    .setColors(
+		    	sliderBackground:controlBackgroundColor,
+		    	knobColor:HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5)
+		    );
 
+		inputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
+		    .font_(parent.controlFont)
+		    .setColors(
+		    	sliderBackground:Color.green(0.3),
+		    	knobColor:HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5)
+		    );
+		outputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
+		    .font_(parent.controlFont)
+		    .setColors(
+		    	sliderBackground:Color.green(0.3),
+		    	knobColor:HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5)
+		    );
 		
 		// buffer control section
 		bufferView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
 			.background_(Color.black);
 		bufferView.decorator_(FlowLayout(bufferView.bounds));
 		
-		addFileMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 210, 25))
-			.background_(controlBackgroundColor)
-			.stringColor_(Color.white)
-		    .font_(parent.controlFont);
-		setFolderButton = GUI.button.new(bufferView, Rect.new(0, 0, 65, 25))
-			.states_([["set folder", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont);
-		
 		clearBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
 			.states_([["clear buffer", Color.white, controlBackgroundColor]])
 		    .font_(parent.controlFont);
 		
-		addEmptyBufferBox = GUI.numberBox.new(bufferView, Rect.new(0, 0, 30, 25))
-		    .font_(parent.controlFont);
 		
-		addEmptyBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 100, 25))
+		addFileButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
+			.states_([["add file(s)", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.addBufferFromFile; });
+		
+		addEmptyBufferBox = GUI.numberBox.new(bufferView, Rect.new(0, 0, 30, 25))
+		    .font_(parent.controlFont)
+		    .value_(16)
+		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
+		
+		addEmptyBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 90, 25))
 			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont);
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
 		
 		bufferSelectMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 280, 25))
 			.background_(controlBackgroundColor)
