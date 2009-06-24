@@ -37,7 +37,7 @@ Sampler {
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -104,16 +104,18 @@ SampleLooper {
 		Dialog.getPaths({ |paths|
 			paths.do{ |obj,ind|
 				buffers = buffers.add(Buffer.read(s, obj));
+				if(ind == paths.lastIndex){
+					// just updating the GUI "later"
+					AppClock.sched(1, {this.updateBufferMenu; nil; });
+				};
 			};
-			// just updating the GUI "later"
-			AppClock.sched(1, {this.updateBufferMenu; nil; });
 		});
 	}
 	
-	addEmptyBuffer {
+	addEmptyBuffer { |length|
 		// only can add empty mono buffers for now.
 		// multi-channel support should come later.
-		buffers = buffers.add(Buffer.alloc(s, addEmptyBufferBox.string.interpret * s.sampleRate, 1));
+		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate, 1));
 		AppClock.sched(1, {this.updateBufferMenu; nil;});
 	}
 	
@@ -124,12 +126,18 @@ SampleLooper {
 			if(obj.path.notNil){
 				ret = ret.add(obj.path.basename);
 			}{
-				ret = ret.add(obj.bufnum);
+				ret = ret.add(obj.bufnum.asString);
 			}
 		};
 		bufferSelectMenu.items = ret;
 	}
 
+	setActiveBuffer { |sel|
+		/* this will screw up if the indexes of the buffers array do not match with the 
+			bufferSelectMenu.items. This might not be a problem though. */
+		activeBufferIndex = sel;
+		
+	}
 	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
@@ -263,7 +271,8 @@ SampleLooper {
 		bufferSelectMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 280, 25))
 			.background_(controlBackgroundColor)
 			.stringColor_(Color.white)
-		    .font_(parent.controlFont);
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.setActiveBuffer(obj.value); });
 
 		
 		//var controlView, viewWidth, sampleViewRow, vZoomSlider, offset, markerBar, sampleView, zoomSlider;
