@@ -134,10 +134,24 @@ SampleLooper {
 
 	setActiveBuffer { |sel|
 		/* this will screw up if the indexes of the buffers array do not match with the 
-			bufferSelectMenu.items. This might not be a problem though. */
+			bufferSelectMenu.items. */
 		activeBufferIndex = sel;
-		
+		this.updateWaveformView(waveformView.value);
 	}
+	
+	updateWaveformView { |array|
+
+		buffers[activeBufferIndex].loadToFloatArray(action:{ |bufArr,bufObj|
+			var ret, channelArr, scale;
+			scale = (buffers[activeBufferIndex].numFrames / array.size);			channelArr = bufArr.unlace(bufObj.numChannels)[0];
+			ret = Array.newClear(array.size);
+			array.do{ |obj,ind|
+				ret[ind] = (bufArr[ind * scale.asInt] * 0.5) + 0.5;
+			};
+			defer{ waveformView.value = ret; };
+		});
+	}
+	
 	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
@@ -194,8 +208,16 @@ SampleLooper {
 			.states_([["X", Color.black, Color.yellow]])
 		    .font_(parent.controlFont);
 		
-		waveformView = GUI.soundFileView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-			.background_(Color.white.alpha_(0.3));
+		waveformView = GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+			.background_(Color.blue.alpha_(0.2))
+			.drawLines_(true)
+			.drawRects_(false)
+			.strokeColor_(Color.white)
+			.thumbSize_(0.1)
+			.value_(Array.fill(512, { 0.5 }))
+			.editable_(false)
+			.showIndex_(true)
+			.action_({ |obj| obj.index.postln; obj.currentvalue.postln; });
 		
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125));
