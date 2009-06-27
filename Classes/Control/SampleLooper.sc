@@ -37,7 +37,7 @@ Sampler {
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, waveformViewData, waveformViewDataStart, waveformViewDataRange, waveformVZoomSpec;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -51,6 +51,7 @@ SampleLooper {
 		s       = Server.default;
 		nodeNum = s.nextNodeID;
 		buffers = Array.new;
+		waveformVZoomSpec = [1,10].asSpec;
 		// synth parameters should be kept in a dict
 		// for all classes, in general. I could add getter/setter
 		// methods if necessary
@@ -136,11 +137,10 @@ SampleLooper {
 		/* this will screw up if the indexes of the buffers array do not match with the 
 			bufferSelectMenu.items. */
 		activeBufferIndex = sel;
-		this.updateWaveformView(waveformView.value);
+		this.drawWaveformView(waveformView.value);
 	}
 	
-	updateWaveformView { |array|
-
+	drawWaveformView { |array|
 		buffers[activeBufferIndex].loadToFloatArray(action:{ |bufArr,bufObj|
 			var ret, channelArr, scale;
 			scale = (buffers[activeBufferIndex].numFrames / array.size);			channelArr = bufArr.unlace(bufObj.numChannels)[0];
@@ -148,10 +148,29 @@ SampleLooper {
 			array.do{ |obj,ind|
 				ret[ind] = (bufArr[ind * scale.asInt] * 0.5) + 0.5;
 			};
-			defer{ waveformView.value = ret; };
+			waveformViewData = ret;
+			waveformViewDataStart = 0;
+			waveformViewDataRange = waveformViewData.size;
+			defer{ 
+				waveformView.value = waveformViewData;
+				waveformViewZoom.lo_(0).hi_(1);
+				waveformViewVZoom.value = 0;
+			};
 		});
 	}
 	
+	setWaveformVZoom { |amt|
+		var scaleData;
+		scaleData = ((waveformViewData - 0.5) * amt) + 0.5;
+		waveformView.value = scaleData[waveformViewDataStart..waveformViewDataRange];
+	}
+		
+	setWaveformZoom { |start,range|
+		waveformViewDataStart = (start * waveformViewData.size).asInt;
+		waveformViewDataRange = (range * waveformViewData.size).asInt;
+		waveformView.value = waveformViewData[waveformViewDataStart..waveformViewDataRange];
+		this.setWaveformVZoom(waveformVZoomSpec.map(waveformViewVZoom.value));
+	}
 	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
@@ -201,9 +220,10 @@ SampleLooper {
 		waveformControlView.decorator_(FlowLayout(waveformControlView.bounds));
 		
 		waveformMarkerBar = MarkerBar.new(waveformControlView, Rect.new(0, 0, 565, 20))
-			.markerColor_(Color.yellow)
-			.background_(Color.blue(0.5, alpha:0.9))
+			.markerColor_(Color.white)
+			.background_(Color.blue.alpha_(0.2))
 			.mouseDownAction_({|obj,x,y,mod| [obj,x,y,mod].postln; });
+
 		waveformMarkerClearButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 20, 20))
 			.states_([["X", Color.black, Color.yellow]])
 		    .font_(parent.controlFont);
@@ -213,18 +233,24 @@ SampleLooper {
 			.drawLines_(true)
 			.drawRects_(false)
 			.strokeColor_(Color.white)
-			.thumbSize_(0.1)
+			.elasticMode_(1)
 			.value_(Array.fill(512, { 0.5 }))
 			.editable_(false)
 			.showIndex_(true)
 			.action_({ |obj| obj.index.postln; obj.currentvalue.postln; });
 		
 
-		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125));
+		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
+			.background_(controlBackgroundColor)
+			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \h, 64, 0.5))
+			.action_({ |obj| this.setWaveformVZoom(waveformVZoomSpec.map(obj.value)); });
 		
 		waveformViewZoom = GUI.rangeSlider.new(waveformControlView, Rect.new(0, 0, 565, 20))
-			.knobColor_(Color.new255(109, 126, 143))
-			.background_(Color.white.alpha_(0.3));
+			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5))
+			.background_(controlBackgroundColor)
+			.lo_(0)
+			.hi_(1)
+			.action_({ |obj| this.setWaveformZoom(obj.lo, obj.hi); });
 		
 		// transport section
 		transportView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
@@ -295,28 +321,7 @@ SampleLooper {
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.setActiveBuffer(obj.value); });
-
-		
-		//var controlView, viewWidth, sampleViewRow, vZoomSlider, offset, markerBar, sampleView, zoomSlider;
-		//controlView = GUI.compositeView.new(container, Rect.new(0, 0, 600, 200))
-		//	.background_(Color.black);
-		//controlView.decorator_(FlowLayout(controlView.bounds));
-		
-		/*
-		viewWidth = view.view.bounds.width - 45;
-		markerBar = MarkerBar.new(controlView, Rect.new(0, 0, viewWidth, 20))
-			.markerColor_(Color.yellow)
-			.background_(Color.white.alpha_(0.3));
-		sampleViewRow = GUI.hLayoutView.new(controlView, Rect.new(0, 0, viewWidth + 45, 100));
-		sampleView = GUI.soundFileView.new(sampleViewRow, Rect.new(0, 0, viewWidth, 0))
-			.background_(Color.white.alpha_(0.3));
-		vZoomSlider = GUI.vLayoutView.new(sampleViewRow, Rect.new(0, 0, 35, 0));
-		GUI.slider.new(vZoomSlider, Rect.new(0, 0, 0, 100));
-		zoomSlider = GUI.rangeSlider.new(controlView, Rect.new(0, 0, viewWidth, 20))
-			.knobColor_(Color.new255(109, 126, 143))
-			.background_(Color.white.alpha_(0.3))
-			.action_({ |obj| this.zoomView(obj.lo, obj.hi, obj.range); });
-		*/
+		    
 	}
 	
 }
