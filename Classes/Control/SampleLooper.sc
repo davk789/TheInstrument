@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=1024;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -65,7 +65,7 @@ SampleLooper {
 			'record'      -> 0,
 			'mix'         -> 0
 		];
-		currentBufferArray = Array.fill(1024, { 0.5 });
+		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 
 	}
 	
@@ -146,46 +146,26 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	
-/*	drawWaveformViewOld {
-		buffers[activeBufferIndex].loadToFloatArray(action:{ |bufArr,bufObj|
-			var ret, channelArr, scale, array;
-			array = Array.fill(1024, { 0.5 });
-			scale = (buffers[activeBufferIndex].numFrames / array.size);			channelArr = bufArr.unlace(bufObj.numChannels)[0];
-			ret = Array.newClear(array.size);
-			array.do{ |obj,ind|
-				ret[ind] = (bufArr[ind * scale.asInt] * 0.5) + 0.5;
-			};
-			currentBufferArray = ret;
-			currBufDisplayStart = 0;
-			currBufDisplayRange = currentBufferArray.size;
-			defer{ 
-				waveformView.value_(currentBufferArray);
-				waveformViewZoom.lo_(0).hi_(1);
-				waveformViewVZoom.value_(0);
-			};
-		});
-	}
-*/	
 	drawWaveformView {
 		var ret, scale;
-		scale = (buffers[activeBufferIndex].numFrames / ret.size).asInt;
-		postln("before routine buffers[activeBufferIndex].bufnum = " ++ buffers[activeBufferIndex].bufnum);
-		1024.do{ |ind|
+		scale = (buffers[activeBufferIndex].numFrames / waveformDisplayResolution).asInt;
+		waveformDisplayResolution.do{ |ind|
 			var bufferIndex;
 			bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
+			[bufferIndex, ind, scale, buffers[activeBufferIndex].numChannels].postln;
 			buffers[activeBufferIndex].get(bufferIndex, { |msg|
 				msg.postln;
 				currentBufferArray[ind] = (msg * 0.5) + 0.5;
-				defer{ waveformView.value[ind] = (msg * 0.5) + 0.5; };
 			});
-		};
-		postln("after routine buffers[activeBufferIndex].bufnum = " ++ buffers[activeBufferIndex].bufnum);
-		currBufDisplayStart = 0;
-		currBufDisplayRange = currentBufferArray.size;
-		defer{ 
-			waveformView.value_(currentBufferArray);
-			waveformViewZoom.lo_(0).hi_(1);
-			waveformViewVZoom.value_(0);
+			if(ind == (waveformDisplayResolution - 1)){
+				currBufDisplayStart = 0;
+				currBufDisplayRange = currentBufferArray.size;
+//				defer{ 
+					waveformView.value_(currentBufferArray);
+					waveformViewZoom.lo_(0).hi_(1);
+					waveformViewVZoom.value_(0);
+//				};
+			};
 		};
 
 	}

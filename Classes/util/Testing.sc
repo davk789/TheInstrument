@@ -6,7 +6,7 @@ TestClass {
 	
 	init_testclass {
 		server = Server.default;
-		buffer = Buffer.read(server, "/Users/davk/Music/SuperCollider_Samples/SC_090419_115207/1.aif");
+		buffer = Buffer.read(server, "/Users/playmac/Music/sc-test-clips/082606-1-bhdk.norm render 002.wav");
 	}
 	
 	getBufferValues {
