@@ -1,4 +1,4 @@
-Sampler {
+Sampler { // container for one or more SampleLoopers
 	var parent, <>win, <>channels, <outBus;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
@@ -12,6 +12,7 @@ Sampler {
 		loopers.do{ |ind|
 			this.addChannel;
 		};
+		this.addMixerChannel;
 	}
 	
 	addChannel {
@@ -37,7 +38,7 @@ Sampler {
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, waveformViewData, waveformViewDataStart, waveformViewDataRange, waveformVZoomSpec;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -52,22 +53,28 @@ SampleLooper {
 		nodeNum = s.nextNodeID;
 		buffers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
-		// synth parameters should be kept in a dict
-		// for all classes, in general. I could add getter/setter
-		// methods if necessary
 		params  = Dictionary[
 			'bufnum'      -> -1, 
 			'speed'       -> 1,
 			'start'       -> 0, 
 			'end'         -> 1, 
-			'outBus'      -> 0, 
+			'outBus'      -> 25, 
 			'inBus'       -> 20, 
 			'delayTime'   -> 0.1,
 			'reordOffset' -> 0.01,
 			'record'      -> 0,
 			'mix'         -> 0
 		];
+		currentBufferArray = Array.fill(1024, { 0.5 });
 
+	}
+	
+	outBus {
+		^params['outBus'];
+	}
+	
+	outBus_ { |val|
+		params['outBus'] = val;
 	}
 		
 	addBuffer { |length=16|
@@ -107,6 +114,7 @@ SampleLooper {
 				buffers = buffers.add(Buffer.read(s, obj));
 				if(ind == paths.lastIndex){
 					// just updating the GUI "later"
+					// seems to fail with large buffers
 					AppClock.sched(1, {this.updateBufferMenu; nil; });
 				};
 			};
@@ -114,7 +122,7 @@ SampleLooper {
 	}
 	
 	addEmptyBuffer { |length|
-		// only can add empty mono buffers for now.
+		// can only add empty mono buffers for now.
 		// multi-channel support should come later.
 		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate, 1));
 		AppClock.sched(1, {this.updateBufferMenu; nil;});
@@ -134,42 +142,71 @@ SampleLooper {
 	}
 
 	setActiveBuffer { |sel|
-		/* this will screw up if the indexes of the buffers array do not match with the 
-			bufferSelectMenu.items. */
 		activeBufferIndex = sel;
-		this.drawWaveformView(waveformView.value);
+		this.drawWaveformView;
 	}
 	
-	drawWaveformView { |array|
+/*	drawWaveformViewOld {
 		buffers[activeBufferIndex].loadToFloatArray(action:{ |bufArr,bufObj|
-			var ret, channelArr, scale;
+			var ret, channelArr, scale, array;
+			array = Array.fill(1024, { 0.5 });
 			scale = (buffers[activeBufferIndex].numFrames / array.size);			channelArr = bufArr.unlace(bufObj.numChannels)[0];
 			ret = Array.newClear(array.size);
 			array.do{ |obj,ind|
 				ret[ind] = (bufArr[ind * scale.asInt] * 0.5) + 0.5;
 			};
-			waveformViewData = ret;
-			waveformViewDataStart = 0;
-			waveformViewDataRange = waveformViewData.size;
+			currentBufferArray = ret;
+			currBufDisplayStart = 0;
+			currBufDisplayRange = currentBufferArray.size;
 			defer{ 
-				waveformView.value = waveformViewData;
+				waveformView.value_(currentBufferArray);
 				waveformViewZoom.lo_(0).hi_(1);
-				waveformViewVZoom.value = 0;
+				waveformViewVZoom.value_(0);
 			};
 		});
+	}
+*/	
+	drawWaveformView {
+		var ret, scale;
+		scale = (buffers[activeBufferIndex].numFrames / ret.size).asInt;
+		postln("before routine buffers[activeBufferIndex].bufnum = " ++ buffers[activeBufferIndex].bufnum);
+		1024.do{ |ind|
+			var bufferIndex;
+			bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
+			buffers[activeBufferIndex].get(bufferIndex, { |msg|
+				msg.postln;
+				currentBufferArray[ind] = (msg * 0.5) + 0.5;
+				defer{ waveformView.value[ind] = (msg * 0.5) + 0.5; };
+			});
+		};
+		postln("after routine buffers[activeBufferIndex].bufnum = " ++ buffers[activeBufferIndex].bufnum);
+		currBufDisplayStart = 0;
+		currBufDisplayRange = currentBufferArray.size;
+		defer{ 
+			waveformView.value_(currentBufferArray);
+			waveformViewZoom.lo_(0).hi_(1);
+			waveformViewVZoom.value_(0);
+		};
+
 	}
 	
 	setWaveformVZoom { |amt|
 		var scaleData;
-		scaleData = ((waveformViewData - 0.5) * amt) + 0.5;
-		waveformView.value = scaleData[waveformViewDataStart..waveformViewDataRange];
+		scaleData = ((currentBufferArray - 0.5) * amt) + 0.5;
+		waveformView.value = scaleData[currBufDisplayStart..currBufDisplayRange];
 	}
 		
 	setWaveformZoom { |start,range|
-		waveformViewDataStart = (start * waveformViewData.size).asInt;
-		waveformViewDataRange = (range * waveformViewData.size).asInt;
-		waveformView.value = waveformViewData[waveformViewDataStart..waveformViewDataRange];
+		currBufDisplayStart = (start * currentBufferArray.size).asInt;
+		currBufDisplayRange = (range * currentBufferArray.size).asInt;
+		waveformView.value = currentBufferArray[currBufDisplayStart..currBufDisplayRange];
+		waveformMarkerBar.zoom(start, range);
 		this.setWaveformVZoom(waveformVZoomSpec.map(waveformViewVZoom.value));
+	}
+	
+	clearActiveBuffer {
+		buffers[activeBufferIndex].zero;
+		this.drawWaveformView;
 	}
 	
 	loadSynthDef { |numChannels=1|
@@ -230,9 +267,9 @@ SampleLooper {
 		
 		waveformView = GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.background_(Color.blue.alpha_(0.2))
+			.strokeColor_(Color.white)
 			.drawLines_(true)
 			.drawRects_(false)
-			.strokeColor_(Color.white)
 			.elasticMode_(1)
 			.value_(Array.fill(512, { 0.5 }))
 			.editable_(false)
@@ -298,7 +335,8 @@ SampleLooper {
 		
 		clearBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
 			.states_([["clear buffer", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont);
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.clearActiveBuffer; });
 		
 		
 		addFileButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
