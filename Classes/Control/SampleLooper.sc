@@ -147,26 +147,25 @@ SampleLooper {
 	}
 	
 	drawWaveformView {
-		var ret, scale;
+		var ret, scale, lastIndex;
+		lastIndex = waveformDisplayResolution - 1;
 		scale = (buffers[activeBufferIndex].numFrames / waveformDisplayResolution).asInt;
 		waveformDisplayResolution.do{ |ind|
 			var bufferIndex;
 			bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
 			[bufferIndex, ind, scale, buffers[activeBufferIndex].numChannels].postln;
 			buffers[activeBufferIndex].get(bufferIndex, { |msg|
-				msg.postln;
 				currentBufferArray[ind] = (msg * 0.5) + 0.5;
 			});
-			if(ind == (waveformDisplayResolution - 1)){
-				currBufDisplayStart = 0;
-				currBufDisplayRange = currentBufferArray.size;
-//				defer{ 
-					waveformView.value_(currentBufferArray);
-					waveformViewZoom.lo_(0).hi_(1);
-					waveformViewVZoom.value_(0);
-//				};
-			};
 		};
+		AppClock.sched(1, {
+			currBufDisplayStart = 0;
+			currBufDisplayRange = currentBufferArray.size;
+			waveformView.value_(currentBufferArray);
+			waveformViewZoom.lo_(0).hi_(1);
+			waveformViewVZoom.value_(0);
+			nil;
+		});
 
 	}
 	
