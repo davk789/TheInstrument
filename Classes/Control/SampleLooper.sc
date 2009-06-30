@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=1024;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=4096;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -148,25 +148,29 @@ SampleLooper {
 	
 	drawWaveformView {
 		var ret, scale, lastIndex;
+		bufferSelectMenu.enabled_(false);
 		lastIndex = waveformDisplayResolution - 1;
 		scale = (buffers[activeBufferIndex].numFrames / waveformDisplayResolution).asInt;
-		waveformDisplayResolution.do{ |ind|
-			var bufferIndex;
-			bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
-			[bufferIndex, ind, scale, buffers[activeBufferIndex].numChannels].postln;
-			buffers[activeBufferIndex].get(bufferIndex, { |msg|
-				currentBufferArray[ind] = (msg * 0.5) + 0.5;
-			});
-		};
-		AppClock.sched(1, {
+		Task.new({
+			waveformDisplayResolution.do{ |ind|
+				var bufferIndex;
+				bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
+				[bufferIndex, ind, scale, buffers[activeBufferIndex].numChannels].postln;
+				buffers[activeBufferIndex].get(bufferIndex, { |msg|
+					currentBufferArray[ind] = (msg * 0.5) + 0.5;
+				});
+				0.0005.wait;
+			};
+
 			currBufDisplayStart = 0;
 			currBufDisplayRange = currentBufferArray.size;
 			waveformView.value_(currentBufferArray);
 			waveformViewZoom.lo_(0).hi_(1);
 			waveformViewVZoom.value_(0);
-			nil;
-		});
-
+			waveformMarkerBar.value_([]);
+			waveformMarkerBar.zoom(0, 1);
+			bufferSelectMenu.enabled_(true);
+		}).play;
 	}
 	
 	setWaveformVZoom { |amt|
