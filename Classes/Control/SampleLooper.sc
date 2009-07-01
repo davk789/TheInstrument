@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=4096;
+	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false;
 	// GUI objects
 	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
@@ -89,12 +89,16 @@ SampleLooper {
 		};
 	}
 	
-	start {
+	record { |val|
+		isRecording = val;
+	}
+	
+	play { |val|
 		s.sendMsg('s_new', 'SampleLooperPlayer', 1, 0, nodeNum);
 		s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
 	}
 
-	pause {
+	pause { |val|
 		if(paused.not){
 			s.sendMsg('n_set', nodeNum, 'speed', 0);
 			paused = true;
@@ -106,6 +110,8 @@ SampleLooper {
 	
 	stop {
 		s.sendMsg('n_free', nodeNum);
+		playButton.value_(0);
+		recordButton.value_(0);
 	}
 	
 	addBufferFromFile {
@@ -164,12 +170,15 @@ SampleLooper {
 
 			currBufDisplayStart = 0;
 			currBufDisplayRange = currentBufferArray.size;
-			waveformView.value_(currentBufferArray);
-			waveformViewZoom.lo_(0).hi_(1);
-			waveformViewVZoom.value_(0);
-			waveformMarkerBar.value_([]);
-			waveformMarkerBar.zoom(0, 1);
-			bufferSelectMenu.enabled_(true);
+
+			defer{
+				waveformView.value_(currentBufferArray);
+				waveformViewZoom.lo_(0).hi_(1);
+				waveformViewVZoom.value_(0);
+				waveformMarkerBar.value_([]);
+				waveformMarkerBar.zoom(0, 1);
+				bufferSelectMenu.enabled_(true);
+			};
 		}).play;
 	}
 	
@@ -278,17 +287,30 @@ SampleLooper {
 		transportView.decorator_(FlowLayout(transportView.bounds));
 		
 		recordButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([["o", Color.red, Color.new255(25,25,25)]])
-		    .font_(parent.strongFont);
+			.states_([
+				["o", Color.red, Color.new255(25,25,25)],
+				["o", Color.black, Color.red]
+			])
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.record(obj.value.toBool); });
 		playButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([[">", Color.green, controlBackgroundColor]])
-		    .font_(parent.strongFont);
+			.states_([
+				[">", Color.green, controlBackgroundColor],
+				[">", Color.black, Color.green]
+			])
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.play(obj.value.toBool); });
 		pauseButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
-			.states_([["||", Color.yellow, controlBackgroundColor]])
-		    .font_(parent.strongFont);
+			.states_([
+				["||", Color.yellow, controlBackgroundColor],
+				["||", Color.black, Color.yellow]
+			])
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.pause(obj.value.toBool); });
 		stopButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
 			.states_([["[]", Color.white(0.8), controlBackgroundColor]])
-		    .font_(parent.strongFont);
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.stop; });
 		
 
 		playbackSpeedSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
