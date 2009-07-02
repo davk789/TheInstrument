@@ -1,3 +1,127 @@
+MarkerBar {
+	var <higlightRange, visibleMarkers, markers, prMarkerColors, prMarkerColor, values, dimensions, uView, <start, <end, >mouseDownAction, >mouseUpAction, >mouseMoveAction;
+	*new { |view, dim|
+		^super.new.init_markerbar(view, dim);
+	}
+
+	init_markerbar { |view, dim|
+		start = 0; // start of visible marker range
+		end = 1;   // end of visible marker range
+		dimensions = dim;
+		markers = Array.new;
+		values = Array.new;
+		mouseDownAction = { |obj,x,y,mod| };
+		mouseUpAction = { |obj,x,y,mod| };
+		mouseMoveAction = { |obj,x,y,mod| };
+		prMarkerColor = Color.black.alpha_(0.8);
+		uView = GUI.userView.new(view, dimensions)
+			.background_(Color.black.alpha_(0.8))
+			.relativeOrigin_(true)
+			.mouseMoveAction_({ |obj,x,y,mod| 
+				mouseMoveAction.value(obj,x,y,mod); 
+			})
+			.mouseDownAction_({ |obj,x,y,mod| 
+				mouseDownAction.value(obj,x,y,mod); 
+			})
+			.mouseUpAction_({ |obj,x,y,mod|
+				mouseUpAction.value(obj,x,y,mod);
+				this.markerUpdate(x);
+				uView.refresh;
+			})
+			.drawFunc_({
+				var rangeLo, rangeHi;
+				Pen.use{
+					Pen.width = 3;
+
+					if(highlightRange.notNil){
+						rangeLo = visibleMarkers[highlightRange['low']];
+						rangeHi = visibleMarkers[highlightRange['high']];
+						Pen.fillColor = Color.green(0.4);
+						Pen.addRect(Rect.new(rangeLo, RangeHi, 0, dimensions.height + 10));
+						Pen.fill;
+					};
+					
+					visibleMarkers.do{ |val,ind|
+						Pen.color = prMarkerColors[ind];
+						Pen.moveTo(val @ 0);
+						Pen.lineTo(val @ (dimensions.height + 10));
+						Pen.stroke;
+					};
+				};
+			});
+	}
+	
+	setHighlightRange { |lo,hi|
+		highlightRange = Dictionary[
+			'low'  -> lo, // lowest marker index
+			'high' -> hi  // highest merker index
+		];
+	}
+
+	clearHighlightRange {
+		highlightRange = nil;
+	}
+
+	setMarkerColor { |ind,color|
+		prMarkerColors[ind] = color;
+	}
+
+	markerColor_ { |color|
+		prMarkerColor = color;
+		prMarkerColors.size.do{  |obj,ind|
+			prMarkerColors[ind] = color;
+		}
+	}
+
+	markerColor {
+		^prMarkerColors;
+	}
+
+	zoom { |startIn, endIn|
+		start = startIn;
+		end = endIn;
+		this.updateVisibleMarkers;
+		uView.refresh;
+	}
+
+	updateVisibleMarkers {
+		var range, startPoint;
+		range = (end - start).reciprocal;
+		startPoint = start * dimensions.width;
+		visibleMarkers = (markers - startPoint) * range;
+	}
+
+	markerUpdate { |x|
+		var scaledX;
+		scaledX = ((x * (end - start)) + (start * dimensions.width)).round;
+		if(markers.indexOf(scaledX).notNil){
+			markers.removeAt(markers.indexOf(scaledX));
+			prMarkerColors.removeAt(markers.indexOf(scaledX));
+		}{
+			markers = markers.add(scaledX);
+			prMarkerColors = prMarkerColors.add(prMarkerColor);
+		};
+		values = markers * (1 / dimensions.width);
+		this.updateVisibleMarkers;
+		uView.refresh;
+	}
+
+	value {
+		^values;
+	}
+
+	value_ { |val|
+		values = val;
+		markers = val * dimensions.width;
+		uView.refresh;
+	}
+
+	background_ { |color|
+		uView.background = color;
+	}
+}
+
+
 MarkerArea {
 	var uView, prCoords, prCurrentIndex, updateCurrentIndex=true,
 		<dimensions, markerColor, selectionColor, markerSize=5, currentMarker,
@@ -54,7 +178,7 @@ MarkerArea {
 		};
 		prCurrentIndex = ind;
 		postln("prCurrentIndex = " ++ prCurrentIndex);
-		// probably not so cool to iterate over all points twice here.
+
 		if(this.countConflicts(coord) < 2){ 
 			prCoords.removeAt(ind);
 			this.addMarker(coord,mod); 
@@ -138,80 +262,3 @@ MarkerArea {
 
 }
 
-MarkerBar {
-	var visibleMarkers, markers, <>markerColor, values, dimensions, uView, <start=0, <end=1, >mouseDownAction, >mouseUpAction, >mouseMoveAction;
-	*new { |view, dim|
-		^super.new.init_markerbar(view, dim);
-	}
-	init_markerbar { |view, dim|
-		dimensions = dim;
-		markers = Array.new;
-		values = Array.new;
-		mouseDownAction = { |obj,x,y,mod| };
-		mouseUpAction = { |obj,x,y,mod| };
-		mouseMoveAction = { |obj,x,y,mod| };
-		markerColor = Color.black.alpha_(0.8);
-		uView = GUI.userView.new(view, dimensions)
-			.background_(Color.black.alpha_(0.8))
-			.relativeOrigin_(true)
-			.mouseMoveAction_({ |obj,x,y,mod| 
-				mouseMoveAction.value(obj,x,y,mod); 
-			})
-			.mouseDownAction_({ |obj,x,y,mod| 
-				mouseDownAction.value(obj,x,y,mod); 
-			})
-			.mouseUpAction_({ |obj,x,y,mod|
-				mouseUpAction.value(obj,x,y,mod);
-				this.markerUpdate(x);
-				uView.refresh;
-			})
-			.drawFunc_({
-				Pen.use{
-					Pen.width = 3;
-					Pen.color = markerColor;
-					visibleMarkers.do{ |val,ind|
-						Pen.moveTo(val @ 0);
-						Pen.lineTo(val @ (dimensions.height + 10));
-						Pen.stroke;
-					};
-				};
-			});
-	}
-	zoom { |startIn, endIn|
-		start = startIn;
-		end = endIn;
-		this.updateVisibleMarkers;
-		uView.refresh;
-	}
-	updateVisibleMarkers {
-		var range, startPoint;
-		range = (end - start).reciprocal;
-		startPoint = start * dimensions.width;
-		visibleMarkers = (markers - startPoint) * range;
-	}
-	markerUpdate { |x|
-		var scaledX;
-		scaledX = ((x * (end - start)) + (start * dimensions.width)).round;
-		if(markers.indexOf(scaledX).notNil){
-			markers.removeAt(markers.indexOf(scaledX));
-		}{
-			markers = markers.add(scaledX);	
-		};
-		values = markers * (1 / dimensions.width);
-		this.updateVisibleMarkers;
-		uView.refresh;
-	}
-	value {
-		^values;
-	}
-	value_ { |val|
-		values = val;
-		markers = val * dimensions.width;
-		uView.refresh;
-	}
-	background_ { |color|
-		uView.background = color;
-	}
-}
-                             
-                 

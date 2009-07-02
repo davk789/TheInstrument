@@ -281,7 +281,9 @@ SampleLooper {
 			.action_({ |obj| 
 				this.refreshLoop(obj.index / obj.value.size, obj.selectionSize / obj.value.size); 
 			});
-		
+		Platform.case('osx', {
+		    waveformView.canReceiveDrag_(false);
+		});
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
