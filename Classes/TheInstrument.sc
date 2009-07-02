@@ -15,7 +15,7 @@
         instead, modulation amounts should add to the visible params
 
  */
-TheInstrument {
+ThyInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
         <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont;
 	*new {
