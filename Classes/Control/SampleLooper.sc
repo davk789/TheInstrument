@@ -40,7 +40,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayRange, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
 	// GUI objects
-	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
+	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
 
 	
 	*new { |par|
@@ -163,7 +163,6 @@ SampleLooper {
 			waveformDisplayResolution.do{ |ind|
 				var bufferIndex;
 				bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
-				[bufferIndex, ind, scale, buffers[activeBufferIndex].numChannels].postln;
 				buffers[activeBufferIndex].get(bufferIndex, { |msg|
 					currentBufferArray[ind] = (msg * 0.5) + 0.5;
 				});
@@ -203,8 +202,21 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	
-	refreshLoop { |start,range|
-		[start,range, loopMarkers].postln;
+	setLoopRange { |start,range|
+		var selectionSize;
+		selectionSize = range * waveformView.value.size;
+		if(waveformMarkerBar.value.isNil){
+			if(selectionSize > 1){
+				params['start'] = 0;
+				params['range'] = 1;
+			}{
+				params['start'] = start;
+				params['range'] = range;
+			};
+		}{
+			
+		};
+		[start, range * waveformView.value.size].postln;
 	}
 	
 	setMarkers { |markers|
@@ -265,7 +277,8 @@ SampleLooper {
 
 		waveformMarkerClearButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 20, 20))
 			.states_([["X", Color.black, Color.yellow]])
-		    .font_(parent.controlFont);
+		    .font_(parent.controlFont)
+		    .action_({ |obj| waveformMarkerBar.clear; });
 		
 		waveformView = GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.background_(Color.grey(0.9))
@@ -279,11 +292,8 @@ SampleLooper {
 			.selectionSize_(2)
 			.startIndex_(0)
 			.action_({ |obj| 
-				this.refreshLoop(obj.index / obj.value.size, obj.selectionSize / obj.value.size); 
+				this.setLoopRange(obj.index / obj.value.size, obj.selectionSize / obj.value.size); 
 			});
-		Platform.case('osx', {
-		    waveformView.canReceiveDrag_(false);
-		});
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)

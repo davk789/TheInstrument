@@ -1,5 +1,5 @@
 MarkerBar {
-	var <higlightRange, visibleMarkers, markers, prMarkerColors, prMarkerColor, values, dimensions, uView, <start, <end, >mouseDownAction, >mouseUpAction, >mouseMoveAction;
+	var <highlightRange, visibleMarkers, markers, <>markerColor, <>hiliteMarkerColor, <>hiliteBackground, values, dimensions, uView, <start, <end, >mouseDownAction, >mouseUpAction, >mouseMoveAction;
 	*new { |view, dim|
 		^super.new.init_markerbar(view, dim);
 	}
@@ -13,7 +13,10 @@ MarkerBar {
 		mouseDownAction = { |obj,x,y,mod| };
 		mouseUpAction = { |obj,x,y,mod| };
 		mouseMoveAction = { |obj,x,y,mod| };
-		prMarkerColor = Color.black.alpha_(0.8);
+		hiliteBackground = Color.green(0.3);
+		markerColor = Color.white;
+		hiliteMarkerColor = Color.yellow;
+		highlightRange = Dictionary['low' -> -1, 'high' -> -1];
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(true)
@@ -33,16 +36,20 @@ MarkerBar {
 				Pen.use{
 					Pen.width = 3;
 
-					if(highlightRange.notNil){
+					if((highlightRange['low'] > -1) && (highlightRange['high'] > -1)){
 						rangeLo = visibleMarkers[highlightRange['low']];
-						rangeHi = visibleMarkers[highlightRange['high']];
-						Pen.fillColor = Color.green(0.4);
-						Pen.addRect(Rect.new(rangeLo, RangeHi, 0, dimensions.height + 10));
+						rangeHi = visibleMarkers[highlightRange['high']] - rangeLo;
+						Pen.color = hiliteBackground;
+						Pen.addRect(Rect.new(rangeLo, 0, rangeHi, dimensions.height + 10));
 						Pen.fill;
 					};
 					
 					visibleMarkers.do{ |val,ind|
-						Pen.color = prMarkerColors[ind];
+						if((ind >= highlightRange['low']) && (ind <= highlightRange['high'])){
+							Pen.color = hiliteMarkerColor;
+						}{
+							Pen.color = markerColor;
+						};
 						Pen.moveTo(val @ 0);
 						Pen.lineTo(val @ (dimensions.height + 10));
 						Pen.stroke;
@@ -50,31 +57,17 @@ MarkerBar {
 				};
 			});
 	}
-	
+		
 	setHighlightRange { |lo,hi|
 		highlightRange = Dictionary[
 			'low'  -> lo, // lowest marker index
-			'high' -> hi  // highest merker index
+			'high' -> hi  // highest marker index
 		];
+		uView.refresh;
 	}
 
 	clearHighlightRange {
-		highlightRange = nil;
-	}
-
-	setMarkerColor { |ind,color|
-		prMarkerColors[ind] = color;
-	}
-
-	markerColor_ { |color|
-		prMarkerColor = color;
-		prMarkerColors.size.do{  |obj,ind|
-			prMarkerColors[ind] = color;
-		}
-	}
-
-	markerColor {
-		^prMarkerColors;
+		highlightRange = Dictionary['low'  -> -1, 'high' -> -1];
 	}
 
 	zoom { |startIn, endIn|
@@ -96,10 +89,8 @@ MarkerBar {
 		scaledX = ((x * (end - start)) + (start * dimensions.width)).round;
 		if(markers.indexOf(scaledX).notNil){
 			markers.removeAt(markers.indexOf(scaledX));
-			prMarkerColors.removeAt(markers.indexOf(scaledX));
 		}{
-			markers = markers.add(scaledX);
-			prMarkerColors = prMarkerColors.add(prMarkerColor);
+			markers = markers.add(scaledX).sort;
 		};
 		values = markers * (1 / dimensions.width);
 		this.updateVisibleMarkers;
@@ -115,10 +106,23 @@ MarkerBar {
 		markers = val * dimensions.width;
 		uView.refresh;
 	}
+	
+	clear {
+		markers = visibleMarkers = Array.new;
+		this.clearHighlightRange;
+		uView.refresh;
+	}
 
 	background_ { |color|
 		uView.background = color;
 	}
+	
+	background {
+		^uView.background;
+	}
+	
+
+	
 }
 
 
