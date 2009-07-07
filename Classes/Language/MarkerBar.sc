@@ -16,7 +16,7 @@ MarkerBar {
 		hiliteBackground = Color.green(0.3);
 		markerColor = Color.white;
 		hiliteMarkerColor = Color.yellow;
-		highlightRange = Dictionary['low' -> -1, 'high' -> -1];
+		highlightRange = Dictionary.new;
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
 			.relativeOrigin_(true)
@@ -31,32 +31,44 @@ MarkerBar {
 				this.markerUpdate(x);
 				uView.refresh;
 			})
-			.drawFunc_({
-				var rangeLo, rangeHi;
-				Pen.use{
-					Pen.width = 3;
-
-					if((highlightRange['low'] > -1) && (highlightRange['high'] > -1)){
-						rangeLo = visibleMarkers[highlightRange['low']];
-						rangeHi = visibleMarkers[highlightRange['high']] - rangeLo;
-						Pen.color = hiliteBackground;
-						Pen.addRect(Rect.new(rangeLo, 0, rangeHi, dimensions.height + 10));
-						Pen.fill;
-					};
-					
-					visibleMarkers.do{ |val,ind|
-						if((ind >= highlightRange['low']) && (ind <= highlightRange['high'])){
-							Pen.color = hiliteMarkerColor;
-						}{
-							Pen.color = markerColor;
-						};
-						Pen.moveTo(val @ 0);
-						Pen.lineTo(val @ (dimensions.height + 10));
-						Pen.stroke;
-					};
-				};
-			});
+			.drawFunc_({ this.drawView; });
 	}
+	
+	drawView {
+		var rangeLo, rangeHi;
+		Pen.use{
+			Pen.width = 3;
+			if((highlightRange['low'].notNil) && (highlightRange['high'].notNil)){
+				rangeLo = this.getHighlightCoord(highlightRange['low']);
+				rangeHi = this.getHighlightCoord(highlightRange['high']) - rangeLo;
+				Pen.color = hiliteBackground;
+				Pen.addRect(Rect.new(rangeLo, 0, rangeHi, dimensions.height + 10));
+				Pen.fill;
+			};
+			
+			visibleMarkers.do{ |val,ind|
+				if(highlightRange['low'].notNil && highlightRange['high'].notNil){
+					if((ind >= highlightRange['low']) && (ind <= highlightRange['high'])){
+						Pen.color = hiliteMarkerColor;
+					}{
+						Pen.color = markerColor;
+					};
+				}{
+					Pen.color = markerColor;
+				};
+				Pen.moveTo(val @ 0);
+				Pen.lineTo(val @ (dimensions.height + 10));
+				Pen.stroke;
+			};
+		};
+	}
+	
+	getHighlightCoord { |ind|
+		case{ ind < 0 }{ ^0; }
+		{ind > visibleMarkers.lastIndex}{ ^uView.bounds.width; }
+		{ ^visibleMarkers[ind] };
+	}
+		
 		
 	setHighlightRange { |lo,hi|
 		highlightRange = Dictionary[
@@ -65,9 +77,10 @@ MarkerBar {
 		];
 		uView.refresh;
 	}
-
+	
 	clearHighlightRange {
-		highlightRange = Dictionary['low'  -> -1, 'high' -> -1];
+		highlightRange = Dictionary.new;
+		uView.refresh;
 	}
 
 	zoom { |startIn, endIn|
@@ -109,7 +122,7 @@ MarkerBar {
 	
 	clear {
 		markers = visibleMarkers = Array.new;
-		this.clearHighlightRange;
+		highlightRange = Dictionary.new;
 		uView.refresh;
 	}
 

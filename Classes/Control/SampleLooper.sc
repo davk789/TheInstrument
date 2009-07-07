@@ -202,25 +202,37 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	
-	setLoopRange { |start,range|
-		var selectionSize;
-		selectionSize = range * waveformView.value.size;
-		if(waveformMarkerBar.value.isNil){
-			if(selectionSize > 1){
-				params['start'] = 0;
-				params['range'] = 1;
-			}{
-				params['start'] = start;
-				params['range'] = range;
-			};
+	setLoopRange { |start, end|
+		var startMarker, endMarker;
+		startMarker = this.getMarkerIndex(start);
+		endMarker = this.getMarkerIndex(end) + 1;
+		waveformMarkerBar.setHighlightRange(startMarker, endMarker);
+		
+	}
+	
+	getMarkerIndex { |val|
+		var ret,ind=0;
+		if(val > waveformMarkerBar.value.last){
+			ret = waveformMarkerBar.value.lastIndex;
 		}{
-			
+			while({ val > waveformMarkerBar.value[ind] }, {
+				ret = ind;
+				ind = ind.increment;
+			});
 		};
-		[start, range * waveformView.value.size].postln;
+		
+		if(ret.isNil){
+			ret = -1;
+		};
+		^ret;
 	}
 	
 	setMarkers { |markers|
 		loopMarkers = markers;
+	}
+	
+	zoomToAbs { |val|
+		^(val / currBufDisplayRange) + currBufDisplayStart;
 	}
 	
 	loadSynthDef { |numChannels=1|
@@ -291,8 +303,12 @@ SampleLooper {
 			.showIndex_(true)
 			.selectionSize_(2)
 			.startIndex_(0)
-			.action_({ |obj| 
-				this.setLoopRange(obj.index / obj.value.size, obj.selectionSize / obj.value.size); 
+			.action_({ |obj|
+				var start,end;
+				start = obj.index;
+				end = obj.selectionSize + obj.index;
+				[this.zoomToAbs(start), this.zoomToAbs(end)].postln;
+//				this.setLoopRange(start, end); 
 			});
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
