@@ -70,12 +70,20 @@ MarkerBar {
 	}
 		
 		
-	setHighlightRange { |lo,hi|
+	setHighlightRange { |lo,hi| // index not location points
 		highlightRange = Dictionary[
-			'low'  -> lo, // lowest marker index
-			'high' -> hi  // highest marker index
+			'low'  -> lo, 
+			'high' -> hi
 		];
 		uView.refresh;
+	}
+	
+	getHighlightCoords { // location points not index
+		^Dictionary[
+			'low' -> values[highlightRange['low']],
+			'high' -> values[highlightRange['high']]
+		
+		];
 	}
 	
 	clearHighlightRange {
