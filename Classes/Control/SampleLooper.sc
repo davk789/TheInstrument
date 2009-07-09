@@ -67,6 +67,7 @@ SampleLooper {
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
+		s.sendMsg('g_new', groupNum, 0, 1);
 
 	}
 	
@@ -95,7 +96,7 @@ SampleLooper {
 	}
 	
 	play { |val|
-		s.sendMsg('s_new', 'SampleLooperPlayer', 1, 0, nodeNum);
+		s.sendMsg('s_new', 'SampleLooperPlayer', nodeNum, 0, groupNum);
 		s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
 	}
 
@@ -150,6 +151,7 @@ SampleLooper {
 
 	setActiveBuffer { |sel|
 		activeBufferIndex = sel;
+		postln("loading new synthDef with number of channels = " ++ buffers[activeBufferIndex].numChannels);
 		this.loadSynthDef(buffers[activeBufferIndex].numChannels);
 		this.drawWaveformView;
 	}
@@ -176,7 +178,7 @@ SampleLooper {
 				waveformView.value_(currentBufferArray);
 				waveformViewZoom.lo_(0).hi_(1);
 				waveformViewVZoom.value_(0);
-				waveformMarkerBar.value_([]);
+				waveformMarkerBar.clear;
 				waveformMarkerBar.zoom(0, 1);
 				bufferSelectMenu.enabled_(true);
 			};
@@ -246,13 +248,13 @@ SampleLooper {
 	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
-			arg bufnum, speed, start, end, outBus, inBus, delayTime=0.1, recordOffset, record, mix;
+			arg bufnum, speed=1, start=0, end=1, outBus=0, inBus=1, delayTime=0.1, recordOffset=0.1, record=0, mix=1;
 			
 			var inPhase, outPhase, outSig, inSig, kNumFrames, sRecordHead;
 
 			kNumFrames = BufFrames.kr(bufnum);
 			
-			inSig = In.ar(inBus * (mix - 1).abs) + (LocalIn.ar * mix);
+			inSig = In.ar(inBus * (mix - 1).abs, numChannels) + (LocalIn.ar(numChannels) * mix);
 
 			outPhase = Phasor.ar(speed, start * kNumFrames, end * kNumFrames);
 			inPhase = (outPhase + (recordOffset * SampleRate.ir)) % kNumFrames;
@@ -260,7 +262,6 @@ SampleLooper {
 			sRecordHead = Select.ar(record, [DC.ar(0), inPhase]);
 			BufWr.ar(inSig.softclip, bufnum, sRecordHead);
 
-			// numChannels needs to be hardwired to the SynthDef
 			outSig = BufRd.ar(numChannels, bufnum, outPhase);
 			Out.ar(outBus, outSig);
 			
