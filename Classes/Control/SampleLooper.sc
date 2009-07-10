@@ -96,8 +96,12 @@ SampleLooper {
 	}
 	
 	play { |val|
-		s.sendMsg('s_new', 'SampleLooperPlayer', nodeNum, 0, groupNum);
-		s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
+		if(val){
+			s.sendMsg('s_new', 'SampleLooperPlayer', nodeNum, 0, groupNum);
+			s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
+		}{
+			playButton.value_(1);
+		};
 	}
 
 	pause { |val|
@@ -217,6 +221,9 @@ SampleLooper {
 		params['start'] = highlightCoords['low'] ? 0;
 		params['end'] = highlightCoords['high'] ? 1;
 		
+		s.sendMsg('n_set', nodeNum, 'resetPos', start, 'trig', 1, 'start', params['start'], 'end', params['end']);
+		
+		
 	}
 	
 	getMarkerIndex { |val|
@@ -248,7 +255,7 @@ SampleLooper {
 	
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
-			arg bufnum, speed=1, start=0, end=1, outBus=0, inBus=1, delayTime=0.1, recordOffset=0.1, record=0, mix=1;
+			arg bufnum, speed=1, start=0, end=1, outBus=0, inBus=1, delayTime=0.1, recordOffset=0.1, record=0, mix=1, trig=1, resetPos=0;
 			
 			var inPhase, outPhase, outSig, inSig, kNumFrames, sRecordHead;
 
@@ -256,7 +263,7 @@ SampleLooper {
 			
 			inSig = In.ar(inBus * (mix - 1).abs, numChannels) + (LocalIn.ar(numChannels) * mix);
 
-			outPhase = Phasor.ar(speed, start * kNumFrames, end * kNumFrames);
+			outPhase = Phasor.ar(trig, speed, start * kNumFrames, end * kNumFrames, resetPos);
 			inPhase = (outPhase + (recordOffset * SampleRate.ir)) % kNumFrames;
 
 			sRecordHead = Select.ar(record, [DC.ar(0), inPhase]);
@@ -318,7 +325,8 @@ SampleLooper {
 				start = this.zoomToAbs(obj.index / obj.value.size);
 				end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
 				this.setLoopRange(start, end); 
-			});
+			})
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
