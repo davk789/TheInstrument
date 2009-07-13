@@ -61,6 +61,15 @@ EZJKnob { // no longer with JKnob on OS X
 		};
 		numberBox.value = prValue;
 	}
+	
+	background_ { |color|
+		knobView.background_(color);
+	}
+	
+	background {
+		^knobView.background;
+	}
+	
 	value {
 		^knob.value;
 	}

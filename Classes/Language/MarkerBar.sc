@@ -71,11 +71,30 @@ MarkerBar {
 		
 		
 	setHighlightRange { |lo,hi| // index not location points
-		highlightRange = Dictionary[
-			'low'  -> lo, 
-			'high' -> hi
-		];
+		var checkLow, checkHigh;
+		checkLow = this.checkInRange(lo);
+		checkHigh = this.checkInRange(hi);
+		if(checkLow == checkHigh){
+			highlightRange = Dictionary.new;
+		}{
+			highlightRange = Dictionary[
+				'low'  -> checkLow,
+				'high' -> checkHigh
+			];
+		};
 		uView.refresh;
+	}
+	
+	checkInRange { |val|
+		case{val < 0}{
+			^0;
+		}
+		{val > values.lastIndex}{
+			^values.lastIndex;
+		}
+		{
+			^val;
+		};
 	}
 	
 	getHighlightCoords { // location points not index

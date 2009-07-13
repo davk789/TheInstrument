@@ -18,7 +18,7 @@ Sampler { // container for one or more SampleLoopers
 	addChannel {
 		channels = channels.add(SampleLooper.new(parent));
 		channels.last.makeGUI(win);
-		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 600, channels.size * 385);
+		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 920, channels.size * 270);
 	}
 	
 	addMixerChannel {
@@ -31,7 +31,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	initGUI {
-		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 600, 385)).front;
+		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 920, 270)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 }
@@ -40,7 +40,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
 	// GUI objects
-	var controlBackgroundColor, topView, presetRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, transportView, bufferView, recordButton, playButton, pauseButton, stopButton, playbackSpeedSlider, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelSlider, outputLevelSlider;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelKnob, outputLevelKnob;
 
 	
 	*new { |par|
@@ -95,6 +95,13 @@ SampleLooper {
 		isRecording = val;
 	}
 	
+	forward {
+		var lo,hi;
+		lo = waveformMarkerBar.highlightRange['low'] + 1;
+		hi = waveformMarkerBar.highlightRange['high'] + 1;
+		waveformMarkerBar.setHighlightRange(lo,hi);
+	}
+	
 	play { |val|
 		if(val){
 			s.sendMsg('s_new', 'SampleLooperPlayer', nodeNum, 0, groupNum);
@@ -102,6 +109,13 @@ SampleLooper {
 		}{
 			playButton.value_(1);
 		};
+	}
+	
+	back {
+		var lo,hi;
+		lo = waveformMarkerBar.highlightRange['low'] - 1;
+		hi = waveformMarkerBar.highlightRange['high'] - 1;
+		waveformMarkerBar.setHighlightRange(lo,hi);
 	}
 
 	pause { |val|
@@ -226,7 +240,7 @@ SampleLooper {
 		
 	}
 	
-	getMarkerIndex { |val|
+	getMarkerIndex { |val| // location in, index out
 		var ret,ind=0;
 		if(val > waveformMarkerBar.value.last){
 			ret = waveformMarkerBar.value.lastIndex;
@@ -278,23 +292,43 @@ SampleLooper {
 	
 	makeGUI { |container|
 		
-		controlBackgroundColor = Color.grey(0.3);
+		controlBackgroundColor = Color.blue.alpha_(0.2);
 		
-		topView = GUI.compositeView.new(container, Rect.new(0, 0, 600, 345));
+		topView = GUI.compositeView.new(container, Rect.new(0, 0, container.view.bounds.width, 245));
 		topView.decorator = FlowLayout(topView.bounds);
 		
-		presetRow = GUI.hLayoutView.new(topView, Rect.new(0, 0, topView.bounds.width, 25))
+		waveformColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 600, 238));
+		
+		bufferRow = GUI.hLayoutView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 25))
 			.background_(Color.black);
-		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 200, 0))
-			.items_(["this will have the presets listed", "some day"])
-			.background_(Color.blue.alpha_(0.2))
+		clearBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 75, 0))
+			.states_([["clear buffer", Color.white, controlBackgroundColor]])
 		    .font_(parent.controlFont)
-			.stringColor_(Color.white);
-		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 85, 0))
+		    .action_({ |obj| this.clearActiveBuffer; });
+		
+		
+		addFileButton = GUI.button.new(bufferRow, Rect.new(0, 0, 75, 0))
+			.states_([["add file(s)", Color.white, controlBackgroundColor]])
 		    .font_(parent.controlFont)
-			.states_([["save preset", Color.white, Color.blue.alpha_(0.2)]]);
+		    .action_({ |obj| this.addBufferFromFile; });
+		
+		addEmptyBufferBox = GUI.numberBox.new(bufferRow, Rect.new(0, 0, 30, 0))
+		    .font_(parent.controlFont)
+		    .value_(16)
+		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
+		
+		addEmptyBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 90, 0))
+			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
+		
+		bufferSelectMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 280, 0))
+			.background_(controlBackgroundColor)
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.setActiveBuffer(obj.value); });
 			
-		waveformControlView = GUI.compositeView.new(topView, Rect.new(0, 0, topView.bounds.width, 180))
+		waveformControlView = GUI.compositeView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 180))
 			.background_(Color.black);
 
 		waveformControlView.decorator_(FlowLayout(waveformControlView.bounds));
@@ -339,90 +373,94 @@ SampleLooper {
 			.lo_(0)
 			.hi_(1)
 			.action_({ |obj| this.setWaveformZoom(obj.lo, obj.hi); });
-		
-		// transport section
-		transportView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
+			
+		transportRow = GUI.hLayoutView.new(waveformColumn, Rect.new(0, 0, 0, 25))
 			.background_(Color.black);
-		transportView.decorator_(FlowLayout(transportView.bounds));
-		
-		recordButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
+			
+		recordButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([
 				["o", Color.red, Color.new255(25,25,25)],
 				["o", Color.black, Color.red]
 			])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.record(obj.value.toBool); });
-		playButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
+
+		backButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+			.states_([["<<", Color.white, controlBackgroundColor]])
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.back; });
+
+
+		playButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([
 				[">", Color.green, controlBackgroundColor],
 				[">", Color.black, Color.green]
 			])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.play(obj.value.toBool); });
-		pauseButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
+
+		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+			.states_([[">>", Color.white, controlBackgroundColor]])
+		    .font_(parent.strongFont)
+		    .action_({ |obj| this.forward; });
+
+		    
+		pauseButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([
 				["||", Color.yellow, controlBackgroundColor],
 				["||", Color.black, Color.yellow]
 			])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.pause(obj.value.toBool); });
-		stopButton = GUI.button.new(transportView, Rect.new(0, 0, 67, 25))
+		    
+		stopButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([["[]", Color.white(0.8), controlBackgroundColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.stop; });
 		
 
-		playbackSpeedSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont)
-		    .setColors(
-		    	sliderBackground:controlBackgroundColor,
-		    	knobColor:HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5)
-		    );
-
-		inputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont)
-		    .setColors(
-		    	sliderBackground:Color.green(0.3),
-		    	knobColor:HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5)
-		    );
-		outputLevelSlider = EZSlider.new(transportView, Rect.new(0, 0, 280, 20))
-		    .font_(parent.controlFont)
-		    .setColors(
-		    	sliderBackground:Color.green(0.3),
-		    	knobColor:HiliteGradient.new(Color.red, Color.white, \v, 64, 0.5)
-		    );
 		
-		// buffer control section
-		bufferView = GUI.compositeView.new(topView, Rect.new(0, 0, 290, 118))
+		controlColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 300, 238));
+		
+		presetRow = GUI.hLayoutView.new(controlColumn, Rect.new(0, 0, 0, 25))
 			.background_(Color.black);
-		bufferView.decorator_(FlowLayout(bufferView.bounds));
-		
-		clearBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
-			.states_([["clear buffer", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.clearActiveBuffer; });
-		
-		
-		addFileButton = GUI.button.new(bufferView, Rect.new(0, 0, 75, 25))
-			.states_([["add file(s)", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.addBufferFromFile; });
-		
-		addEmptyBufferBox = GUI.numberBox.new(bufferView, Rect.new(0, 0, 30, 25))
-		    .font_(parent.controlFont)
-		    .value_(16)
-		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
-		
-		addEmptyBufferButton = GUI.button.new(bufferView, Rect.new(0, 0, 90, 25))
-			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
-		
-		bufferSelectMenu = GUI.popUpMenu.new(bufferView, Rect.new(0, 0, 280, 25))
+
+		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 200, 0))
+			.items_(["this will have the presets listed", "some day"])
 			.background_(controlBackgroundColor)
-			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
-		    .action_({ |obj| this.setActiveBuffer(obj.value); });
+			.stringColor_(Color.white);
+		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 85, 0))
+		    .font_(parent.controlFont)
+			.states_([["save preset", Color.white, Color.blue.alpha_(0.2)]]);
+
+		controlView = GUI.compositeView.new(controlColumn, Rect.new(0, 0, 300, 210))
+			.background_(Color.black);
+		controlView.decorator_(FlowLayout(controlView.bounds));
+
+
+		playbackSpeedKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "speed")
+			.spec_([-4, 4].asSpec)
+			.value_(1)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.stringColor_(Color.white)
+			.background_(controlBackgroundColor)
+			.knobAction_({ |obj| obj.value.postln; });
+		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
+			.background_(controlBackgroundColor)
+			.spec_([0, 4].asSpec)
+			.value_(1)
+			.stringColor_(Color.white)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| obj.value.postln; });
+		outputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "out lev")
+			.spec_([0, 4].asSpec)
+			.value_(1)
+			.stringColor_(Color.white)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| obj.value.postln; });
+
 		    
 	}
 	
