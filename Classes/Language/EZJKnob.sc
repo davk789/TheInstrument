@@ -1,3 +1,4 @@
+
 KnobWrapper {
 	var containerView, knob, numberBox, label;
 	*new { |parent,bounds|
@@ -91,3 +92,16 @@ EZJKnob { // no longer with JKnob on OS X
 	}
 
 }
+
++ JSCCompositeView {
+	relativeOrigin_ { |val|
+		postln("desn't do shit.");
+	}
+}
+
++ JSCNumberBox {
+	scroll_step_ { |val|
+		postln("whose fault is this anyway?");
+	}
+}
+  
