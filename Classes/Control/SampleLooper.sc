@@ -18,7 +18,7 @@ Sampler { // container for one or more SampleLoopers
 	addChannel {
 		channels = channels.add(SampleLooper.new(parent));
 		channels.last.makeGUI(win);
-		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 920, channels.size * 270);
+		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
 	}
 	
 	addMixerChannel {
@@ -31,7 +31,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	initGUI {
-		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 920, 270)).front;
+		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 830, 270)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 }
@@ -40,7 +40,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, inputLevelKnob, outputLevelKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton;
 
 	
 	*new { |par|
@@ -258,7 +258,60 @@ SampleLooper {
 		range = currBufDisplayEnd - currBufDisplayStart;
 		^((val  * range) / currentBufferArray.size) + (currBufDisplayStart / currentBufferArray.size);
 	}
+
+	savePreset {
+		"need to have a save preset action here".postln;
+	}
+
+	loadPreset { |sel|
+		"loading preset name " ++ sel;
+	}
 	
+	setModSource { |sel|
+		params['modSource'] = sel;
+		//		s.sendMsg('n_set', nodeNum, '');
+	}
+
+	setModLevel { |val|
+		params['modLevel'] = val;
+		s.sendMsg('n_set', nodeNum, 'modLevel', params['modLevel']);
+	}
+	
+	setModLag { |val|
+		params['modLag'] = val;
+		s.sendMsg('n_set', nodeNum, 'modLag', params['modLag']);
+	}
+
+	setSpeed { |val|
+		params['speed'] = val;
+		s.sendMsg('n_set', nodeNum, 'speed', params['speed']);
+	}
+
+	setGain { |val|
+		params['gain'] = val;
+		s.sendMsg('n_set', nodeNum, 'gain', params['gain']);
+	}
+
+	setInputSource { |sel|
+		params['inputSource'] = sel;
+	}
+	
+	setInputLevel { |val| 
+		params['inputLevel'] = val;
+		s.sendMsg('n_set', nodeNum, 'inputLevel', params['inputLevel']);
+	}
+
+	setRecordOffset { |val|
+		params['recordOffset'] = val;
+		s.sendMsg('n_set', nodeNum, 'recordOffset', params['recordOffset']);
+	}
+
+	setRecordMode { |sync|
+		if(sync){
+		}{
+		};
+	}
+
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, inBus=1, delayTime=0.1, recordOffset=0.1, record=0, mix=1, trig=1, resetPos=0;
@@ -414,46 +467,102 @@ SampleLooper {
 		
 
 		
-		controlColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 300, 238));
+		controlColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 200, 238));
 		
 		presetRow = GUI.hLayoutView.new(controlColumn, Rect.new(0, 0, 0, 25))
 			.background_(Color.black);
 
-		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 200, 0))
+		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 45, 0))
+		    .font_(parent.controlFont)
+			.states_([["save", Color.white, Color.blue.alpha_(0.2)]])
+		    .action_({ |obj| this.savePreset; });
+		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 145, 0))
 			.items_(["this will have the presets listed", "some day"])
 			.background_(controlBackgroundColor)
 		    .font_(parent.controlFont)
-			.stringColor_(Color.white);
-		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 85, 0))
-		    .font_(parent.controlFont)
-			.states_([["save preset", Color.white, Color.blue.alpha_(0.2)]]);
+			.stringColor_(Color.white)
+		    .action_({ |obj| this.loadPreset(obj.item); });
 
-		controlView = GUI.compositeView.new(controlColumn, Rect.new(0, 0, 300, 210))
+		controlView = GUI.compositeView.new(controlColumn, Rect.new(0, 0, 200, 210))
 			.background_(Color.black);
 		controlView.decorator_(FlowLayout(controlView.bounds));
 
+		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
+            .string_("mod")
+		    .stringColor_(Color.white);
+		modSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
+			.items_(parent.audioBusRegister.keys.asArray)
+			.background_(controlBackgroundColor)
+		    .font_(parent.controlFont)
+			.stringColor_(Color.white)
+		    .action_({ |obj| this.setModSource(obj.item); });
 
-		playbackSpeedKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "speed")
+		modLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lev")
 			.spec_([-4, 4].asSpec)
 			.value_(1)
+		    .font_(parent.controlFont)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.stringColor_(Color.white)
 			.background_(controlBackgroundColor)
-			.knobAction_({ |obj| obj.value.postln; });
+			.knobAction_({ |obj| this.setModLevel(obj.value); });
+		modLagKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lag")
+			.background_(controlBackgroundColor)
+			.spec_([0, 4].asSpec)
+			.value_(1)
+		    .font_(parent.controlFont)
+			.stringColor_(Color.white)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| this.setModLag(obj.value); });
+		speedKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "speed")
+			.spec_([0, 4].asSpec)
+			.value_(1)
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| this.setSpeed(obj.value); });
+		gainKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "out gain")
+			.spec_([0, 4].asSpec)
+			.value_(1)
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| this.setGain(obj.value); });
+
+
+		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
+            .string_("in")
+		    .stringColor_(Color.white);
+		inputSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
+ 		    .items_(parent.audioBusRegister.keys.asArray)
+			.background_(controlBackgroundColor)
+		    .font_(parent.controlFont)
+			.stringColor_(Color.white)
+		    .action_({ |obj| this.setInputSource(obj.item); });
 		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
-			.background_(controlBackgroundColor)
 			.spec_([0, 4].asSpec)
 			.value_(1)
 			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| obj.value.postln; });
-		outputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "out lev")
+			.knobAction_({ |obj| this.setInputLevel(obj.value); });
+		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in gain")
 			.spec_([0, 4].asSpec)
 			.value_(1)
 			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| obj.value.postln; });
+			.knobAction_({ |obj| this.setRecordOffset(obj.value); });
+		recordModeButton = GUI.button.new(controlView, Rect.new(0, 0, 75, 25))
+			.states_([
+				["full", Color.yellow, controlBackgroundColor],
+				["sync", Color.black, Color.yellow]
+			])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.setRecordMode(obj.value.toBool); });
 
 		    
 	}
