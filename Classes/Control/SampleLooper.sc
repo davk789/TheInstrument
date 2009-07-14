@@ -100,6 +100,7 @@ SampleLooper {
 		lo = waveformMarkerBar.highlightRange['low'] + 1;
 		hi = waveformMarkerBar.highlightRange['high'] + 1;
 		waveformMarkerBar.setHighlightRange(lo,hi);
+		this.setLoopPointParams;
 	}
 	
 	play { |val|
@@ -116,6 +117,7 @@ SampleLooper {
 		lo = waveformMarkerBar.highlightRange['low'] - 1;
 		hi = waveformMarkerBar.highlightRange['high'] - 1;
 		waveformMarkerBar.setHighlightRange(lo,hi);
+		this.setLoopPointParams;
 	}
 
 	pause { |val|
@@ -223,38 +225,28 @@ SampleLooper {
 	}
 	
 	setLoopRange { |start, end|
-		var startMarker, endMarker, highlightCoords;
+		var startMarker, endMarker;
 		
-		startMarker = this.getMarkerIndex(start);
-		endMarker = this.getMarkerIndex(end) + 1;
+		startMarker = waveformMarkerBar.getIndexForLocation(start);
+		endMarker = waveformMarkerBar.getIndexForLocation(end) + 1;
 		
 		waveformMarkerBar.setHighlightRange(startMarker, endMarker);
 		
+		this.setLoopPointParams(start);
+		
+	}
+	
+	setLoopPointParams { |start|
+		var highlightCoords, startPoint;
 		highlightCoords = waveformMarkerBar.getHighlightCoords;
 		
 		params['start'] = highlightCoords['low'] ? 0;
 		params['end'] = highlightCoords['high'] ? 1;
+
+		startPoint = start ? params['start'];
 		
-		s.sendMsg('n_set', nodeNum, 'resetPos', start, 'trig', 1, 'start', params['start'], 'end', params['end']);
-		
-		
-	}
+		s.sendMsg('n_set', nodeNum, 'resetPos', startPoint, 'trig', 1, 'start', params['start'], 'end', params['end']);
 	
-	getMarkerIndex { |val| // location in, index out
-		var ret,ind=0;
-		if(val > waveformMarkerBar.value.last){
-			ret = waveformMarkerBar.value.lastIndex;
-		}{
-			while({ val > waveformMarkerBar.value[ind] }, {
-				ret = ind;
-				ind = ind.increment;
-			});
-		};
-		
-		if(ret.isNil){
-			ret = -1;
-		};
-		^ret;
 	}
 	
 	setMarkers { |markers|
@@ -385,10 +377,11 @@ SampleLooper {
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.record(obj.value.toBool); });
 
-		backButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+		backButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
 			.states_([["<<", Color.white, controlBackgroundColor]])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.back; });
+		    .action_({ |obj| this.back; })
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
 
 
 		playButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
@@ -399,10 +392,11 @@ SampleLooper {
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.play(obj.value.toBool); });
 
-		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
 			.states_([[">>", Color.white, controlBackgroundColor]])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.forward; });
+		    .action_({ |obj| this.forward; })
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
 
 		    
 		pauseButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))

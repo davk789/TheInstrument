@@ -63,40 +63,38 @@ MarkerBar {
 		};
 	}
 	
+	getIndexForLocation { |val| // return the last marker index below the location (range == 0..1)
+		var ret,ind=0;
+		if(val > values.last){
+			ret = values.lastIndex;
+		}{
+			while({ val > values[ind] }, {
+				ret = ind;
+				ind = ind.increment;
+			});
+		};
+		
+		if(ret.isNil){
+			ret = -1;
+		};
+		^ret;
+	}
+	
 	getHighlightCoord { |ind|
 		case{ ind < 0 }{ ^0; }
 		{ind > visibleMarkers.lastIndex}{ ^uView.bounds.width; }
 		{ ^visibleMarkers[ind] };
-	}
-		
+	}	
 		
 	setHighlightRange { |lo,hi| // index not location points
-		var checkLow, checkHigh;
-		checkLow = this.checkInRange(lo);
-		checkHigh = this.checkInRange(hi);
-		if(checkLow == checkHigh){
-			highlightRange = Dictionary.new;
-		}{
-			highlightRange = Dictionary[
-				'low'  -> checkLow,
-				'high' -> checkHigh
-			];
-		};
+		var clipLow, clipHigh;
+		highlightRange = Dictionary[
+			'low'  -> lo,
+			'high' -> hi
+		];
 		uView.refresh;
 	}
-	
-	checkInRange { |val|
-		case{val < 0}{
-			^0;
-		}
-		{val > values.lastIndex}{
-			^values.lastIndex;
-		}
-		{
-			^val;
-		};
-	}
-	
+		
 	getHighlightCoords { // location points not index
 		^Dictionary[
 			'low' -> values[highlightRange['low']],
