@@ -40,7 +40,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par|
@@ -60,7 +60,6 @@ SampleLooper {
 			'end'         -> 1, 
 			'outBus'      -> 25, 
 			'inBus'       -> 20, 
-			'delayTime'   -> 0.1,
 			'reordOffset' -> 0.01,
 			'record'      -> 0,
 			'mix'         -> 0
@@ -268,8 +267,8 @@ SampleLooper {
 	}
 	
 	setModSource { |sel|
-		params['modSource'] = sel;
-		//		s.sendMsg('n_set', nodeNum, '');
+		params['modSource'] = paret.audioBusRegister[sel];
+		s.sendMsg('n_set', nodeNum, 'modBus', 'modSource');
 	}
 
 	setModLevel { |val|
@@ -314,13 +313,17 @@ SampleLooper {
 
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
-			arg bufnum, speed=1, start=0, end=1, outBus=0, inBus=1, delayTime=0.1, recordOffset=0.1, record=0, mix=1, trig=1, resetPos=0;
+			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
+				modBus=20, modLag=0.2,
+				inBus=1, recordOffset=0.1, record=0, mix=1;
 			
-			var inPhase, outPhase, outSig, inSig, kNumFrames, sRecordHead;
-
+			var inPhase, outPhase, outSig, inSig, kNumFrames, sRecordHead, modSig;
+	
 			kNumFrames = BufFrames.kr(bufnum);
 			
-			inSig = In.ar(inBus * (mix - 1).abs, numChannels) + (LocalIn.ar(numChannels) * mix);
+			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
+			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (LocalIn.ar(numChannels) * mix);
+			
 
 			outPhase = Phasor.ar(trig, speed, start * kNumFrames, end * kNumFrames, resetPos);
 			inPhase = (outPhase + (recordOffset * SampleRate.ir)) % kNumFrames;
@@ -328,7 +331,7 @@ SampleLooper {
 			sRecordHead = Select.ar(record, [DC.ar(0), inPhase]);
 			BufWr.ar(inSig.softclip, bufnum, sRecordHead);
 
-			outSig = BufRd.ar(numChannels, bufnum, outPhase);
+			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
 			Out.ar(outBus, outSig);
 			
 			LocalOut.ar(outSig);
