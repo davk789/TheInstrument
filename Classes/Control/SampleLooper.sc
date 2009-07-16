@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <nodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
+	var parent, s, <playerNodeNum, params, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -50,19 +50,26 @@ SampleLooper {
 	init_samplelooper { |par|
 		parent  = par;
 		s       = Server.default;
-		nodeNum = s.nextNodeID;
+		playerNodeNum = s.nextNodeID;
 		buffers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
 		params  = Dictionary[
-			'bufnum'      -> -1, 
-			'speed'       -> 1,
-			'start'       -> 0, 
-			'end'         -> 1, 
-			'outBus'      -> 25, 
-			'inBus'       -> 20, 
-			'reordOffset' -> 0.01,
-			'record'      -> 0,
-			'mix'         -> 0
+			'bufnum' -> -1, 
+			'speed' -> 1, 
+			'start' -> 0, 
+			'end' -> 1, 
+			'outBus' -> 0, 
+			'trig' -> 1, 
+			'resetPos' -> 0, 
+			'recordTrig' -> 0,
+			'modBus' -> 20, 
+			'modLag' -> 0.2, 
+			'modLev' -> 0,
+			'inBus' -> 1, 
+			'recordOffset' -> 0.1, 
+			'record' -> 0, 
+			'recordMode' -> 0, 
+			'mix' -> 1
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
@@ -91,7 +98,8 @@ SampleLooper {
 	}
 	
 	record { |val|
-		isRecording = val;
+		params['record'] = val;
+		s.sendMsg('n_set', playerNodeNum, 'record', params['record']);
 	}
 	
 	forward {
@@ -104,8 +112,7 @@ SampleLooper {
 	
 	play { |val|
 		if(val){
-			s.sendMsg('s_new', 'SampleLooperPlayer', nodeNum, 0, groupNum);
-			s.listSendMsg(['n_set', nodeNum] ++ params.getPairs);
+			s.listSendMsg(['s_new', 'SampleLooperPlayer', playerNodeNum, 0, groupNum] ++ params.getPairs);
 		}{
 			playButton.value_(1);
 		};
@@ -121,16 +128,16 @@ SampleLooper {
 
 	pause { |val|
 		if(paused.not){
-			s.sendMsg('n_set', nodeNum, 'speed', 0);
+			s.sendMsg('n_set', playerNodeNum, 'speed', 0);
 			paused = true;
 		}{
-			s.sendMsg('n_set', nodeNum, 'speed', params['speed']);
+			s.sendMsg('n_set', playerNodeNum, 'speed', params['speed']);
 			paused = false;
 		};
 	}
 	
 	stop {
-		s.sendMsg('n_free', nodeNum);
+		s.sendMsg('n_free', playerNodeNum);
 		playButton.value_(0);
 		recordButton.value_(0);
 	}
@@ -244,7 +251,7 @@ SampleLooper {
 
 		startPoint = start ? params['start'];
 		
-		s.sendMsg('n_set', nodeNum, 'resetPos', startPoint, 'trig', 1, 'start', params['start'], 'end', params['end']);
+		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'trig', 1, 'start', params['start'], 'end', params['end']);
 	
 	}
 	
@@ -267,28 +274,28 @@ SampleLooper {
 	}
 	
 	setModSource { |sel|
-		params['modSource'] = paret.audioBusRegister[sel];
-		s.sendMsg('n_set', nodeNum, 'modBus', 'modSource');
+		params['modSource'] = parent.audioBusRegister[sel];
+		s.sendMsg('n_set', playerNodeNum, 'modBus', 'modSource');
 	}
 
 	setModLevel { |val|
 		params['modLevel'] = val;
-		s.sendMsg('n_set', nodeNum, 'modLevel', params['modLevel']);
+		s.sendMsg('n_set', playerNodeNum, 'modLevel', params['modLevel']);
 	}
 	
 	setModLag { |val|
 		params['modLag'] = val;
-		s.sendMsg('n_set', nodeNum, 'modLag', params['modLag']);
+		s.sendMsg('n_set', playerNodeNum, 'modLag', params['modLag']);
 	}
 
 	setSpeed { |val|
 		params['speed'] = val;
-		s.sendMsg('n_set', nodeNum, 'speed', params['speed']);
+		s.sendMsg('n_set', playerNodeNum, 'speed', params['speed']);
 	}
 
 	setGain { |val|
 		params['gain'] = val;
-		s.sendMsg('n_set', nodeNum, 'gain', params['gain']);
+		s.sendMsg('n_set', playerNodeNum, 'gain', params['gain']);
 	}
 
 	setInputSource { |sel|
@@ -297,12 +304,12 @@ SampleLooper {
 	
 	setInputLevel { |val| 
 		params['inputLevel'] = val;
-		s.sendMsg('n_set', nodeNum, 'inputLevel', params['inputLevel']);
+		s.sendMsg('n_set', playerNodeNum, 'inputLevel', params['inputLevel']);
 	}
 
 	setRecordOffset { |val|
 		params['recordOffset'] = val;
-		s.sendMsg('n_set', nodeNum, 'recordOffset', params['recordOffset']);
+		s.sendMsg('n_set', playerNodeNum, 'recordOffset', params['recordOffset']);
 	}
 
 	setRecordMode { |sync|
@@ -313,29 +320,37 @@ SampleLooper {
 
 	loadSynthDef { |numChannels=1|
 		SynthDef.new( "SampleLooperPlayer", {
-			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
-				modBus=20, modLag=0.2,
-				inBus=1, recordOffset=0.1, record=0, mix=1;
+			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, recordTrig=0,
+				modBus=20, modLag=0.2, modLev=0,
+				inBus=1, recordOffset=0.1, record=0, recordMode=0, mix=1;
 			
-			var inPhase, outPhase, outSig, inSig, kNumFrames, sRecordHead, modSig;
+			var outPhase, outSig, kNumFrames, sRecordHead, modSig, kStart, kEnd;
 	
 			kNumFrames = BufFrames.kr(bufnum);
+			kStart = kNumFrames * start;
+			kEnd = kNumFrames * end;
 			
 			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
-			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (LocalIn.ar(numChannels) * mix);
 			
-
-			outPhase = Phasor.ar(trig, speed, start * kNumFrames, end * kNumFrames, resetPos);
-			inPhase = (outPhase + (recordOffset * SampleRate.ir)) % kNumFrames;
-
-			sRecordHead = Select.ar(record, [DC.ar(0), inPhase]);
-			BufWr.ar(inSig.softclip, bufnum, sRecordHead);
-
+			outPhase = Phasor.ar(trig, speed, kStart, kEnd, resetPos);
+			
 			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
 			Out.ar(outBus, outSig);
 			
-			LocalOut.ar(outSig);
 		}).load(s);
+		
+		SynthDef.new("SampleLooperRecorder", { |bufnum, trig=0, start=0, end=0, inBus=20, mix=0|
+			var aRecordHead, kStart, kEnd, inSig;
+			aRecordHead = Phasor.ar(trig, 1, kStart, end);			
+			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);
+			
+			kStart = BufFrames.kr(bufnum) * start;
+			kEnd   = BufFrames.kr(bufnum) * end;
+
+			BufWr.ar(inSig.softclip, bufnum, aRecordHead);
+
+		}).load(s);
+		
 	}
 	
 	makeGUI { |container|
@@ -408,7 +423,7 @@ SampleLooper {
 				end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
 				this.setLoopRange(start, end); 
 			})
-			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
@@ -437,7 +452,7 @@ SampleLooper {
 			.states_([["<<", Color.white, controlBackgroundColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.back; })
-			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 
 		playButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
@@ -452,7 +467,7 @@ SampleLooper {
 			.states_([[">>", Color.white, controlBackgroundColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.forward; })
-			.mouseUpAction_({ |obj| s.sendMsg('n_set', nodeNum, 'trig', 0) });
+			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 		    
 		pauseButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))

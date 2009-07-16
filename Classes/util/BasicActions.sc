@@ -1,9 +1,10 @@
 QuickKeyboard { // quick and dirty replacement for my Axiom25 keyboard
-	var <>synthKeys, <>drumKeys, <>root, repeat;
-	*new {
-		^super.new.init_quickkeyboard
+	var <>synthKeys, <>drumKeys, <>root, repeat, instrument;
+	*new { |inst|
+		^super.new.init_quickkeyboard(inst);
 	}
-	init_quickkeyboard {
+	init_quickkeyboard { |inst|
+		instrument = inst;
 		repeat = Array.new;
 		synthKeys = Dictionary[
 			$a -> 0,
@@ -43,10 +44,10 @@ QuickKeyboard { // quick and dirty replacement for my Axiom25 keyboard
 			if(repeat.includes(char).not){
 				repeat = repeat.add(char);
 				if(synthKeys[char].notNil){
-					TheInstrument.noteOn(nil, 0, synthKeys[char] + root, 90);
+					instrument.noteOn(nil, 0, synthKeys[char] + root, 90);
 				};
 				if(drumKeys[char].notNil){
-					TheInstrument.noteOn(nil, 9, drumKeys[char], 90);
+					instrument.noteOn(nil, 9, drumKeys[char], 90);
 				};
 				keyc.switch(
 					123, {
@@ -63,7 +64,7 @@ QuickKeyboard { // quick and dirty replacement for my Axiom25 keyboard
 				repeat.remove(char);
 			};
 			if(synthKeys[char].notNil){
-				TheInstrument.noteOff(nil,0, synthKeys[char] + root,0);
+				instrument.noteOff(nil,0, synthKeys[char] + root,0);
 			};
 		};
 	}

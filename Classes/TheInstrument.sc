@@ -25,6 +25,12 @@ ThyInstrument {
 		this.launchMidiResponders;
 		this.launchObjects;
 	}
+	
+	*test {
+		this.new;
+		this.useComputerKeyboard;
+	}
+	
 	*initializeMIDI {
 		Platform.case('osx', {
 			MIDIClient.init(3, 2);
@@ -114,13 +120,13 @@ ThyInstrument {
 		
 		//monoInputChannel = MonoInputChannel.new(this);
 
-		//polySynth = WavetableSynthFilter.new(this);
+		polySynth = WavetableSynthFilter.new(this);
 //		polySynth = WavetableSynth.new(this);
 
-		//drumSynth = DrumSynth.new(this);
+		drumSynth = DrumSynth.new(this);
 				
 		Platform.case('osx', {
-			//gravityGridPlayer = GravityGridPlayer.new(this);
+			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 
 		sampler = Sampler.new(this, 1);
@@ -143,7 +149,7 @@ ThyInstrument {
 	
 	*useComputerKeyboard { |create=true|
 		if(create){
-			keyControl = QuickKeyboard.new;
+			keyControl = QuickKeyboard.new(this);
 		}{
 			keyControl = nil;
 		};
