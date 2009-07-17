@@ -16,7 +16,7 @@
 	}
 	
 	toBool {
-		if(this.value == 0){
+		if(this.value.trunc < 1){
 			^false;
 		}{
 			^true;

@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -73,7 +73,7 @@ SampleLooper {
 			'bufnum' -> -1, 
 			'trig'   -> 0, 
 			'start'  -> 0, 
-			'end'    -> 0,
+			'end'    -> 1,
 			'inBus'  -> 20, 
 			'mix'    -> 0
 		];
@@ -104,10 +104,12 @@ SampleLooper {
 	}
 	
 	record { |val|
+		isRecording = val;
 		if(val){
-			s.listSendMsg(['s_new', recorderNoteNum, 1, groupNum] ++ recorderParams.getPairs);
+			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
 		}{
-			s.sendMsg('n_free', recorderNoteNum);
+			s.sendMsg('n_free', recorderNodeNum);
+			this.drawWaveformView;
 		};
 	}
 	
@@ -120,7 +122,8 @@ SampleLooper {
 	}
 	
 	play { |val|
-		if(val){
+		isPlaying = val;
+		if(isPlaying){
 			s.listSendMsg(['s_new', 'SampleLooperPlayer', playerNodeNum, 0, groupNum] ++ playerParams.getPairs);
 		}{
 			playButton.value_(1);
@@ -148,6 +151,9 @@ SampleLooper {
 	stop {
 		s.sendMsg('n_free', playerNodeNum);
 		playButton.value_(0);
+		if(recordButton.value == 1){
+			this.drawWaveformView;
+		};
 		recordButton.value_(0);
 	}
 	
@@ -186,8 +192,12 @@ SampleLooper {
 
 	setActiveBuffer { |sel|
 		activeBufferIndex = sel;
-		postln("loading new synthDef with number of channels = " ++ buffers[activeBufferIndex].numChannels);
+
 		this.loadSynthDef(buffers[activeBufferIndex].numChannels);
+		playerParams['bufnum'] = buffers[activeBufferIndex];
+		recorderParams['bufnum'] = buffers[activeBufferIndex];
+		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
+		s.sendMsg('n_set', recorderNodeNum, 'bufnum', recorderParams['bufnum']);
 		this.drawWaveformView;
 	}
 	
@@ -308,12 +318,13 @@ SampleLooper {
 	}
 
 	setInputSource { |sel|
-		playerParams['inputSource'] = sel;
+		recorderParams['inBus'] = sel;
+		s.sendMsg('n_set', recorderNodeNum, 'inBus', recorderParams['inBus']);
 	}
 	
-	setInputLevel { |val| 
-		playerParams['inputLevel'] = val;
-		s.sendMsg('n_set', playerNodeNum, 'inputLevel', playerParams['inputLevel']);
+	setInputMix { |val| 
+		playerParams['inBus'] = val;
+		s.sendMsg('n_set', playerNodeNum, 'inputLevel', playerParams['inBus']);
 	}
 
 	setRecordOffset { |val|
@@ -327,13 +338,13 @@ SampleLooper {
 		};
 	}
 
-	loadSynthDef { |numChannels=1, kBus=1000|
+	loadSynthDef { |numChannels=1, kTrigBus=1000, kStart=1001|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
 				inBus=1, recordOffset=0.1;
 			
-			var outPhase, outSig, kNumFrames, sRecordHead, modSig, kStart, kEnd;
+			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd;
 	
 			kNumFrames = BufFrames.kr(bufnum);
 			kStart = kNumFrames * start;
@@ -345,21 +356,24 @@ SampleLooper {
 			
 			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
 			Out.ar(outBus, outSig);
-			Out.kr(kBus, (A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5));
+			Out.kr(kTrigBus, (A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5));
+			Out.kr(kStart);
 			
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
 			arg bufnum, start=0, end=0, inBus=20, mix=0, recordMode=0;
 			
-			var aRecordHead, kStart, kEnd, inSig, kTrig;
-			kTrig = Select.kr(recordMode, [DC.kr(0), In.kr(kBus)]);
-			aRecordHead = Phasor.ar(kTrig, 1, kStart, end);			
-			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);
-			inTrig = In.kr(kBus);
+			var aRecordHead, kEnd, inSig, kTrig, kNumFrames, skStart, iZero;
+			iZero = DC.kr(0);
+			kTrig = Select.kr(recordMode, [iZero, In.kr(kTrigBus)]);
 			
-			kStart = BufFrames.kr(bufnum) * start;
-			kEnd   = BufFrames.kr(bufnum) * end;
+			skStart = Select.kr(recordMode, [iZero, In.kr(kStart)]);
+			aRecordHead = Phasor.ar(kTrig, 1, kStart, end);			
+			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);			
+			kNumFrames = BufFrames.kr(bufnum);
+			kStart = kNumFrames * start;
+			kEnd   = kNumFrames * end;
 
 			BufWr.ar(inSig.softclip, bufnum, aRecordHead);
 
@@ -572,14 +586,14 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 		    .action_({ |obj| this.setInputSource(obj.item); });
-		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
-			.spec_([0, 4].asSpec)
-			.value_(1)
+		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "rec mix")
+			.spec_([0, 1].asSpec)
+			.value_(0)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setInputLevel(obj.value); });
+			.knobAction_({ |obj| this.setInputMix(obj.value); });
 		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in gain")
 			.spec_([0, 4].asSpec)
 			.value_(1)
