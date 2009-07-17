@@ -324,7 +324,7 @@ SampleLooper {
 	
 	setInputMix { |val| 
 		playerParams['inBus'] = val;
-		s.sendMsg('n_set', playerNodeNum, 'inputLevel', playerParams['inBus']);
+		s.sendMsg('n_set', recorderNodeNum, 'inputLevel', playerParams['inBus']);
 	}
 
 	setRecordOffset { |val|
@@ -338,7 +338,7 @@ SampleLooper {
 		};
 	}
 
-	loadSynthDef { |numChannels=1, kTrigBus=1000, kStart=1001|
+	loadSynthDef { |numChannels=1, kTrigBus=1000, kStartPoint=1001|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
@@ -357,7 +357,7 @@ SampleLooper {
 			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
 			Out.ar(outBus, outSig);
 			Out.kr(kTrigBus, (A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5));
-			Out.kr(kStart);
+			Out.kr(kStart + (recordOffset * SampleRate.ir));
 			
 		}).load(s);
 		
@@ -368,7 +368,7 @@ SampleLooper {
 			iZero = DC.kr(0);
 			kTrig = Select.kr(recordMode, [iZero, In.kr(kTrigBus)]);
 			
-			skStart = Select.kr(recordMode, [iZero, In.kr(kStart)]);
+			skStart = Select.kr(recordMode, [iZero, In.kr(kStartPoint)]);
 			aRecordHead = Phasor.ar(kTrig, 1, kStart, end);			
 			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);			
 			kNumFrames = BufFrames.kr(bufnum);
@@ -585,7 +585,7 @@ SampleLooper {
 			.background_(controlBackgroundColor)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
-		    .action_({ |obj| this.setInputSource(obj.item); });
+		    .action_({ |obj| this.setInputSource(parent.audioBusRegister[obj.item]); });
 		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "rec mix")
 			.spec_([0, 1].asSpec)
 			.value_(0)
