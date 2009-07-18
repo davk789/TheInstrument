@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -60,7 +60,7 @@ SampleLooper {
 			'start'        -> 0, 
 			'end'          -> 1, 
 			'outBus'       -> 0, 
-			'trig'         -> 1, 
+			'trig'         -> 0, 
 			'resetPos'     -> 0, 
 			'recordTrig'   -> 0,
 			'modBus'       -> 20, 
@@ -79,6 +79,11 @@ SampleLooper {
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
+		synthOutputs = Dictionary[
+			1 -> { |bus,sig| Out.ar(bus, Pan2.ar(sig, 0)); },
+			2 -> { |bus,sig| Out.ar(bus, sig); }
+		];
+		
 		s.sendMsg('g_new', groupNum, 0, 1);
 
 	}
@@ -104,7 +109,7 @@ SampleLooper {
 	}
 	
 	record { |val|
-		isRecording = val;
+		isRecording = val ? true;
 		if(val){
 			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
 		}{
@@ -122,7 +127,7 @@ SampleLooper {
 	}
 	
 	play { |val|
-		isPlaying = val;
+		isPlaying = val ? true;
 		if(isPlaying){
 			s.listSendMsg(['s_new', 'SampleLooperPlayer', playerNodeNum, 0, groupNum] ++ playerParams.getPairs);
 		}{
@@ -251,11 +256,12 @@ SampleLooper {
 	
 	setLoopRange { |start, end|
 		var startMarker, endMarker;
-		
-		startMarker = waveformMarkerBar.getIndexForLocation(start);
-		endMarker = waveformMarkerBar.getIndexForLocation(end) + 1;
-		
-		waveformMarkerBar.setHighlightRange(startMarker, endMarker);
+		if(waveformMarkerBar.value.size > 0){
+			startMarker = waveformMarkerBar.getIndexForLocation(start);
+			endMarker = waveformMarkerBar.getIndexForLocation(end) + 1;
+			
+			waveformMarkerBar.setHighlightRange(startMarker, endMarker);
+		};
 		
 		this.setLoopPointParams(start);
 		
@@ -263,13 +269,14 @@ SampleLooper {
 	
 	setLoopPointParams { |start|
 		var highlightCoords, startPoint;
+
 		highlightCoords = waveformMarkerBar.getHighlightCoords;
 		
 		playerParams['start'] = highlightCoords['low'] ? 0;
 		playerParams['end'] = highlightCoords['high'] ? 1;
 
 		startPoint = start ? playerParams['start'];
-		
+		postln("SampleLooper:setLoopPointParams startPoint = " ++ startPoint);
 		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'trig', 1, 'start', playerParams['start'], 'end', playerParams['end']);
 	
 	}
@@ -355,7 +362,7 @@ SampleLooper {
 			outPhase = Phasor.ar(trig, speed, kStart, kEnd, resetPos);
 			
 			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
-			Out.ar(outBus, outSig);
+			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig]);
 			Out.kr(kTrigBus, (A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5));
 			Out.kr(kStart + (recordOffset * SampleRate.ir));
 			
@@ -364,16 +371,17 @@ SampleLooper {
 		SynthDef.new("SampleLooperRecorder", { 
 			arg bufnum, start=0, end=0, inBus=20, mix=0, recordMode=0;
 			
-			var aRecordHead, kEnd, inSig, kTrig, kNumFrames, skStart, iZero;
-			iZero = DC.kr(0);
-			kTrig = Select.kr(recordMode, [iZero, In.kr(kTrigBus)]);
-			
-			skStart = Select.kr(recordMode, [iZero, In.kr(kStartPoint)]);
-			aRecordHead = Phasor.ar(kTrig, 1, kStart, end);			
-			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);			
+			var aRecordHead, kEnd, inSig, skTrig, kNumFrames, skStart, kZero;
+			kZero = DC.kr(0);
 			kNumFrames = BufFrames.kr(bufnum);
-			kStart = kNumFrames * start;
+			
+			skTrig = Select.kr(recordMode, [kZero, In.kr(kTrigBus)]);
+			skStart = Select.kr(recordMode, [kZero, In.kr(kStartPoint)]);
 			kEnd   = kNumFrames * end;
+
+			aRecordHead = Phasor.ar(skTrig, 1, skStart, kEnd);
+						
+			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);			
 
 			BufWr.ar(inSig.softclip, bufnum, aRecordHead);
 

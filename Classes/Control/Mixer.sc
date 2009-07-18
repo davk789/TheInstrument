@@ -153,47 +153,9 @@ MixerChannel {
 	}
 }
 /*
-this is how things look on startup now:
-NODE TREE Group 0
-   1 group
-      400 group
-         999 group
-         1003 group
-            1002 r_klank
-         1005 group
-            1004 r_lpf
-         1007 group
-            1006 r_hpf
-         1009 group
-            1008 r_hpf
-         1011 group
-            1010 r_klank
-         1013 group
-            1012 r_klank
-         1015 group
-            1014 r_klank
-         1017 group
-            1016 r_lpf
-      102 group
-      103 group
-      500 group
-         900 group
-         901 group
-         902 group
-         903 group
-         904 group
-            1026 monoMixerChannel
-            1001 monoMixerChannel
-         905 group
-            906 group
-            907 group
-            908 group
-            909 group
-            1000 stereoMixerChannel
-
-*** the group numbers should be <1000, nodes can be >1000/dereived from s.sendMsg 
+*** the group numbers should be <1000, nodes can be >1000/derived from s.sendMsg 
 	for now. see if this causes conflicts with voice creation. node management might
-	need to be cleaned up later, to avoid mode id conflicts with synths using dynamic
+	need to be cleaned up later, to avoid node id conflicts with synths using dynamic
 	node numbers.
 */                                                              
  

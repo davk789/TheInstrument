@@ -96,11 +96,15 @@ MarkerBar {
 	}
 		
 	getHighlightCoords { // location points not index
-		^Dictionary[
-			'low' -> values[highlightRange['low']],
-			'high' -> values[highlightRange['high']]
-		
-		];
+		if(values.size > 0){
+			^Dictionary[
+				'low' -> values[highlightRange['low']],
+				'high' -> values[highlightRange['high']]
+			
+			];
+		}{
+			^Dictionary.new;
+		};
 	}
 	
 	clearHighlightRange {
@@ -146,7 +150,7 @@ MarkerBar {
 	}
 	
 	clear {
-		markers = visibleMarkers = Array.new;
+		markers = visibleMarkers = values = Array.new;
 		highlightRange = Dictionary.new;
 		uView.refresh;
 	}
