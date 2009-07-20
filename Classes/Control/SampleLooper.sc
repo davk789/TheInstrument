@@ -38,7 +38,7 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -74,7 +74,8 @@ SampleLooper {
 			'trig'   -> 0, 
 			'start'  -> 0, 
 			'end'    -> 1,
-			'inBus'  -> 20, 
+			'inBus'  -> 20,
+			'stereo' -> 0,
 			'mix'    -> 0
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
@@ -83,7 +84,15 @@ SampleLooper {
 			1 -> { |bus,sig| Out.ar(bus, Pan2.ar(sig, 0)); },
 			2 -> { |bus,sig| Out.ar(bus, sig); }
 		];
-		
+		synthInputs = Dictionary[
+			1 -> { |bus, phase, bufnum, mix, stereo| [
+				(InFeedback.ar(bus, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix)
+			] },
+			2 -> { |bus, phase, bufnum, mix, stereo| [
+				(InFeedback.ar(bus, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix), 
+				(InFeedback.ar(bus + stereo, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix)
+			] }
+		];
 		s.sendMsg('g_new', groupNum, 0, 1);
 
 	}
@@ -205,6 +214,7 @@ SampleLooper {
 			if(isPlaying || isRecording){
 				this.stop;
 			};
+			postln("calling this.loadSynthDef(" ++ buffers[activeBufferIndex].numChannels ++ ");");
 			this.loadSynthDef(buffers[activeBufferIndex].numChannels);
 		};
 		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
@@ -282,7 +292,7 @@ SampleLooper {
 		playerParams['end'] = highlightCoords['high'] ? 1;
 
 		startPoint = start ? playerParams['start'];
-		postln("SampleLooper:setLoopPointParams startPoint = " ++ startPoint);
+
 		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'trig', 1, 'start', playerParams['start'], 'end', playerParams['end']);
 	
 	}
@@ -331,13 +341,14 @@ SampleLooper {
 	}
 
 	setInputSource { |sel|
+		postln("setting recorderParams['inBus'] = " ++ sel);
 		recorderParams['inBus'] = sel;
 		s.sendMsg('n_set', recorderNodeNum, 'inBus', recorderParams['inBus']);
 	}
 	
 	setInputMix { |val| 
-		playerParams['inBus'] = val;
-		s.sendMsg('n_set', recorderNodeNum, 'inputLevel', playerParams['inBus']);
+		recorderParams['mix'] = val;
+		s.sendMsg('n_set', recorderNodeNum, 'inputLevel', playerParams['mix']);
 	}
 
 	setRecordOffset { |val|
@@ -375,7 +386,7 @@ SampleLooper {
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
-			arg bufnum, start=0, end=0, inBus=20, mix=0, recordMode=0;
+			arg bufnum, start=0, end=0, inBus=20, stereo=0, inNumChannels=1, mix=0, recordMode=0;
 			
 			var aRecordHead, kEnd, inSig, skTrig, kNumFrames, skStart, kZero;
 			kZero = DC.kr(0);
@@ -385,11 +396,9 @@ SampleLooper {
 			skStart = Select.kr(recordMode, [kZero, In.kr(startPointBus)]);
 			kEnd   = kNumFrames * end;
 
-			aRecordHead = Phasor.ar(skTrig, 1, skStart, kEnd);
+			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, kEnd);
 			
-//			inSig = (In.ar(inBus, numChannels) * (mix - 1).abs) + (BufRd.ar(numChannels, bufnum, aRecordHead) * mix);			
-			inSig = (In.ar(inBus, numChannels));
-			BufWr.ar(inSig.softclip, bufnum, aRecordHead);
+			BufWr.ar(SynthDef.wrap(synthInputs[numChannels], nil, [inBus, aRecordHead, bufnum, mix, stereo]), bufnum, aRecordHead);
 
 		}).load(s);
 		

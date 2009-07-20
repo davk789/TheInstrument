@@ -2,9 +2,34 @@
 Mixer {
 	var s, <channels, win, windowHeight=530, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
+	
 	*new { |par|
 		^super.new.init_mixer(par);
 	}
+	
+	*loadSynthDefs { |server|
+		server = server ? Server.default;
+		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+		    var aSig, aIn;
+			aIn = (In.ar(inBus, 1) * gain).softclip;
+		    aSig = Pan2.ar(aIn, pan, lev);
+		    Out.ar(outBus, aSig);
+			Out.ar(3, aSig); // 
+		}).load(server);
+		SynthDef.new("monoMixerChannelNoAuxOut", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+		    var aSig, aIn;
+			aIn = (In.ar(inBus, 1) * gain).softclip;
+		    aSig = Pan2.ar(aIn, pan, lev);
+		    Out.ar(outBus, aSig);
+		}).load(server);
+		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+		    var aSig, aIn;
+			aIn = (In.ar(inBus, 2) * gain).softclip;
+		    aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
+		    Out.ar(outBus, aSig.softclip);
+		}).load(server);
+	}
+	
 	init_mixer { |par|
 		parent = par;
 		s = Server.default;
@@ -25,16 +50,19 @@ Mixer {
 		this.initGUI;
 		this.addStereoChannel("master", 0, true);
 	}
+	
 	//// GUI methods
 	initGUI {
 		win = GUI.window.new("Output Mix / Plugins", Rect.new(500.rand, 500.rand, 555, windowHeight)).front;
 		win.view.background = Color.grey(15);
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
+	
 	addMonoChannel { |name, addTarget=0, noAux=false|
 		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 1, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
+	
 	addStereoChannel { |name, addTarget=0, noAux=false|
 		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 2, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
@@ -43,21 +71,18 @@ Mixer {
 
 MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
-	var parent, s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, synthName, parent;
+	var parent, s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, parent;
+
 	*new { |par, name, addTarget, group, channels, noAux=false|
 		insertList = ["<none>", "MonoDelay", "Distortion", "Compressor", "RingMod", 
 			"EQ", "PitchShift"];
 		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
 	}
+
 	init_mixerChannel { |par, name, addTarget, group, channels, noAux=false|
 		s = Server.default;
 		parent = par;
-		if(noAux){
-			synthName = 's_monoMixerChannelNoAuxOut'
-		}{
-			synthName = 's_monoMixerChannel'
-		};
-		channelName = name ? "master"; // i shouldn't need to set a default value here
+		channelName = name ? "master"; 
 		volumeSpec = 'amp'.asSpec;
 		panSpec = [-1, 1].asSpec;
 		nodeID = s.nextNodeID;
@@ -72,6 +97,7 @@ MixerChannel {
 		lastInBus = inBus + channels;
 		this.startChannel(addTarget, group, channels);
 	}
+	
 	startChannel { |addTarget=0, group=1, channels=1|
 		channels.switch(
 			1, {
@@ -82,15 +108,19 @@ MixerChannel {
 			}
 		);
 	}
+	
 	stopChannel {
 		s.sendMsg('n_free', nodeID);
 	}
+	
 	setVolume { |volume|
 		s.sendMsg('n_set', nodeID, 'lev', volumeSpec.map(volume));
 	}
+	
 	setPan { |pan|
 		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(pan));
 	}
+	
 	makeChannelGUI { |win, groups|
 		var channel, inserts, insertMenus, label, labelText, 
 		faders, panFaderView, panFader, levelFader;
@@ -131,6 +161,7 @@ MixerChannel {
 			this.setVolume(obj.value);
 		};
 	}
+	
 	launchFXWindow { |menu, ind, group|
 		if(menu.value > 0){
 				if( effects[ind].isKindOf(menu.item.interpret).not ){

@@ -123,13 +123,13 @@ ThyInstrument {
 		polySynth = WavetableSynthFilter.new(this);
 //		polySynth = WavetableSynth.new(this);
 
-	//	drumSynth = DrumSynth.new(this);
+		drumSynth = DrumSynth.new(this);
 				
 		Platform.case('osx', {
 			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 
-		//sampler = Sampler.new(this, 1);
+		sampler = Sampler.new(this, 1);
 		
 	}
 	
