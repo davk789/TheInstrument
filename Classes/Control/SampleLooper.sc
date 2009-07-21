@@ -40,7 +40,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modSourceMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par|
@@ -61,22 +61,22 @@ SampleLooper {
 			'end'          -> 1, 
 			'outBus'       -> 0, 
 			'trig'         -> 0, 
-			'resetPos'     -> 0, 
-			'recordTrig'   -> 0,
+			'recordOffset' -> 0.1, 
 			'modBus'       -> 20, 
 			'modLag'       -> 0.2, 
 			'modLev'       -> 0,
-			'inBus'        -> 1, 
-			'recordOffset' -> 0.1, 
+			'inBus'        -> 1
 		];
 		recorderParams = Dictionary[
-			'bufnum' -> -1, 
-			'trig'   -> 0, 
-			'start'  -> 0, 
-			'end'    -> 1,
-			'inBus'  -> 20,
-			'stereo' -> 0,
-			'mix'    -> 0
+			'bufnum'       -> -1, 
+			'trig'         -> 0, 
+			'start'        -> 0, 
+			'end'          -> 1,
+			'inBus'        -> 20,
+			'stereo'       -> 0,
+			'inLev'        -> 1,
+			'preLev'       -> 0,
+			'recordMode'   -> 0
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
@@ -85,12 +85,12 @@ SampleLooper {
 			2 -> { |bus,sig| Out.ar(bus, sig); }
 		];
 		synthInputs = Dictionary[
-			1 -> { |bus, phase, bufnum, mix, stereo| [
-				(InFeedback.ar(bus, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix)
+			1 -> { |bus, phase, bufnum, inLev, preLev, stereo| [
+				(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
 			] },
-			2 -> { |bus, phase, bufnum, mix, stereo| [
-				(InFeedback.ar(bus, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix), 
-				(InFeedback.ar(bus + stereo, 1) * (mix - 1).abs) + (BufRd.ar(1, bufnum, phase) * mix)
+			2 -> { |bus, phase, bufnum, inLev, preLev, stereo| [
+				(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev), 
+				(InFeedback.ar(bus + stereo, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
 			] }
 		];
 		s.sendMsg('g_new', groupNum, 0, 1);
@@ -315,14 +315,14 @@ SampleLooper {
 		"loading preset name " ++ sel;
 	}
 	
-	setModSource { |sel|
-		playerParams['modSource'] = parent.audioBusRegister[sel];
-		s.sendMsg('n_set', playerNodeNum, 'modBus', 'modSource');
+	setModBus { |sel|
+		playerParams['modBus'] = sel;
+		s.sendMsg('n_set', playerNodeNum, 'modBus', playerParams['modBus']);
 	}
 
 	setModLevel { |val|
-		playerParams['modLevel'] = val;
-		s.sendMsg('n_set', playerNodeNum, 'modLevel', playerParams['modLevel']);
+		playerParams['modLev'] = val;
+		s.sendMsg('n_set', playerNodeNum, 'modLev', playerParams['modLev']);
 	}
 	
 	setModLag { |val|
@@ -341,14 +341,18 @@ SampleLooper {
 	}
 
 	setInputSource { |sel|
-		postln("setting recorderParams['inBus'] = " ++ sel);
 		recorderParams['inBus'] = sel;
 		s.sendMsg('n_set', recorderNodeNum, 'inBus', recorderParams['inBus']);
 	}
 	
-	setInputMix { |val| 
-		recorderParams['mix'] = val;
-		s.sendMsg('n_set', recorderNodeNum, 'inputLevel', playerParams['mix']);
+	setInputLevel { |val| 
+		recorderParams['inLev'] = val;
+		s.sendMsg('n_set', recorderNodeNum, 'inLev', playerParams['inLev']);
+	}
+
+	setPreLevel { |val| 
+		recorderParams['preLev'] = val;
+		s.sendMsg('n_set', recorderNodeNum, 'preLev', playerParams['preLev']);
 	}
 
 	setRecordOffset { |val|
@@ -356,17 +360,16 @@ SampleLooper {
 		s.sendMsg('n_set', playerNodeNum, 'recordOffset', playerParams['recordOffset']);
 	}
 
-	setRecordMode { |sync|
-		if(sync){
-		}{
-		};
+	setRecordMode { |sel|
+		recorderParams['recordMode'] = sel;
+		s.sendMsg('n_set', recorderNodeNum, 'recordMode', playerParams['recordMode']);
 	}
 
 	loadSynthDef { |numChannels=1, trigBus=1000, startPointBus=1001|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
-				inBus=1, recordOffset=0.1;
+				inBus=1, recordOffset=0.1, gain=1;
 			
 			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd;
 	
@@ -376,29 +379,29 @@ SampleLooper {
 			
 			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
 			
-			outPhase = Phasor.ar(trig, speed, kStart, kEnd, resetPos);
+			outPhase = Phasor.ar(trig, speed + modSig, kStart, kEnd, resetPos);
 			
-			outSig = BufRd.ar(numChannels, bufnum, outPhase + modSig);
-			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig]);
-			Out.kr(trigBus, (A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5));
+			outSig = BufRd.ar(numChannels, bufnum, outPhase);
+			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig * gain]);
+			Out.kr(trigBus, Trig.kr((A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5), 0.05));
 			Out.kr(kStart + (recordOffset * SampleRate.ir));
 			
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
-			arg bufnum, start=0, end=0, inBus=20, stereo=0, inNumChannels=1, mix=0, recordMode=0;
+			arg bufnum, start=0, end=0, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0;
 			
 			var aRecordHead, kEnd, inSig, skTrig, kNumFrames, skStart, kZero;
 			kZero = DC.kr(0);
 			kNumFrames = BufFrames.kr(bufnum);
 			
-			skTrig = Select.kr(recordMode, [kZero, In.kr(trigBus)]);
+			skTrig = Select.kr(recordMode, [kZero, InTrig.kr(trigBus)]);
 			skStart = Select.kr(recordMode, [kZero, In.kr(startPointBus)]);
 			kEnd   = kNumFrames * end;
 
 			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, kEnd);
 			
-			BufWr.ar(SynthDef.wrap(synthInputs[numChannels], nil, [inBus, aRecordHead, bufnum, mix, stereo]), bufnum, aRecordHead);
+			BufWr.ar(SynthDef.wrap(synthInputs[numChannels], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo]), bufnum, aRecordHead);
 
 		}).load(s);
 		
@@ -559,16 +562,16 @@ SampleLooper {
 		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
             .string_("mod")
 		    .stringColor_(Color.white);
-		modSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
+		modBusMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
 			.items_(parent.audioBusRegister.keys.asArray)
 			.background_(controlBackgroundColor)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
-		    .action_({ |obj| this.setModSource(obj.item); });
+		    .action_({ |obj| this.setModBus(parent.audioBusRegister[obj.item]); });
 
 		modLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lev")
-			.spec_([-4, 4].asSpec)
-			.value_(1)
+			.spec_([0, 100].asSpec)
+			.value_(0)
 		    .font_(parent.controlFont)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.stringColor_(Color.white)
@@ -576,21 +579,21 @@ SampleLooper {
 			.knobAction_({ |obj| this.setModLevel(obj.value); });
 		modLagKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lag")
 			.background_(controlBackgroundColor)
-			.spec_([0, 4].asSpec)
-			.value_(1)
+			.spec_([0, 1].asSpec)
+			.value_(0.1)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| this.setModLag(obj.value); });
 		speedKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "speed")
-			.spec_([0, 4].asSpec)
+			.spec_([-4, 4].asSpec)
 			.value_(1)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| this.setSpeed(obj.value); });
-		gainKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "out gain")
+		gainKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "gain")
 			.spec_([0, 4].asSpec)
 			.value_(1)
 			.stringColor_(Color.white)
@@ -609,29 +612,37 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 		    .action_({ |obj| this.setInputSource(parent.audioBusRegister[obj.item]); });
-		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "rec mix")
+		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
+			.spec_([0, 1].asSpec)
+			.value_(1)
+			.stringColor_(Color.white)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
+			.knobAction_({ |obj| this.setInputLevel(obj.value); });
+		preLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "pre lev")
 			.spec_([0, 1].asSpec)
 			.value_(0)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setInputMix(obj.value); });
-		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in gain")
-			.spec_([0, 4].asSpec)
-			.value_(1)
+			.knobAction_({ |obj| this.setPreLevel(obj.value); });
+		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "offset")
+			.spec_([0, 1].asSpec)
+			.value_(0.2)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| this.setRecordOffset(obj.value); });
-		recordModeButton = GUI.button.new(controlView, Rect.new(0, 0, 75, 25))
+		recordModeButton = GUI.button.new(controlView, Rect.new(0, 0, 50, 25))
 			.states_([
 				["full", Color.yellow, controlBackgroundColor],
 				["sync", Color.black, Color.yellow]
 			])
 		    .font_(parent.controlFont)
-		    .action_({ |obj| this.setRecordMode(obj.value.toBool); });
+		    .action_({ |obj| this.setRecordMode(obj.value); });
 
 		    
 	}
