@@ -40,11 +40,19 @@ Sampler { // container for one or more SampleLoopers
 		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 830, 270)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
+	
+	cc {
+		channels.do{ |obj,ind|
+			obj.ccFunction.value(obj,ind);
+		};
+	}
+	
 }
 
 SampleLooper {
 	classvar <buffers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
+	looper, <>ccFunction;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -85,6 +93,30 @@ SampleLooper {
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
+		ccFunction = { |src,chan,num,val|
+			num.switch(
+				20, {
+					postln("what should I be user for??");
+				},
+				21, {
+					this.back;
+				},
+				22, {
+					this.forward;
+				},
+				23, {
+					this.stop;
+				},
+				24, {
+					this.play;
+					defer{ playButton.value_(1); };
+				},
+				25, {
+					this.record;
+					defer{ recordButton.value_(1); }
+				}
+			);
+		};
 		synthOutputs = Dictionary[
 			1 -> { |bus,sig| Out.ar(bus, Pan2.ar(sig, 0)); },
 			2 -> { |bus,sig| Out.ar(bus, sig); }

@@ -32,24 +32,25 @@ ThyInstrument {
 	}
 	
 	*initializeMIDI {
-		Platform.case('osx', {
+/*		Platform.case('osx', { // is there any need for this?
 			MIDIClient.init(3, 2);
 			MIDIIn.connect(1, MIDIClient.sources[1]);
 		},
 		'linux', {
 			MIDIClient.init;
 			MIDIIn.connect(1, MIDIClient.sources[3]);
-		});
+		});*/
 		noteOnFunction = { |src,chan,num,vel|
+			[src,chan,num,vel].postln;
 			lastChannel = chan;
 			switch(chan,
-				0, {
+				0, { // WavetableSynth
 					polySynth.noteOn(src, chan, num, vel);
 					if(polySynth.looper.notNil){
 						polySynth.looper.addEvent([0,src,chan,num,vel]);
 					};
 				},
-				9, {
+				9, { // DurmSynth
 					drumSynth.noteOn(src, chan, num, vel);
 					if(drumSynth.looper.notNil){
 						drumSynth.looper.addEvent([num, vel]);
@@ -72,14 +73,21 @@ ThyInstrument {
 			};
 		};
 		ccFunction = { |src,chan,num,val|
+			[src,chan,num,val].postln;
 			switch(lastChannel,
-				0, {
+				0, { // WavetableSynth
 					polySynth.cc(src,chan,num,val);
 					if(polySynth.looper.notNil){
 						polySynth.looperHandleCC(src,chan,num,val);
 					};
 				},
-				9, {
+				1, {  // Sampler
+					sampler.cc(src,chan,num,val);
+					/*if(sampler.looper.notNil){ // not supporting command sequencing here yet
+						sampler.looper.addEvent([src,chan,num,vel]);
+					};*/
+				},
+				9, { // DrumSynth
 					drumSynth.cc(src, chan, num, val);	
 				}
 			);
