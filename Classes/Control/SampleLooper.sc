@@ -1,3 +1,10 @@
+/*
+	TODO:
+	- MIDI support
+	- preset support
+	- record offset in sync mode
+*/
+
 Sampler { // container for one or more SampleLoopers
 	var parent, <>win, <>channels, <outBus;
 	*new { |env, loopers|
@@ -23,7 +30,6 @@ Sampler { // container for one or more SampleLoopers
 	
 	addMixerChannel {
 		parent.mixer.addMonoChannel("Sampler", 0, true);
-		// keeping a member variable to describe the outbus that the channels share. 
 		outBus = parent.mixer.channels["Sampler"].inBus;
 		channels.do{ |obj,ind|
 			obj.outBus = outBus;
@@ -40,7 +46,7 @@ SampleLooper {
 	classvar <buffers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, /*!!!*/<>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par|
@@ -61,7 +67,6 @@ SampleLooper {
 			'end'          -> 1, 
 			'outBus'       -> 0, 
 			'trig'         -> 0, 
-			'recordOffset' -> 0.1, 
 			'modBus'       -> 20, 
 			'modLag'       -> 0.2, 
 			'modLev'       -> 0,
@@ -70,13 +75,13 @@ SampleLooper {
 		recorderParams = Dictionary[
 			'bufnum'       -> -1, 
 			'trig'         -> 0, 
-			'start'        -> 0, 
-			'end'          -> 1,
 			'inBus'        -> 20,
 			'stereo'       -> 0,
 			'inLev'        -> 1,
 			'preLev'       -> 0,
+//			'recordOffset' -> 0.1, // not using this for now
 			'recordMode'   -> 0
+			
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
@@ -85,13 +90,15 @@ SampleLooper {
 			2 -> { |bus,sig| Out.ar(bus, sig); }
 		];
 		synthInputs = Dictionary[
-			1 -> { |bus, phase, bufnum, inLev, preLev, stereo| [
-				(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
-			] },
-			2 -> { |bus, phase, bufnum, inLev, preLev, stereo| [
-				(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev), 
-				(InFeedback.ar(bus + stereo, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
-			] }
+			1 -> { |bus, phase, bufnum, inLev, preLev, stereo| 
+				[(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)] 
+			},
+			2 -> { |bus, phase, bufnum, inLev, preLev, stereo| 
+				[
+					(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev), 
+					(InFeedback.ar(bus + stereo, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
+				]
+			}
 		];
 		s.sendMsg('g_new', groupNum, 0, 1);
 
@@ -128,9 +135,15 @@ SampleLooper {
 	}
 
 	back {
-		var lo,hi;
-		lo = waveformMarkerBar.highlightRange['low'] - 1;
-		hi = waveformMarkerBar.highlightRange['high'] - 1;
+		var lo,hi, range;
+		if(waveformMarkerBar.highlightRange['low'] <= -1){
+			range = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'];
+			lo = waveformMarkerBar.value.size - range;
+			hi = waveformMarkerBar.value.lastIndex + 1;
+		}{
+			lo = waveformMarkerBar.highlightRange['low'] - 1;
+			hi = waveformMarkerBar.highlightRange['high'] - 1;
+		};
 		waveformMarkerBar.setHighlightRange(lo,hi);
 		this.setLoopPointParams;
 	}
@@ -146,8 +159,14 @@ SampleLooper {
 	
 	forward {
 		var lo,hi;
-		lo = waveformMarkerBar.highlightRange['low'] + 1;
-		hi = waveformMarkerBar.highlightRange['high'] + 1;
+		if(waveformMarkerBar.highlightRange['high'] > waveformMarkerBar.value.lastIndex){
+			lo = -1;
+			hi = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'] - 1;
+		}{
+			lo = waveformMarkerBar.highlightRange['low'] + 1;
+			hi = waveformMarkerBar.highlightRange['high'] + 1;
+		};
+
 		waveformMarkerBar.setHighlightRange(lo,hi);
 		this.setLoopPointParams;
 	}
@@ -355,23 +374,23 @@ SampleLooper {
 		s.sendMsg('n_set', recorderNodeNum, 'preLev', playerParams['preLev']);
 	}
 
-	setRecordOffset { |val|
+/*	setRecordOffset { |val| // not using a record offset for now
 		playerParams['recordOffset'] = val;
 		s.sendMsg('n_set', playerNodeNum, 'recordOffset', playerParams['recordOffset']);
-	}
+	}*/
 
 	setRecordMode { |sel|
 		recorderParams['recordMode'] = sel;
 		s.sendMsg('n_set', recorderNodeNum, 'recordMode', playerParams['recordMode']);
 	}
 
-	loadSynthDef { |numChannels=1, trigBus=1000, startPointBus=1001|
+	loadSynthDef { |numChannels=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
 				inBus=1, recordOffset=0.1, gain=1;
 			
-			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd;
+			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, aTrig, kTrig;
 	
 			kNumFrames = BufFrames.kr(bufnum);
 			kStart = kNumFrames * start;
@@ -383,23 +402,28 @@ SampleLooper {
 			
 			outSig = BufRd.ar(numChannels, bufnum, outPhase);
 			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig * gain]);
-			Out.kr(trigBus, Trig.kr((A2K.kr(outPhase) * -1) + ((kEnd - kStart) * 0.5), 0.05));
-			Out.kr(kStart + (recordOffset * SampleRate.ir));
+			aTrig = ((outPhase - kStart) * -1) + ((kEnd - kStart) * 0.5);
+			kTrig = A2K.kr(aTrig);
+
+			Out.kr(trigBus, kTrig);
+			Out.kr(startPointBus, kStart);
+			Out.kr(endPointBus, kEnd);
 			
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
-			arg bufnum, start=0, end=0, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0;
+			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0;
 			
-			var aRecordHead, kEnd, inSig, skTrig, kNumFrames, skStart, kZero;
+			var aRecordHead, skEnd, inSig, skTrig, kNumFrames, skStart, kZero;
 			kZero = DC.kr(0);
 			kNumFrames = BufFrames.kr(bufnum);
 			
 			skTrig = Select.kr(recordMode, [kZero, InTrig.kr(trigBus)]);
-			skStart = Select.kr(recordMode, [kZero, In.kr(startPointBus)]);
-			kEnd   = kNumFrames * end;
 
-			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, kEnd);
+			skStart = Select.kr(recordMode, [kZero, In.kr(startPointBus)]);
+			skEnd   = Select.kr(recordMode, [kNumFrames, In.kr(endPointBus)]);
+
+			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, skEnd);
 			
 			BufWr.ar(SynthDef.wrap(synthInputs[numChannels], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo]), bufnum, aRecordHead);
 
@@ -628,6 +652,7 @@ SampleLooper {
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| this.setPreLevel(obj.value); });
+/*		// it might be nice to have a record offset to get delay effects with a short record sync
 		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "offset")
 			.spec_([0, 1].asSpec)
 			.value_(0.2)
@@ -635,7 +660,7 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setRecordOffset(obj.value); });
+			.knobAction_({ |obj| this.setRecordOffset(obj.value); });*/
 		recordModeButton = GUI.button.new(controlView, Rect.new(0, 0, 50, 25))
 			.states_([
 				["full", Color.yellow, controlBackgroundColor],

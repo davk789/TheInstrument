@@ -87,7 +87,6 @@ MarkerBar {
 	}	
 		
 	setHighlightRange { |lo,hi| // index not location points
-		var clipLow, clipHigh;
 		highlightRange = Dictionary[
 			'low'  -> lo,
 			'high' -> hi
