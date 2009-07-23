@@ -41,7 +41,7 @@ ThyInstrument {
 			MIDIIn.connect(1, MIDIClient.sources[3]);
 		});*/
 		noteOnFunction = { |src,chan,num,vel|
-			[src,chan,num,vel].postln;
+			["top level note on",src,chan,num,vel].postln;
 			lastChannel = chan;
 			switch(chan,
 				0, { // WavetableSynth
@@ -73,8 +73,9 @@ ThyInstrument {
 			};
 		};
 		ccFunction = { |src,chan,num,val|
+			"top level cc".postln;
 			[src,chan,num,val].postln;
-			switch(lastChannel,
+			switch(chan,
 				0, { // WavetableSynth
 					polySynth.cc(src,chan,num,val);
 					if(polySynth.looper.notNil){
@@ -82,6 +83,7 @@ ThyInstrument {
 					};
 				},
 				1, {  // Sampler
+					postln(["inside 1 in switch",src,chan,num,val]);
 					sampler.cc(src,chan,num,val);
 					/*if(sampler.looper.notNil){ // not supporting command sequencing here yet
 						sampler.looper.addEvent([src,chan,num,vel]);

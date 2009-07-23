@@ -41,9 +41,9 @@ Sampler { // container for one or more SampleLoopers
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	
-	cc {
+	cc { |src,chan,num,val|
 		channels.do{ |obj,ind|
-			obj.ccFunction.value(obj,ind);
+			obj.ccFunction.value(src,chan,num,val);
 		};
 	}
 	
@@ -112,7 +112,7 @@ SampleLooper {
 					defer{ playButton.value_(1); };
 				},
 				25, {
-					this.record;
+					this.record(isRecording.not);
 					defer{ recordButton.value_(1); }
 				}
 			);
@@ -158,7 +158,7 @@ SampleLooper {
 	
 	record { |val|
 		isRecording = val ? true;
-		if(val){
+		if(isRecording){
 			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
 		}{
 			s.sendMsg('n_free', recorderNodeNum);
