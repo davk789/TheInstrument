@@ -1,6 +1,6 @@
 /*
 	TODO:
-	- MIDI support
+	- make the waveform controls jump to the clicked/region-delimited point
 	- preset support
 	- record offset in sync mode
 */
@@ -112,8 +112,8 @@ SampleLooper {
 					defer{ playButton.value_(1); };
 				},
 				25, {
-					this.record(isRecording.not);
-					defer{ recordButton.value_(1); }
+					this.record(isRecording.not); // toggles isRecording in this function
+					defer{ recordButton.value_(isRecording.toInt); }
 				}
 			);
 		};
@@ -162,7 +162,7 @@ SampleLooper {
 			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
 		}{
 			s.sendMsg('n_free', recorderNodeNum);
-			this.drawWaveformView;
+			this.drawWaveformView(false);
 		};
 	}
 
@@ -217,9 +217,8 @@ SampleLooper {
 		s.sendMsg('n_free', playerNodeNum);
 		playButton.value_(0);
 		if(recordButton.value == 1){
-			this.drawWaveformView;
+			recordButton.valueAction_(0);
 		};
-		recordButton.value_(0);
 	}
 	
 	addBufferFromFile {
@@ -273,7 +272,7 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	
-	drawWaveformView {
+	drawWaveformView { |clearMarkerBar=true|
 		var ret, scale, lastIndex;
 		bufferSelectMenu.enabled_(false);
 		lastIndex = waveformDisplayResolution - 1;
@@ -295,7 +294,9 @@ SampleLooper {
 				waveformView.value_(currentBufferArray);
 				waveformViewZoom.lo_(0).hi_(1);
 				waveformViewVZoom.value_(0);
-				waveformMarkerBar.clear;
+				if(clearMarkerBar){
+					waveformMarkerBar.clear;
+				};
 				waveformMarkerBar.zoom(0, 1);
 				bufferSelectMenu.enabled_(true);
 			};

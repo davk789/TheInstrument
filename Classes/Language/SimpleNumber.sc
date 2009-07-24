@@ -25,3 +25,14 @@
 	
 }
 
++ True {
+	toInt {
+		^ 1;
+	}
+}
+
++ False {
+	toInt {
+		^0;
+	}
+}

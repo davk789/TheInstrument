@@ -5,11 +5,11 @@
 		envelope modulators mostly don't work, must be cleaned up
 		the filter type menu does not update when the paramters are 
 			changed automatically (preset loading/initialization)
-		some of the filters need extra parameters/different settings
-			-- should I creates subclasses here?
+	    .clip error when loading a SynthDef (in linux only?)
+	    some of the filters need extra parameters/different settings
+		
 
 	TODO:
-	add a sample looper to the project
 	make all the effects inherit from an EffectsBase
 	WavetableSynth - no midi control over GUI should be the rule 
         instead, modulation amounts should add to the visible params
