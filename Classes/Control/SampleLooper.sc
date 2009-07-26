@@ -1,12 +1,15 @@
 /*
 	TODO:
 	- make the waveform controls jump to the clicked/region-delimited point
-	- preset support
+	- preset support -- save temp buffers, 
+	- EventLooper support
 	- record offset in sync mode
+	
 */
 
 Sampler { // container for one or more SampleLoopers
-	var parent, <>win, <>channels, <outBus;
+	var parent, <>win, activeMidiChannels, <>channels, <outBus,
+		controlView, midiButtons, crossfadeSlider;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
 	}
@@ -14,18 +17,36 @@ Sampler { // container for one or more SampleLoopers
 	init_sampler { |env, loopers=1|
 		parent = env;
 		channels = Array.new;
-		
+		midiButtons = Array.new;
+		activeMidiChannels = Array.new;
 		this.initGUI;
 		loopers.do{ |ind|
-			this.addChannel;
+			this.addChannel(ind);
+			
 		};
 		this.addMixerChannel;
 	}
 	
-	addChannel {
-		channels = channels.add(SampleLooper.new(parent));
+	addChannel { |num|
+		channels = channels.add(SampleLooper.new(parent, this));
 		channels.last.makeGUI(win);
 		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
+		midiButtons = midiButtons.add(
+			GUI.button.new(controlView, Rect.new(0, 0, controlView.bounds.height, 0))
+				.states_([
+					[(num + 1).asString, Color.yellow, Color.black],
+					[(num + 1).asString, Color.black, Color.yellow]
+				])
+				.action_({ |obj| this.setActiveMidiChannel(obj.value.toBool, num); })
+		);
+	}
+	
+	setActiveMidiChannel { |sel,chan|
+		if(sel){
+			activeMidiChannels = activeMidiChannels.add(chan);
+		}{
+			activeMidiChannels.remove(sel);
+		};
 	}
 	
 	addMixerChannel {
@@ -39,34 +60,59 @@ Sampler { // container for one or more SampleLoopers
 	initGUI {
 		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 830, 270)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
+		controlView = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
+			.background_(Color.black);
+		GUI.staticText.new(controlView, Rect.new(0, 0, 35, 0))
+			.stringColor_(Color.white)
+			.string_("xfade:")
+			.font_(parent.controlFont);
+		crossfadeSlider = GUI.slider.new(controlView, Rect.new(0, 0, 200, 0))
+			.value_(0.5)
+			.background_(Color.blue.alpha_(0.2))
+			.knobColor_(HiliteGradient.new(Color.blue.alpha_(0.2), Color.white, \v, 64, 0.5))
+			.action_({ |obj| this.setCrossfade(obj.value); });
+		GUI.staticText.new(controlView, Rect.new(0, 0, 55, 0))
+			.stringColor_(Color.white)
+			.string_("midi active:")
+			.font_(parent.controlFont);		
 	}
 	
 	cc { |src,chan,num,val|
 		channels.do{ |obj,ind|
-			obj.ccFunction.value(src,chan,num,val);
+			if(activeMidiChannels.includes(ind)){
+				obj.ccFunction.value(src,chan,num,val);
+			};
+		};
+	}
+	
+	updateBufferMenus {
+		channels.do{ |obj,ind|
+			obj.updateBufferMenu;
 		};
 	}
 	
 }
 
 SampleLooper {
-	classvar <buffers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
-	looper, <>ccFunction;
+	classvar <buffers, <bufferMarkers, <groupNum=55;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
+	looper, <>ccFunction, <>sampler;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
-	*new { |par|
-		^super.new.init_samplelooper(par);
+	*new { |par,samp|
+		^super.new.init_samplelooper(par,samp);
 	}
 	
-	init_samplelooper { |par|
+	init_samplelooper { |par,samp|
 		parent  = par;
+		sampler = samp;
 		s       = Server.default;
 		playerNodeNum = s.nextNodeID;
 		recorderNodeNum = s.nextNodeID;
 		buffers = Array.new;
+		bufferMarkers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
 		playerParams  = Dictionary[
 			'bufnum'       -> -1, 
@@ -94,28 +140,30 @@ SampleLooper {
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
 		ccFunction = { |src,chan,num,val|
-			num.switch(
-				20, {
-					postln("what should I be user for??");
-				},
-				21, {
-					this.back;
-				},
-				22, {
-					this.forward;
-				},
-				23, {
-					this.stop;
-				},
-				24, {
-					this.play;
-					defer{ playButton.value_(1); };
-				},
-				25, {
-					this.record(isRecording.not); // toggles isRecording in this function
-					defer{ recordButton.value_(isRecording.toInt); }
-				}
-			);
+			defer{
+				num.switch(
+					20, {
+						postln("what should I be user for??");
+					},
+					21, {
+						this.back;
+					},
+					22, {
+						this.forward;
+					},
+					23, {
+						this.stop;
+					},
+					24, {
+						this.play;
+						playButton.value_(1);
+					},
+					25, {
+						this.record(isRecording.not); // toggles isRecording in this function
+						recordButton.value_(isRecording.toInt); 
+					}
+				);
+			};
 		};
 		synthOutputs = Dictionary[
 			1 -> { |bus,sig| Out.ar(bus, Pan2.ar(sig, 0)); },
@@ -144,18 +192,21 @@ SampleLooper {
 		playerParams['outBus'] = val;
 	}
 		
-	addBuffer { |length=16|
+/*	addBuffer { |length=16|
 		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate));
+		bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
 	}
-	
-	addSoundFile { |filename|
+
+	addSoundFile { |filename| // public only method??
 		if(filename.notNil){
 			buffers = buffers.add(Buffer.read(s, filename));
+			bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
 		}{
 			buffers = buffers.add(Buffer.loadDialog(s));
+			bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
 		};
 	}
-	
+*/	
 	record { |val|
 		isRecording = val ? true;
 		if(isRecording){
@@ -168,16 +219,23 @@ SampleLooper {
 
 	back {
 		var lo,hi, range;
-		if(waveformMarkerBar.highlightRange['low'] <= -1){
-			range = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'];
-			lo = waveformMarkerBar.value.size - range;
-			hi = waveformMarkerBar.value.lastIndex + 1;
-		}{
-			lo = waveformMarkerBar.highlightRange['low'] - 1;
-			hi = waveformMarkerBar.highlightRange['high'] - 1;
+		if(waveformMarkerBar.value.size > 0){
+			if(waveformMarkerBar.highlightRange.size > 0){
+				if(waveformMarkerBar.highlightRange['low'] <= -1){
+					range = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'];
+					lo = waveformMarkerBar.value.size - range;
+					hi = waveformMarkerBar.value.lastIndex + 1;
+				}{
+					lo = waveformMarkerBar.highlightRange['low'] - 1;
+					hi = waveformMarkerBar.highlightRange['high'] - 1;
+				};
+			}{
+				lo = waveformMarkerBar.value.lastIndex;
+				hi = waveformMarkerBar.value.size;
+			};
+			waveformMarkerBar.setHighlightRange(lo,hi);
+			this.setLoopPointParams;
 		};
-		waveformMarkerBar.setHighlightRange(lo,hi);
-		this.setLoopPointParams;
 	}
 
 	play { |val|
@@ -191,16 +249,22 @@ SampleLooper {
 	
 	forward {
 		var lo,hi;
-		if(waveformMarkerBar.highlightRange['high'] > waveformMarkerBar.value.lastIndex){
-			lo = -1;
-			hi = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'] - 1;
-		}{
-			lo = waveformMarkerBar.highlightRange['low'] + 1;
-			hi = waveformMarkerBar.highlightRange['high'] + 1;
+		if(waveformMarkerBar.value.size > 0){
+			if(waveformMarkerBar.highlightRange.size > 0){
+				if(waveformMarkerBar.highlightRange['high'] > waveformMarkerBar.value.lastIndex){
+					lo = -1;
+					hi = waveformMarkerBar.highlightRange['high'] - waveformMarkerBar.highlightRange['low'] - 1;
+				}{
+					lo = waveformMarkerBar.highlightRange['low'] + 1;
+					hi = waveformMarkerBar.highlightRange['high'] + 1;
+				};
+			}{
+				lo = -1;
+				hi = 0;
+			};
+			waveformMarkerBar.setHighlightRange(lo,hi);
+			this.setLoopPointParams;
 		};
-
-		waveformMarkerBar.setHighlightRange(lo,hi);
-		this.setLoopPointParams;
 	}
 
 	pause { |val|
@@ -225,10 +289,11 @@ SampleLooper {
 		Dialog.getPaths({ |paths|
 			paths.do{ |obj,ind|
 				buffers = buffers.add(Buffer.read(s, obj));
+				bufferMarkers = bufferMarkers.add(Array.new);
 				if(ind == paths.lastIndex){
 					// just updating the GUI "later"
 					// may fail with large buffers
-					AppClock.sched(1, {this.updateBufferMenu; nil; });
+					AppClock.sched(1, {sampler.updateBufferMenus; nil; });
 				};
 			};
 		});
@@ -238,7 +303,8 @@ SampleLooper {
 		// can only add empty mono buffers for now.
 		// multi-channel support should come later.
 		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate, 1));
-		AppClock.sched(1, {this.updateBufferMenu; nil;});
+		bufferMarkers = bufferMarkers.add(Array.new);
+		AppClock.sched(1, {sampler.updateBufferMenus; nil;});
 	}
 	
 	updateBufferMenu {
@@ -269,7 +335,14 @@ SampleLooper {
 		};
 		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
 		s.sendMsg('n_set', recorderNodeNum, 'bufnum', recorderParams['bufnum']);
+		this.setActiveMarkers(sel);
 		this.drawWaveformView;
+	}
+	
+	setActiveMarkers { |sel|
+		bufferMarkers[activeMarkerIndex] = waveformMarkerBar.value;
+		activeMarkerIndex = sel;
+		waveformMarkerBar.value = bufferMarkers[activeMarkerIndex];
 	}
 	
 	drawWaveformView { |clearMarkerBar=true|
@@ -294,9 +367,9 @@ SampleLooper {
 				waveformView.value_(currentBufferArray);
 				waveformViewZoom.lo_(0).hi_(1);
 				waveformViewVZoom.value_(0);
-				if(clearMarkerBar){
+				/*if(clearMarkerBar){
 					waveformMarkerBar.clear;
-				};
+				};*/
 				waveformMarkerBar.zoom(0, 1);
 				bufferSelectMenu.enabled_(true);
 			};
@@ -423,15 +496,15 @@ SampleLooper {
 				modBus=20, modLag=0.2, modLev=0,
 				inBus=1, recordOffset=0.1, gain=1;
 			
-			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, aTrig, kTrig;
+			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, aTrig, kTrig, aSpeed;
 	
 			kNumFrames = BufFrames.kr(bufnum);
 			kStart = kNumFrames * start;
 			kEnd = kNumFrames * end;
 			
 			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
-			
-			outPhase = Phasor.ar(trig, speed + modSig, kStart, kEnd, resetPos);
+			aSpeed = Lag.ar(speed, 1);
+			outPhase = Phasor.ar(trig, aSpeed + modSig, kStart, kEnd, resetPos);
 			
 			outSig = BufRd.ar(numChannels, bufnum, outPhase);
 			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig * gain]);

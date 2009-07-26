@@ -139,7 +139,7 @@ ThyInstrument {
 			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 
-		sampler = Sampler.new(this, 1);
+		sampler = Sampler.new(this, 2);
 		
 	}
 	
