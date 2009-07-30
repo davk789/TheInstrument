@@ -25,12 +25,26 @@ Sampler { // container for one or more SampleLoopers
 			
 		};
 		this.addMixerChannel;
+		this.useKeyboard;
+	}
+	
+	useKeyboard {
+		GUI.view.globalKeyDownAction = { |obj,char,mod,unic,keyc|
+			char.switch(
+				$1, { midiButtons[0].valueAction_(activeMidiChannels.includes(0).not.toInt); },
+				$2, { midiButtons[1].valueAction_(activeMidiChannels.includes(1).not.toInt); },
+				$3, { midiButtons[2].valueAction_(activeMidiChannels.includes(2).not.toInt); },
+				$4, { midiButtons[3].valueAction_(activeMidiChannels.includes(3).not.toInt); },
+				$5, { midiButtons[4].valueAction_(activeMidiChannels.includes(4).not.toInt); },
+				$6, { midiButtons[5].valueAction_(activeMidiChannels.includes(5).not.toInt); }
+			);			
+		};
 	}
 	
 	addChannel { |num|
 		channels = channels.add(SampleLooper.new(parent, this));
+		//win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
 		channels.last.makeGUI(win);
-		win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
 		midiButtons = midiButtons.add(
 			GUI.button.new(controlView, Rect.new(0, 0, controlView.bounds.height, 0))
 				.states_([
@@ -45,7 +59,7 @@ Sampler { // container for one or more SampleLoopers
 		if(sel){
 			activeMidiChannels = activeMidiChannels.add(chan);
 		}{
-			activeMidiChannels.remove(sel);
+			activeMidiChannels.remove(chan);
 		};
 	}
 	
@@ -58,7 +72,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	initGUI {
-		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 830, 270)).front;
+		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 1700, 1024)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		controlView = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.black);
@@ -357,7 +371,7 @@ SampleLooper {
 				buffers[activeBufferIndex].get(bufferIndex, { |msg|
 					currentBufferArray[ind] = (msg * 0.5) + 0.5;
 				});
-				0.0005.wait;
+				0.002.wait; //0.0005.wait;
 			};
 
 			currBufDisplayStart = 0;
@@ -541,7 +555,7 @@ SampleLooper {
 		
 		controlBackgroundColor = Color.blue.alpha_(0.2);
 		
-		topView = GUI.compositeView.new(container, Rect.new(0, 0, container.view.bounds.width, 245));
+		topView = GUI.compositeView.new(container, Rect.new(0, 0, 812, 245));
 		topView.decorator = FlowLayout(topView.bounds);
 		
 		waveformColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 600, 238));
@@ -561,7 +575,7 @@ SampleLooper {
 		
 		addEmptyBufferBox = GUI.numberBox.new(bufferRow, Rect.new(0, 0, 30, 0))
 		    .font_(parent.controlFont)
-		    .value_(16)
+		    .value_(20)
 		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
 		
 		addEmptyBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 90, 0))
