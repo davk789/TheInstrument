@@ -110,7 +110,7 @@ Sampler { // container for one or more SampleLoopers
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
-	looper, <>ccFunction, <>sampler;
+	looper, <>ccFunction, <>sampler, numChannels;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -335,17 +335,19 @@ SampleLooper {
 	}
 
 	setActiveBuffer { |sel|
-		var numChan;
-		numChan = buffers[activeBufferIndex].numChannels;
+		if(numChannels.isNil){
+			this.loadSynthDef(1);
+		};
+		numChannels = buffers[activeBufferIndex].numChannels; // numChannels is set for the first time here
+
 		activeBufferIndex = sel;
 		playerParams['bufnum'] = buffers[activeBufferIndex].bufnum;
 		recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
-		if(buffers[activeBufferIndex].numChannels != numChan){
+		if(buffers[activeBufferIndex].numChannels != numChannels){
 			if(isPlaying || isRecording){
 				this.stop;
 			};
-			postln("calling this.loadSynthDef(" ++ buffers[activeBufferIndex].numChannels ++ ");");
-			this.loadSynthDef(buffers[activeBufferIndex].numChannels);
+			this.loadSynthDef(numChannels);
 		};
 		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
 		s.sendMsg('n_set', recorderNodeNum, 'bufnum', recorderParams['bufnum']);
@@ -371,7 +373,7 @@ SampleLooper {
 				buffers[activeBufferIndex].get(bufferIndex, { |msg|
 					currentBufferArray[ind] = (msg * 0.5) + 0.5;
 				});
-				0.002.wait; //0.0005.wait;
+				0.0005.wait;
 			};
 
 			currBufDisplayStart = 0;
@@ -504,7 +506,8 @@ SampleLooper {
 		s.sendMsg('n_set', recorderNodeNum, 'recordMode', playerParams['recordMode']);
 	}
 
-	loadSynthDef { |numChannels=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
+	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
+		postln("inside this.loadSynthDef(" ++ numChan ++ ");");
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
@@ -517,11 +520,11 @@ SampleLooper {
 			kEnd = kNumFrames * end;
 			
 			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
-			aSpeed = Lag.ar(speed, 1);
+			aSpeed = Lag.ar(K2A.ar(speed), 1);
 			outPhase = Phasor.ar(trig, aSpeed + modSig, kStart, kEnd, resetPos);
 			
-			outSig = BufRd.ar(numChannels, bufnum, outPhase);
-			SynthDef.wrap(synthOutputs[numChannels], nil, [outBus, outSig * gain]);
+			outSig = BufRd.ar(numChan, bufnum, outPhase);
+			SynthDef.wrap(synthOutputs[numChan], nil, [outBus, outSig * gain]);
 			aTrig = ((outPhase - kStart) * -1) + ((kEnd - kStart) * 0.5);
 			kTrig = A2K.kr(aTrig);
 
@@ -545,7 +548,7 @@ SampleLooper {
 
 			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, skEnd);
 			
-			BufWr.ar(SynthDef.wrap(synthInputs[numChannels], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo]), bufnum, aRecordHead);
+			BufWr.ar(SynthDef.wrap(synthInputs[numChan], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo]), bufnum, aRecordHead);
 
 		}).load(s);
 		

@@ -41,7 +41,6 @@ ThyInstrument {
 			MIDIIn.connect(1, MIDIClient.sources[3]);
 		});*/
 		noteOnFunction = { |src,chan,num,vel|
-			["top level note on",src,chan,num,vel].postln;
 			lastChannel = chan;
 			switch(chan,
 				0, { // WavetableSynth
@@ -73,8 +72,6 @@ ThyInstrument {
 			};
 		};
 		ccFunction = { |src,chan,num,val|
-			"top level cc".postln;
-			[src,chan,num,val].postln;
 			switch(chan,
 				0, { // WavetableSynth
 					polySynth.cc(src,chan,num,val);
@@ -139,7 +136,7 @@ ThyInstrument {
 			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 
-		sampler = Sampler.new(this, 6);
+		sampler = Sampler.new(this, 4);
 		
 	}
 	

@@ -8,6 +8,7 @@ WavetableSynth {
  		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob,
 		noteOnCommand, noteOffCommand, <>saveRoot, sep, 
+	    xfadeSpec, fbLagSpec, fbMulSpec, freq2Spec, fm2Spec,
 		presetRow, presetNameField, saveButton, presetMenu, modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
@@ -117,6 +118,11 @@ WavetableSynth {
 		noteOffCommand = { |id|
 			s.sendMsg('n_set', id, 'gate', 0);
 		};
+		xfadeSpec = 'pan'.asSpec;
+		fbLagSpec = [0.001, 4, 2.3].asSpec;
+		fbMulSpec = [0, 256].asSpec;
+		freq2Spec = [-12, 12].asSpec;
+		fm2Spec = [0, 12].asSpec;
 
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
@@ -394,20 +400,20 @@ WavetableSynth {
 			controls.do{ |obj,ind|
 				obj.switch(
 					'xFade', {
-						this.setXFade(value);
-						defer{ xfadeKnob.zeroOneValue = value };
+						this.setXFade(xfadeSpec.map(value));
+						//defer{ xfadeKnob.zeroOneValue = value };
 					},
 					'fbMul', {
-						this.setFBMul(value);
-						defer{ fbMulKnob.zeroOneValue = value };
+						this.setFBMul(fbMulSpec.map(value));
+						//defer{ fbMulKnob.zeroOneValue = value };
 					},
 					'freq2', {
-						this.setFreq2(value);
-						defer{ freq2Knob.zeroOneValue = value };
+						this.setFreq2(freq2Spec.map(value));
+						//defer{ freq2Knob.zeroOneValue = value };
 					},
 					'fm2', {
-						this.setFM2(value);
-						defer{ fm2Knob.zeroOneValue = value };
+						this.setFM2(fm2Spec.map(value));
+						//defer{ fm2Knob.zeroOneValue = value };
 					},
 					'pitchBend', {
 						this.setPitchBend(value);
@@ -550,25 +556,25 @@ WavetableSynth {
 			.background_(Color.blue(0.1, alpha:0.2));
 		xfadeKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "xfade")
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
-			.spec_('pan'.asSpec)
+			.spec_(xfadeSpec)
 			.knobAction_({ |obj| this.setXFade(obj.value); })
 			.knobCentered_(true);
 		fbLagKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbLag")
-			.spec_([0.001, 4, 2.3].asSpec)
+			.spec_(fbLagSpec)
 			.value_(0.3)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_([0, 256].asSpec)
+			.spec_()
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
-			.spec_([-12, 12].asSpec)
+			.spec_(freq2Spec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFreq2(obj.value); })
 			.knobCentered_(true);
 		fm2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fm")
-			.spec_([0, 12].asSpec)
+			.spec_(fm2Spec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFM2(obj.value); });
 		envelopeView = GUI.envelopeView.new(partialRow2, Rect.new(0, 0, 150, 0))
@@ -630,7 +636,8 @@ WavetableSynth {
 }
 
 WavetableSynthFilter : WavetableSynth {
-	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, filterUGens, filterSpecs, currentFilter;
+	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, filterUGens, filterSpecs, currentFilter,
+	    cutoffSpec, cutoffModSpec, rezSpec;
 	*new { |par, name|
 		^super.new(par, name).init_wavetablesynthfilter;
 	}
@@ -656,14 +663,8 @@ WavetableSynthFilter : WavetableSynth {
 	and so all keys must match between these two Dictionaries
 */
 		filterUGens = Dictionary[
-			"RLPFD" -> { |in, freq, rez| RLPF.ar(in, freq, rez, 0.8); }, // this needs a subclass with a distortion parameter. for now it is hard wired.
-			"MoogLadder" -> { |in, freq, rez| MoogLadder.ar(in, freq, rez); },
-			"BMoogLPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 0, 0.5); }, // saturation is hardwired here. needs a subclass as well
-			"BMoogHPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 1, 0.5); }, // saturation is hardwired here. needs a subclass as well
-			"IIRFilter" -> { |in, freq, rez| IIRFilter.ar(in, freq, rez.reciprocal); },
 			"RLPF" -> { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
 			"RHPF" -> { |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
-			"MoogVCF" -> { |in, freq, rez| MoogVCF.ar(in, freq, rez); },
 			"MoogFF" -> { |in, freq, gain| MoogFF.ar(in, freq, gain); },
 			"BLowPass4" -> { |in, freq, rez| BLowPass4.ar(in, freq, rez.reciprocal); },
 			"BLowPass" -> { |in, freq, rez| BLowPass.ar(in, freq, rez.reciprocal); },
@@ -671,8 +672,16 @@ WavetableSynthFilter : WavetableSynth {
 			"BHiPass" -> { |in, freq, rez| BHiPass.ar(in, freq, rez.reciprocal); },
 			"BBandPass" -> { |in, freq, q| BBandPass.ar(in, freq, q.reciprocal); }, 
 			"BAllPass" -> { |in, freq, rez| BAllPass.ar(in, freq, rez.reciprocal); },
-			"Resonz" -> { |in, freq, rez| Resonz.ar(in, freq, rez.reciprocal); }			
+			"Resonz" -> { |in, freq, rez| Resonz.ar(in, freq, rez.reciprocal); }	
 		];
+		Platform.case('osx', { // some of these filters take more than (in,freq,rez), I should address this later
+			filterUGens = filterUGens.add("MoogVCF" -> { |in, freq, rez| MoogVCF.ar(in, freq, rez); });
+			filterUGens = filterUGens.add("RLPFD" -> { |in, freq, rez| RLPF.ar(in, freq, rez, 0.8); }); 
+			filterUGens = filterUGens.add("MoogLadder" -> { |in, freq, rez| MoogLadder.ar(in, freq, rez); });
+			filterUGens = filterUGens.add("BMoogLPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 0, 0.5); });
+			filterUGens = filterUGens.add("BMoogHPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 1, 0.5); });
+			filterUGens = filterUGens.add("IIRFilter" -> { |in, freq, rez| IIRFilter.ar(in, freq, rez.reciprocal); });
+		});
 		filterSpecs = Dictionary[ 
 			"RLPFD" -> [0,1].asSpec,
 			"MoogLadder" -> [0,1].asSpec,
@@ -691,6 +700,8 @@ WavetableSynthFilter : WavetableSynth {
 			"BAllPass" -> [1,100].asSpec,
 			"Resonz" -> [1,100].asSpec
 		];
+		cutoffSpec = [-12,12].asSpec;
+		cutoffModSpec = [0, 8].asSpec;
 
 		this.addGUI;
 		this.setFilterType("MoogVCF");
@@ -763,12 +774,12 @@ WavetableSynthFilter : WavetableSynth {
 			controls.do{ |obj,ind|
 				obj.switch(
 					'cutoff', {
-						this.setCutoff(value);
-						defer{ cutoffKnob.zeroOneValue = value; };
+						this.setCutoff(cutoffSpec.map(value));
+						//defer{ cutoffKnob.zeroOneValue = value; };
 					},
 					'cutoffMod', {
-						this.setCutoff(value);
-						defer{ cutoffModKnob.zeroOneValue = value; };
+						this.setCutoffMod(cutoffModSpec.map(value));
+						//defer{ cutoffModKnob.zeroOneValue = value; };
 					}
 				);
 			}
@@ -797,16 +808,16 @@ WavetableSynthFilter : WavetableSynth {
 		filterControlRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 75))
 			.background_(Color.blue(0.1, alpha:0.2));
 		cutoffKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "cutoff")
-			.spec_([-12, 12].asSpec)
+			.spec_(cutoffSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setCutoff(obj.value); })
 			.knobCentered_(true);
 		cutoffModKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "coMod")
-			.spec_([0, 8].asSpec)
+			.spec_(cutoffModSpec)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
 		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
-			.spec_([1, 10].asSpec)
+			.spec_(rezSpec)
 			.value_(1)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setResonance(obj.value); });
@@ -821,7 +832,7 @@ WavetableSynthFilter : WavetableSynth {
 			.action_({|obj| this.setCutoffModFlag(obj.value) });
 	}
 	loadSynthDef { |filter|
-		filter = filter ? filterUGens["MoogVCF"];
+		filter = filter ? filterUGens["MoogFF"];
 		SynthDef.new("s_dualWavetableRLPF", { 
 			|gate, outBus=20, 
 				curve=(-1.6), lev=1,
