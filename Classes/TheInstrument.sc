@@ -5,14 +5,15 @@
 		envelope modulators mostly don't work, must be cleaned up
 		the filter type menu does not update when the paramters are 
 			changed automatically (preset loading/initialization)
-	    .clip error when loading a SynthDef (in linux only?)
 	    some of the filters need extra parameters/different settings
 		
 
 	TODO:
 	make all the effects inherit from an EffectsBase
-	WavetableSynth - no midi control over GUI should be the rule 
-        instead, modulation amounts should add to the visible params
+	all channels should be stereo, and all effects should be stereo -- some should have stereo features
+	all windows should be available to re-open on closing.
+	WavetableSynth - modulation amounts should add to the visible params
+	Sampler  -figure out some way to use CCs that can work with the wavetable synth
 
  */
 ThyInstrument {
@@ -32,14 +33,6 @@ ThyInstrument {
 	}
 	
 	*initializeMIDI {
-/*		Platform.case('osx', { // is there any need for this?
-			MIDIClient.init(3, 2);
-			MIDIIn.connect(1, MIDIClient.sources[1]);
-		},
-		'linux', {
-			MIDIClient.init;
-			MIDIIn.connect(1, MIDIClient.sources[3]);
-		});*/
 		noteOnFunction = { |src,chan,num,vel|
 			lastChannel = chan;
 			switch(chan,
