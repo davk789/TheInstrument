@@ -28,15 +28,15 @@ Sampler { // container for one or more SampleLoopers
 		this.useKeyboard;
 	}
 	
-	useKeyboard {
+	useKeyboard { // this should automatically generate keys based on the number samplers
 		GUI.view.globalKeyDownAction = { |obj,char,mod,unic,keyc|
 			char.switch(
 				$1, { midiButtons[0].valueAction_(activeMidiChannels.includes(0).not.toInt); },
 				$2, { midiButtons[1].valueAction_(activeMidiChannels.includes(1).not.toInt); },
 				$3, { midiButtons[2].valueAction_(activeMidiChannels.includes(2).not.toInt); },
-				$4, { midiButtons[3].valueAction_(activeMidiChannels.includes(3).not.toInt); },
-				$5, { midiButtons[4].valueAction_(activeMidiChannels.includes(4).not.toInt); },
-				$6, { midiButtons[5].valueAction_(activeMidiChannels.includes(5).not.toInt); }
+				$4, { midiButtons[3].valueAction_(activeMidiChannels.includes(3).not.toInt); }//,
+				//$5, { midiButtons[4].valueAction_(activeMidiChannels.includes(4).not.toInt); },
+				//$6, { midiButtons[5].valueAction_(activeMidiChannels.includes(5).not.toInt); }
 			);			
 		};
 	}
@@ -64,7 +64,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	addMixerChannel {
-		parent.mixer.addMonoChannel("Sampler", 0, true);
+		parent.mixer.addStereoChannel("Sampler", 0, true);
 		outBus = parent.mixer.channels["Sampler"].inBus;
 		channels.do{ |obj,ind|
 			obj.outBus = outBus;

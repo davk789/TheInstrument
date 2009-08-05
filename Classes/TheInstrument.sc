@@ -1,6 +1,5 @@
 /**
 	BUGS:
-	DrumSynth - mixer volume does not affect this instrument
 	WavetableSynth:
 		envelope modulators mostly don't work, must be cleaned up
 		the filter type menu does not update when the paramters are 
@@ -15,7 +14,7 @@
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  -figure out some way to use CCs that can work with the wavetable synth
 
- */
+*/
 ThyInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
         <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont;

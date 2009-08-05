@@ -587,9 +587,9 @@ DrumSynth {
 
 	}
 
-	*loadSynthDefs {
-		server = server ? Server.default;
-	// Drums ~~~~~~~~~~
+	*loadSynthDefs { |s|
+		s = s ? Server.default;
+		// Drums ~~~~~~~~~~
 		SynthDef.new("x_osc", { 
 			|att=0.001, rel=0.5, lev=1, curve=(-8), freq=80, 
 			modPhase=0, modFreq=(-1), modAmt=0, drive=0, trig=1, outBus=15| 
@@ -604,7 +604,7 @@ DrumSynth {
 			uEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 			Out.ar(outBus, uDrive * uEnv);
 
-		}).load(server);
+		}).load(s);
 
 		SynthDef.new("x_gray", { 
 			|att=0.001, rel=0.5, lev=1, curve=(-8), 
@@ -613,7 +613,7 @@ DrumSynth {
 			aNoise = GrayNoise.ar;
 			aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 			Out.ar(outBus, RLPF.ar(aNoise * aEnv, 200, 1));
-		}).load(server);
+		}).load(s);
 
 		SynthDef.new("x_crackle", { 
 			|att=0.001, rel=1.5, lev=1, curve=(-4), 
@@ -622,7 +622,7 @@ DrumSynth {
 			aNoise = Crackle.ar(crackle);
 			aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 			Out.ar(outBus, (aNoise * aEnv).softclip);//RLPF.ar(aNoise * aEnv, 200, 1));
-		}).load(server);
+		}).load(s);
 
 		SynthDef.new("x_clip", { 
 			|att=0.001, rel=0.5, lev=1, curve=(-8), 
@@ -631,7 +631,7 @@ DrumSynth {
 			aNoise = ClipNoise.ar;
 			aEnv = EnvGen.ar(Env.perc(att, rel, lev * 0.25, curve), trig, doneAction:2);
 			Out.ar(outBus, RLPF.ar(aNoise * aEnv, 200, 1));
-		}).load(server);
+		}).load(s);
 
 		SynthDef.new("x_whiteSnare", { 
 			|outBus=10, freq=1200, gain=1, rez=2, trig=1, 
@@ -644,16 +644,17 @@ DrumSynth {
 			aEnv = EnvGen.ar(Env.perc(att, rel, lev, curve), trig, doneAction:2);
 			aSig = aLo + aHi;
 			Out.ar(outBus, aSig * aEnv);
-		}).load(server);
+		}).load(s);
 
 		// Resonators ~~~~~~~~~~ 
-		// these resonators should have a pan parameter... make the DrumSynth stereo after adding stereo support to the mixer
+		// these resonators should have a pan parameter... 
+		// make the DrumSynth stereo after adding stereo support to the mixer
 		SynthDef.new("r_formlet", { |freq=1600, attTime=0.01, decTime=0.1,
 			outBus=0, inBus=11, lev=1|
 			var aRez;
 			aRez = Formlet.ar(In.ar(inBus), freq, attTime, decTime);
 			Out.ar(outBus, aRez * lev);
-		}).load(server);
+		}).load(s);
 		
 		SynthDef.new("r_lpf", { |freq=1600, res=10,
 			outBus=0, inBus=12, lev=1, gain=1|
@@ -661,7 +662,7 @@ DrumSynth {
 			aIn = (In.ar(inBus) * gain).softclip;
 			aRez = RLPF.ar(aIn, freq, 1 / res);
 			Out.ar(outBus, aRez * lev);
-		}).load(server);	
+		}).load(s);	
 		
 		SynthDef.new("r_hpf", { |freq=1600, res=10,
 			outBus=0, inBus=13, lev=1, gain=1|
@@ -669,7 +670,7 @@ DrumSynth {
 			aIn = (In.ar(inBus) * gain).softclip;
 			aRez = RHPF.ar(aIn, freq, 1 / res);
 			Out.ar(outBus, aRez * lev);
-		}).load(server);	
+		}).load(s);	
 
 	    SynthDef.new("r_klank", { |outBus=0, inBus=10, lev=1, 
 			f1=80,f2=90,f3=145,
@@ -683,7 +684,7 @@ DrumSynth {
 				Limiter.ar(In.ar(inBus), 0.5, 0.02).softclip
 			);
 			Out.ar(outBus, aRez * lev);
-		}).load(server);
+		}).load(s);
 
 	}
 }
