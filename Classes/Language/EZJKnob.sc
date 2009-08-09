@@ -15,7 +15,7 @@ KnobWrapper {
 	}
 }
 
-EZJKnob { // no longer with JKnob on OS X
+EZJKnob {
     var <knobView, <label, <knob, <numberBox, labelText, >knobAction, controlSpec,
 		prValue=0;
     *new { |parent, dimensions, lab|

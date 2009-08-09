@@ -1,21 +1,15 @@
-Distortion {
-	var parent, server, inputName, inputNumber, groupID, <nodeID, bus, chebyAmps, drawFunction,
+Distortion : EffectBase {
+	var chebyAmps, drawFunction,
 		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, tableSize=1024,
 		postMixBuffer,
-		<win, shapeView, curve=1, mix, gain=1;
+		<win, shapeView, curve=1;
 	*new { |par, group, name, ind|
-		^super.new.init_distortion(par, group, name, ind);
+		^super.new(par, group, name, ind).init_distortion;
 	}
-	init_distortion { |par, group, name, ind|
-		parent = par;
-		server = Server.default;
-		nodeID = server.nextNodeID;
-		groupID = group;
-		inputName = name;
-		inputNumber = ind;
-		mix = -1;
+	init_distortion {
+		synthdefName = 'fx_distortion';
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
-		bus = parent.mixer.channels[inputName].inBus;
+		postln("parent.mixer is this: " ++ parent.mixer.class);
 		chebyArr = Array.new;
 		expArr = this.getExpoCurve(tableSize);
 		postArr = Array.new;
@@ -23,6 +17,14 @@ Distortion {
 		expPreBuffer  = Buffer.alloc(server, tableSize, 1);
 		postMixBuffer  = Buffer.alloc(server, tableSize * 2, 1);
 		postSignal = Signal.newClear(tableSize);
+		startParams = Dictionary[
+			'buffer' -> postMixBuffer.bufnum, 
+			'gain' -> 1, 
+			'mix' -> -1, 
+			'bus' -> parent.mixer.channels[inputName].inBus
+		];
+		win.class.postln;
+		winBounds = Rect.new(winBounds.left, winBounds.top, 550, 350);
 		drawFunction = {
 			var displayY=0, displayX=0;
 			Pen.use{
@@ -48,15 +50,8 @@ Distortion {
 		this.writeBuffers;
 		this.startSynth;
 		this.initGUI;
-		//this.makeGUI;
 	}
-	startSynth {
-		server.sendMsg('s_new', 'fx_distortion', nodeID, 0, groupID,
-			'buffer', postMixBuffer.bufnum, 'gain', gain, 'mix', mix, 'bus', bus);
-	}
-	releaseSynth {
-		server.sendMsg('n_free', nodeID);
-	}
+	
 	writeBuffers {
 		var task;
 		
@@ -81,6 +76,7 @@ Distortion {
 		task.play;
 
 	}
+	
 	calculateExponent { |index,numPoints|
 		var unscaledLinY=(-1), unscaledCurveY=(-1);
 		unscaledLinY = (index / (numPoints / 2)) - 1;
@@ -91,6 +87,7 @@ Distortion {
 		};
 		^unscaledCurveY;
 	}
+	
 	getExpoCurve { |size|
 		var arr;
 		arr =  Array.fill(size, { |ind|
@@ -108,44 +105,44 @@ Distortion {
 		};
 		^arr;
 	}
+	
 	setCurve { |val|
 		curve = val;
 		this.writeBuffers;
 	}
+	
 	setChebyAmt { |val|
 		chebyAmt = val;
 		this.writeBuffers;
 	}
+	
 	setChebyAmps { |val|
 		chebyAmps = val;
 		this.writeBuffers;
 	}
+	
 	setExpAmt { |val|
 		expAmt = val;
 		this.writeBuffers;
 	}
+	
 	setWetDryMix { |val|
-		mix = val;
-		server.sendMsg('n_set', nodeID, 'mix', mix);
+		startParams['mix'] = val;
+		server.sendMsg('n_set', nodeID, 'mix', startParams['mix']);
 	}
+	
 	setGain { |val|
-		gain = val;
-		server.sendMsg('n_set', nodeID, 'gain', gain);
+		startParams['gain'] = val;
+		server.sendMsg('n_set', nodeID, 'gain', startParams['gain']);
 	}
-	initGUI {
-		win = GUI.window.new("Distortion", Rect.new(100, 350, 550, 280))
-			.front;
-		win.view
-			.decorator_(FlowLayout(win.view.bounds))
-			.background_(Color.black);
-	}
+
 	makeGUI {
 		var expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, labelColumn, mixSlider, gainSlider;
-		if(win.isClosed){ 
+/*		if(win.isClosed){ 
 			win = nil;
 			this.initGUI;
 		};
-		GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
+*/		GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
 			.align_('center')
 			.string_(inputName ++ " channel, slot " ++ inputNumber)
 			.stringColor_(Color.yellow);
@@ -183,12 +180,12 @@ Distortion {
 
 		gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
-			.value_([0.001, 4, 2].asSpec.unmap(gain))
+			.value_([0.001, 4, 2].asSpec.unmap(startParams['gain']))
 			.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
 
 		mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
 		GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
-			.value_('pan'.asSpec.unmap(mix))
+			.value_('pan'.asSpec.unmap(startParams['mix']))
 			.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
 
 
@@ -212,8 +209,19 @@ Distortion {
 		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
 			.stringColor_(Color.yellow)
 			.string_("mix");
-
 	}
+	
+	*loadSynthDef { |s|
+		s = s ? Server.default;
+		SynthDef.new("fx_distortion", { |bus, buffer=73, gain=1, mix=(-1)|
+		    var aIn, aShape, aSig;
+		    aIn = (In.ar(bus) * gain).softclip;
+		    aShape = Shaper.ar(buffer, aIn);
+			aSig = XFade2.ar(aShape, aIn, mix);
+		    ReplaceOut.ar(bus, aSig);
+		}).load(s);
+	}
+	
 }
 
 

@@ -140,7 +140,7 @@ ThyInstrument {
 		BendResponder(bendFunction);
 	}
 	
-	*loadSynthDefs {
+	*loadSynthDefs { // oops I deprecated this on accident.
 		var path;
 		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";
 		path.pathMatch.do{ |obj,ind| obj.load; };

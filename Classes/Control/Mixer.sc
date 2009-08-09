@@ -1,6 +1,6 @@
 
 Mixer {
-	var s, <channels, win, windowHeight=530, parent,
+	var s, <channels, <>win, windowHeight=560, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
 	
 	*new { |par|
@@ -53,17 +53,21 @@ Mixer {
 	
 	//// GUI methods
 	initGUI {
-		win = GUI.window.new("Output Mix / Plugins", Rect.new(500.rand, 500.rand, 555, windowHeight)).front;
+		win = GUI.window.new("Mixer", Rect.new(500.rand, 500.rand, 700, windowHeight)).front;
 		win.view.background = Color.grey(15);
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	
 	addMonoChannel { |name, addTarget=0, noAux=false|
+		// this doesn't work... WHAT. THE. FUCK.
+		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + 100, win.bounds.height);
 		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 1, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 	
 	addStereoChannel { |name, addTarget=0, noAux=false|
+		// this doesn't work... WHAT. THE. FUCK.
+		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + 100, win.bounds.height);
 		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 2, noAux));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
@@ -74,7 +78,7 @@ MixerChannel {
 	var parent, s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, parent;
 
 	*new { |par, name, addTarget, group, channels, noAux=false|
-		insertList = ["<none>", "MonoDelay", "Distortion", "Compressor", "RingMod", 
+		insertList = ["*none*", "MonoDelay", "Distortion", "Compressor", "RingMod", 
 			"EQ", "PitchShift"];
 		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
 	}
@@ -124,7 +128,6 @@ MixerChannel {
 	makeChannelGUI { |win, groups|
 		var channel, inserts, insertMenus, label, labelText, 
 		faders, panFaderView, panFader, levelFader;
-		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + channelWidth + 10, channelHeight);
 
 		channel = GUI.vLayoutView.new(win, Rect.new(0, 0, channelWidth, channelHeight))
 			.background_(Color.red);
@@ -140,6 +143,7 @@ MixerChannel {
 		insertMenus = Array.fill(4, { |ind|
 			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
 				.items_(insertList)
+				.stringColor_(Color.white)
 				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
 		});
 		Platform.case('linux', {
@@ -148,7 +152,7 @@ MixerChannel {
 			};
 		});
 		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
-			.background_(Color.white.alpha_(0.95));
+			.background_(Color.white.alpha_(0.75));
 
 		// forcing the slider to be horizontal
 		panFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30));
@@ -156,7 +160,10 @@ MixerChannel {
 		panFader.action = { |obj|
 			this.setPan(obj.value);
 		};		
-		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, (channelHeight * 0.725) - 45)).value_(0.75);
+		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, 315))
+			.knobColor_(Color.new255(50,50,50))
+			.background_(Color.blue.alpha_(0.25))
+			.value_(0.75);
 		levelFader.action = { |obj|
 			this.setVolume(obj.value);
 		};
@@ -164,22 +171,15 @@ MixerChannel {
 	
 	launchFXWindow { |menu, ind, group|
 		if(menu.value > 0){
-				if( effects[ind].isKindOf(menu.item.interpret).not ){
-					if(effects[ind].notNil){
-						effects[ind].releaseSynth;
-						effects[ind] = nil;
-					};
-					effects[ind] = menu.item.interpret.new(parent, group, channelName, ind);
-					effects[ind].makeGUI(menu.item);
-				};
-				if(effects[ind].win.isClosed){
-					effects[ind].makeGUI(menu.item);
-				}{
-					effects[ind].win.front;
-				};
-		}{
-				effects[ind].releaseSynth(ind);
+			if(effects[ind].notNil){
+				effects[ind].releaseSynth;
 				effects[ind] = nil;
+			};
+			effects[ind] = menu.item.interpret.new(parent, group, channelName, ind);
+			effects[ind].makeGUI(menu.item);
+		}{
+			effects[ind].releaseSynth(ind);
+			effects[ind] = nil;
 		};
 	}
 }

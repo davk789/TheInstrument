@@ -14,9 +14,9 @@ Compressor : EffectBase {
 		this.initGUI;
 	}
 	updateStartParams {
-		startParams = ['bus', bus, 'controlBus', controlBus, 
-			'threshold', threshold, 'slopeBelow', slopeBelow, 'slopeAbove', slopeAbove, 
-			'clampTime', clampTime, 'relaxTime', relaxTime, 'mix', mix];
+		startParams = Dictionary['bus' -> bus, 'controlBus' -> controlBus, 
+			'threshold' -> threshold, 'slopeBelow' -> slopeBelow, 'slopeAbove' -> slopeAbove, 
+			'clampTime' -> clampTime, 'relaxTime' -> relaxTime, 'mix' -> mix];
 	}
 	setThreshold { |val|
 		threshold = val;
@@ -53,11 +53,11 @@ Compressor : EffectBase {
 	makeGUI {
 		var fullWidth, controlRow, knobColors, controlMenu;
 		knobColors = [Color.white.alpha_(0.5), Color.yellow, Color.black, Color.yellow];
-		if(win.isClosed){ 
+/*		if(win.isClosed){ 
 			win = nil;
 			this.initGUI;
 		};
-		fullWidth = win.view.bounds.width - 10;
+*/		fullWidth = win.view.bounds.width - 10;
 		GUI.staticText.new(win, Rect.new(0, 0, 63, 20))
 			.stringColor_(Color.yellow)
 			.string_("sidechain: ")
