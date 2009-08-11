@@ -12,13 +12,17 @@ EffectBase {
 		groupID = group;
 		inputName = name;
 		inputNumber = ind;
+		
 	}
+	
 	startSynth {
 		server.listSendMsg(['s_new', synthdefName, nodeID, 0, groupID] ++ startParams.getPairs);
 	}
+	
 	releaseSynth {
 		server.sendMsg('n_free', nodeID);
 	}
+	
 	initGUI {
 		win = GUI.window.new(inputName ++ " channel, slot " ++ inputNumber, winBounds).front;
 		win.view

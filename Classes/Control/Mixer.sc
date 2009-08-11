@@ -1,6 +1,6 @@
 
 Mixer {
-	var s, <channels, <>win, windowHeight=560, parent,
+	var s, <channels, <>win, windowHeight=570, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
 	
 	*new { |par|
@@ -54,7 +54,6 @@ Mixer {
 	//// GUI methods
 	initGUI {
 		win = GUI.window.new("Mixer", Rect.new(500.rand, 500.rand, 700, windowHeight)).front;
-		win.view.background = Color.grey(15);
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	
@@ -74,8 +73,11 @@ Mixer {
 }
 
 MixerChannel {
-	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=530;
-	var parent, s, <nodeID, volumeSpec, panSpec, <inBus, <outBus, effects, channelName, parent;
+	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=565;
+	var parent, s, <nodeID, panSpec, <inBus, <outBus, effects, channelName, 
+		dbSpec, displayBox,
+		channel, inserts, insertMenus, label, labelText, 
+		faders, panFaderView, panFader, levelFader;
 
 	*new { |par, name, addTarget, group, channels, noAux=false|
 		insertList = ["*none*", "MonoDelay", "Distortion", "Compressor", "RingMod", 
@@ -87,8 +89,8 @@ MixerChannel {
 		s = Server.default;
 		parent = par;
 		channelName = name ? "master"; 
-		volumeSpec = 'amp'.asSpec;
-		panSpec = [-1, 1].asSpec;
+		panSpec = 'pan'.asSpec;
+		dbSpec = [-60, 24].asSpec;
 		nodeID = s.nextNodeID;
 		if(channelName == "master"){
 			outBus = 0; // MAIN OUTPUT CHANNEL
@@ -117,40 +119,50 @@ MixerChannel {
 		s.sendMsg('n_free', nodeID);
 	}
 	
-	setVolume { |volume|
-		s.sendMsg('n_set', nodeID, 'lev', volumeSpec.map(volume));
+	setVolumeFromSlider { |volume|
+		var db;
+		if(volume == 0){
+			db = -inf;
+		}{
+			db = dbSpec.map(volume);
+		};
+		displayBox.value = db;
+		s.sendMsg('n_set', nodeID, 'lev', db.dbamp);
 	}
 	
+	setVolumeFromNumberBox { |val|
+		levelFader.value = dbSpec.unmap(val);
+		s.sendMsg('n_set', nodeID, 'lev', val);
+	}
+		
 	setPan { |pan|
 		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(pan));
 	}
 	
 	makeChannelGUI { |win, groups|
-		var channel, inserts, insertMenus, label, labelText, 
-		faders, panFaderView, panFader, levelFader;
 
 		channel = GUI.vLayoutView.new(win, Rect.new(0, 0, channelWidth, channelHeight))
-			.background_(Color.red);
+			.background_(Color.black);
 		
 		label = GUI.hLayoutView.new(channel, Rect.new(0, 0, channelWidth, 25))
 			.background_(Color.white);
 		labelText = GUI.staticText.new(label, label.bounds)
 			.string_(channelName);
 
-		inserts = GUI.vLayoutView.new(channel, channelHeight * 0.275)
+		inserts = GUI.vLayoutView.new(channel, 155)
 			.background_(Color.black.alpha_(0.95));
 
 		insertMenus = Array.fill(4, { |ind|
-			GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 30))
+			var menu;
+			GUI.button.new(inserts, Rect.new(0, 0, 0, 8))
+				.states_([["", Color.black, Color.white]])
+				.action_({ |obj| this.launchFXWindow(menu, ind, groups[ind]) });
+			menu = GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 20)) 
 				.items_(insertList)
 				.stringColor_(Color.white)
 				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
 		});
-		Platform.case('linux', {
-			insertMenus.do{ |obj,ind|
-				obj.allowsReselection_(true)
-			};
-		});
+
 		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
 			.background_(Color.white.alpha_(0.75));
 
@@ -163,10 +175,13 @@ MixerChannel {
 		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, 315))
 			.knobColor_(Color.new255(50,50,50))
 			.background_(Color.blue.alpha_(0.25))
-			.value_(0.75);
-		levelFader.action = { |obj|
-			this.setVolume(obj.value);
-		};
+			.value_(dbSpec.unmap(0))
+			.action_({ |obj| this.setVolumeFromSlider(obj.value); });
+
+		displayBox = GUI.numberBox.new(faders, Rect.new(0, 0, 0, 25))
+			.value_(dbSpec.map(levelFader.value))
+			.action_({ |obj| this.setVolumeFromNumberBox(obj.value); });
+		
 	}
 	
 	launchFXWindow { |menu, ind, group|

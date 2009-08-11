@@ -17,10 +17,8 @@
 */
 ThyInstrument {
 	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont;
+        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont, <>effectsList;
 	*new {
-		controlFont = Font.new("Helvetica", 10);
-		strongFont = Font.new("Arial Black", 12);
 		this.initializeMIDI;
 		this.launchMidiResponders;
 		this.launchObjects;
@@ -112,7 +110,13 @@ ThyInstrument {
 	}
 	
 	*launchObjects {
+		// global helper objects
 		audioBusRegister = Dictionary.new;
+		effectsList = Array.new;
+		controlFont = Font.new("Helvetica", 10);
+		strongFont = Font.new("Arial Black", 12);
+		
+		// Instrument classes
 		mixer = Mixer.new(this);
 				
 		eventLooper = EventLooper.new(this);

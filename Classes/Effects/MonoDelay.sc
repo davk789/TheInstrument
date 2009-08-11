@@ -4,11 +4,9 @@ MonoDelay : EffectBase {
 	}
 	init_monoDelay {
 		var bus;
-		postln("going to get the mixer");
 		bus = parent.mixer.channels[inputName].inBus;
 		winBounds = Rect.new(winBounds.left, winBounds.top, 400, 200);
-		postln("got the mixer");
-		postln("initializing the Mono Delay with node ID " ++ nodeID);
+
 		synthdefName = 'fx_monoDelay';
 		startParams = Dictionary[
 			'bus' -> bus, 
