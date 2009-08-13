@@ -12,15 +12,32 @@ EffectBase {
 		groupID = group;
 		inputName = name;
 		inputNumber = ind;
-		
 	}
 	
 	startSynth {
-		server.listSendMsg(['s_new', synthdefName, nodeID, 0, groupID] ++ startParams.getPairs);
+		var numChan;
+		numChan = parent.mixer.channels[inputName].numChannels;
+		if(numChan == 1){
+			server.listSendMsg(['s_new', synthdefName, nodeID, 0, groupID] ++ startParams.getPairs);
+		}{
+			server.sendMsg('g_new', nodeID, 0, groupID);
+			numChan.do{ |ind|
+				startParams['bus'] = startParams['bus'] + ind;
+				server.listSendMsg(
+					['s_new', synthdefName, server.nextNodeID, 0, nodeID] ++ startParams.getPairs;
+				);
+			};
+		};
 	}
 	
+	
+	
 	releaseSynth {
-		server.sendMsg('n_free', nodeID);
+		if(parent.numChannels == 1){
+			server.sendMsg('n_free', nodeID);	
+		}{
+			server.sendMsg('g_free', nodeID);	
+		};
 	}
 	
 	initGUI {

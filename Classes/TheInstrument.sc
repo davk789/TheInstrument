@@ -8,8 +8,7 @@
 		
 
 	TODO:
-	make all the effects inherit from an EffectsBase
-	all channels should be stereo, and all effects should be stereo -- some should have stereo features
+	make EffectBase support stereo effects, write stereo effects.
 	all windows should be available to re-open on closing.
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  -figure out some way to use CCs that can work with the wavetable synth

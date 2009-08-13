@@ -14,7 +14,7 @@ Mixer {
 			aIn = (In.ar(inBus, 1) * gain).softclip;
 		    aSig = Pan2.ar(aIn, pan, lev);
 		    Out.ar(outBus, aSig);
-			Out.ar(3, aSig); // 
+			Out.ar(3, aSig);
 		}).load(server);
 		SynthDef.new("monoMixerChannelNoAuxOut", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
 		    var aSig, aIn;
@@ -51,7 +51,6 @@ Mixer {
 		this.addStereoChannel("master", 0, true);
 	}
 	
-	//// GUI methods
 	initGUI {
 		win = GUI.window.new("Mixer", Rect.new(500.rand, 500.rand, 700, windowHeight)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
@@ -75,7 +74,7 @@ Mixer {
 MixerChannel {
 	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=565;
 	var parent, s, <nodeID, panSpec, <inBus, <outBus, effects, channelName, 
-		dbSpec, displayBox,
+		dbSpec, displayBox, <numChannels=1,
 		channel, inserts, insertMenus, label, labelText, 
 		faders, panFaderView, panFader, levelFader;
 
@@ -84,23 +83,29 @@ MixerChannel {
 			"EQ", "PitchShift"];
 		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
 	}
+	
+	*incrementChannelNumber { |channels|
+		lastInBus = lastInBus + channels;
+	}
 
 	init_mixerChannel { |par, name, addTarget, group, channels, noAux=false|
 		s = Server.default;
 		parent = par;
+		numChannels = channels;
 		channelName = name ? "master"; 
 		panSpec = 'pan'.asSpec;
 		dbSpec = [-60, 24].asSpec;
 		nodeID = s.nextNodeID;
 		if(channelName == "master"){
-			outBus = 0; // MAIN OUTPUT CHANNEL
+			outBus = 0; // main output channel
 		}{
 			outBus = 20;
 		};
 		inBus = lastInBus;
 		parent.audioBusRegister = parent.audioBusRegister.add(name -> inBus);
 		effects = [nil, nil, nil, nil];
-		lastInBus = inBus + channels;
+		this.class.incrementChannelNumber(numChannels); // "static" method
+		lastInBus = inBus + numChannels;
 		this.startChannel(addTarget, group, channels);
 	}
 	
