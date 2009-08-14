@@ -63,7 +63,7 @@ DSKlunk : DSBase {
 		this.startRez;
 	}
 	initGUI { |parent|
-		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
+		view = GUI.compositeView.new(parent, Rect.new(0, 0, 550, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
 		rezControls = Dictionary[
@@ -353,7 +353,7 @@ DSSnare  : DSBase {
 		this.startRez;
 	}
 	initGUI { |parent|
-		view = GUI.compositeView.new(parent, Rect.new(0, 0, 500, 65))
+		view = GUI.compositeView.new(parent, Rect.new(0, 0, 550, 65))
 			.background_(Color.blue(0.1, alpha:0.2));
 		view.decorator = FlowLayout(view.bounds);
 		rezControls = Dictionary[

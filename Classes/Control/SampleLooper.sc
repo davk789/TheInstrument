@@ -72,7 +72,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	initGUI {
-		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 1700, 1024)).front;
+		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 1700, 530)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		controlView = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.black);

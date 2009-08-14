@@ -8,8 +8,7 @@
 		
 
 	TODO:
-	make EffectBase support stereo effects, write stereo effects.
-	all windows should be available to re-open on closing.
+	window management
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  -figure out some way to use CCs that can work with the wavetable synth
 
