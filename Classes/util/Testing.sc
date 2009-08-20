@@ -6,7 +6,7 @@ TestClass {
 	
 	init_testclass {
 		server = Server.default;
-		buffer = Buffer.read(server, "/Users/playmac/Music/sc-test-clips/082606-1-bhdk.norm render 002.wav");
+		
 	}
 	
 	getBufferValues {
@@ -14,4 +14,27 @@ TestClass {
 			buffer.get(ind, { |msg| msg.postln; });
 		}
 	}
+	
+	executeSuperclassFunction {
+		this.executeSubclassFuction;
+	}
+	
+	/*executeSubclassFuction {
+		// "virtual" method
+	}*/
+}
+
+TestSubClass : TestClass {
+	*new {
+		^super.new.init_testsubclass;
+	}
+	
+	init_testsubclass {
+		postln("initializing " ++ this.class);
+	}
+	
+	executeSubclassFunction {
+		postln("inside testSubclass");
+	}
+
 }

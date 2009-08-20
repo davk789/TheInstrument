@@ -1,11 +1,16 @@
 Distortion : EffectBase {
 	var chebyAmps, drawFunction,
-		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, postSignal, chebyAmt=0, expAmt=1, tableSize=1024,
+		expPreBuffer, chebyPreBuffer, postBuffer, expArr, chebyArr, postArr, 
+		postSignal, chebyAmt=0, expAmt=1, tableSize=1024,
+		expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, 
+		labelColumn, mixSlider, gainSlider,
 		postMixBuffer,
 		<win, shapeView, curve=1;
+		
 	*new { |par, group, name, ind|
 		^super.new(par, group, name, ind).init_distortion;
 	}
+	
 	init_distortion {
 		synthdefName = 'fx_distortion';
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
@@ -49,7 +54,8 @@ Distortion : EffectBase {
 		};
 		this.writeBuffers;
 		this.startSynth;
-		this.initGUI;
+		// this sets addGUIControls to a big ugly GUI creation function
+		this.setGUIControls; 
 	}
 	
 	writeBuffers {
@@ -136,79 +142,76 @@ Distortion : EffectBase {
 		server.sendMsg('n_set', nodeID, 'gain', startParams['gain']);
 	}
 
-	makeGUI {
-		var expCurveSlider, expAmtSlider, chebyAmtSlider, chebyCoefSlider, sliderColumn, labelColumn, mixSlider, gainSlider;
-/*		if(win.isClosed){ 
-			win = nil;
-			this.initGUI;
+	setGUIControls {
+		addGUIControls = {
+			GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
+				.align_('center')
+				.string_(inputName ++ " channel, slot " ++ inputNumber)
+				.stringColor_(Color.yellow);
+			shapeView = GUI.userView.new(win, Rect.new(0, 0, 250, 250))
+				.relativeOrigin_(true)
+				.background_(Color.black.alpha_(0.8))
+				//.mouseUpAction_({ |obj,x,y,mod| this.refreshUserView(x,y,mod); })
+				.drawFunc_(drawFunction);
+			sliderColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 200, 250))
+				.background_(Color.black);
+			chebyCoefSlider = GUI.multiSliderView.new(sliderColumn, Rect.new(0, 0, 0, 100))
+				.fillColor_(Color.black)
+				.strokeColor_(Color.yellow)
+				.indexThumbSize_(9.4)
+				.background_(Color.black.alpha_(0.9))
+				.valueThumbSize_(3.4)
+				.value_(chebyAmps)
+				.isFilled_(true)
+				.mouseUpAction_({ |obj| this.setChebyAmps(obj.value); });
+	
+			chebyAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+			GUI.slider.new(chebyAmtSlider, Rect.new(0, 0, 200, 0))
+				.value_(chebyAmt)
+				.mouseUpAction_({ |obj| this.setChebyAmt(obj.value); });
+	
+			expCurveSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+			GUI.slider.new(expCurveSlider, Rect.new(0, 0, 200, 0))
+				.value_([1, 0.001, 0.5].asSpec.unmap(curve))
+				.mouseUpAction_({ |obj| this.setCurve([0.01, 10, 0.5].asSpec.map(obj.value)) });
+			
+			expAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+			GUI.slider.new(expAmtSlider, Rect.new(0, 0, 200, 0))
+				.value_(expAmt)
+				.mouseUpAction_({ |obj| this.setExpAmt(obj.value); }); 
+	
+			gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+			GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
+				.value_([0.001, 4, 2].asSpec.unmap(startParams['gain']))
+				.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
+	
+			mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
+			GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
+				.value_('pan'.asSpec.unmap(startParams['mix']))
+				.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
+	
+	
+			labelColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 75, 250))
+				.background_(Color.black);
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 100))
+				.stringColor_(Color.yellow)
+				.string_("cheby partials");
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+				.stringColor_(Color.yellow)
+				.string_("cheby amt");
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+				.stringColor_(Color.yellow)
+				.string_("exp coef");
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+				.stringColor_(Color.yellow)
+				.string_("exp amt");		
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+				.stringColor_(Color.yellow)
+				.string_("gain");
+			GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
+				.stringColor_(Color.yellow)
+				.string_("mix");
 		};
-*/		GUI.staticText.new(win, Rect.new(0, 0, 540, 15))
-			.align_('center')
-			.string_(inputName ++ " channel, slot " ++ inputNumber)
-			.stringColor_(Color.yellow);
-		shapeView = GUI.userView.new(win, Rect.new(0, 0, 250, 250))
-			.relativeOrigin_(true)
-			.background_(Color.black.alpha_(0.8))
-			//.mouseUpAction_({ |obj,x,y,mod| this.refreshUserView(x,y,mod); })
-			.drawFunc_(drawFunction);
-		sliderColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 200, 250))
-			.background_(Color.black);
-		chebyCoefSlider = GUI.multiSliderView.new(sliderColumn, Rect.new(0, 0, 0, 100))
-			.fillColor_(Color.black)
-			.strokeColor_(Color.yellow)
-			.indexThumbSize_(9.4)
-			.background_(Color.black.alpha_(0.9))
-			.valueThumbSize_(3.4)
-			.value_(chebyAmps)
-			.isFilled_(true)
-			.mouseUpAction_({ |obj| this.setChebyAmps(obj.value); });
-
-		chebyAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-		GUI.slider.new(chebyAmtSlider, Rect.new(0, 0, 200, 0))
-			.value_(chebyAmt)
-			.mouseUpAction_({ |obj| this.setChebyAmt(obj.value); });
-
-		expCurveSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-		GUI.slider.new(expCurveSlider, Rect.new(0, 0, 200, 0))
-			.value_([1, 0.001, 0.5].asSpec.unmap(curve))
-			.mouseUpAction_({ |obj| this.setCurve([0.01, 10, 0.5].asSpec.map(obj.value)) });
-		
-		expAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-		GUI.slider.new(expAmtSlider, Rect.new(0, 0, 200, 0))
-			.value_(expAmt)
-			.mouseUpAction_({ |obj| this.setExpAmt(obj.value); }); 
-
-		gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-		GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
-			.value_([0.001, 4, 2].asSpec.unmap(startParams['gain']))
-			.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
-
-		mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-		GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
-			.value_('pan'.asSpec.unmap(startParams['mix']))
-			.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
-
-
-		labelColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 75, 250))
-			.background_(Color.black);
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 100))
-			.stringColor_(Color.yellow)
-			.string_("cheby partials");
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
-			.stringColor_(Color.yellow)
-			.string_("cheby amt");
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
-			.stringColor_(Color.yellow)
-			.string_("exp coef");
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
-			.stringColor_(Color.yellow)
-			.string_("exp amt");		
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
-			.stringColor_(Color.yellow)
-			.string_("gain");
-		GUI.staticText.new(labelColumn, Rect.new(0, 0, 0, 25))
-			.stringColor_(Color.yellow)
-			.string_("mix");
 	}
 	
 	*loadSynthDef { |s|
