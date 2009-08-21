@@ -2,6 +2,7 @@ EffectBase {
 	classvar parent;
 	var server, saveRoot, sep, inputName, inputNumber, groupID, <nodeID, 
 		startParams, paramControls, synthdefName, <win, 
+		presetRow, saveButton, presetNameField, presetMenu,
 		<winBounds, addGUIControls; // to be set by subclasses
 	
 	*new { |par, group, name, ind|
@@ -46,7 +47,7 @@ EffectBase {
 	}
 	
 	initGUI {
-		var presetRow, saveButton, presetNameField, presetMenu;
+
 		win = GUI.window.new(inputName ++ " channel, slot " ++ inputNumber, winBounds).front;
 		win.view
 			.background_(Color.black)
@@ -66,6 +67,58 @@ EffectBase {
 
 	getPresetList {
 		^(saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; };
+	}
+	
+	getParams {
+		var ret;
+		ret = Dictionary.new;
+		startParams.keysValuesDo{ |key,val,ind|
+			ret = ret.add('\'' ++ key ++ '\'' -> val);
+		};
+		^ret;
+	}
+	
+	savePreset { |name| 
+		// copied from DrumSynth... preset support should exist as a static class or a global object
+		var params, fileName, filePath, fh, pipe;
+
+		params = this.getParams;
+		if(name == "<>"){
+			fileName = Date.localtime.stamp;
+		}{
+			fileName = name;
+		};
+		
+		filePath = saveRoot ++ sep ++ fileName;
+		fh = File.new(filePath, "w");
+		if(fh.isOpen){
+			fh.write(params.asInfString);
+			fh.close;
+		}{
+			postln("creating save directory " ++ saveRoot);
+			pipe = Pipe.new("mkdir -p \"" ++ saveRoot ++ "\"", "w");
+			pipe.close;
+			fh = File.new(filePath, "w");
+			if(fh.isOpen){
+				fh.write(params.asInfString);
+				fh.close
+			}{
+				postln("preset save operation failed");
+			};
+			
+		};
+		presetMenu.items_(this.getPresetList);
+		presetNameField.string_("<>");
+	}
+
+	loadPreset { |presetName|
+		var preset;
+		preset = (saveRoot ++ sep ++ presetName).load;
+		preset.do{ |obj,ind|
+			drums[ind].drumParams = obj[0];
+			drums[ind].rezParams = obj[1];
+			drums[ind].refreshValues;
+		};
 	}
 	
 	makeGUI {
