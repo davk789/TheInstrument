@@ -72,15 +72,13 @@ Mixer {
 }
 
 MixerChannel {
-	classvar lastInBus=20, insertList, channelWidth=100, channelHeight=565;
-	var parent, s, <nodeID, panSpec, <inBus, <outBus, effects, channelName, 
+	classvar lastInBus=20, channelWidth=100, channelHeight=565;
+	var parent, s, <nodeID, insertList, panSpec, <inBus, <outBus, effects, channelName, 
 		dbSpec, displayBox, <numChannels=1,
-		channel, inserts, insertMenus, label, labelText, 
+		channel, inserts, insertMenus, label, labelButton, 
 		faders, panFaderView, panFader, levelFader;
 
 	*new { |par, name, addTarget, group, channels, noAux=false|
-		insertList = ["*none*", "MonoDelay", "Distortion", "Compressor", "RingMod", 
-			"EQ", "PitchShift"];
 		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
 	}
 	
@@ -96,6 +94,7 @@ MixerChannel {
 		panSpec = 'pan'.asSpec;
 		dbSpec = [-60, 24].asSpec;
 		nodeID = s.nextNodeID;
+		insertList = this.getMixerInserts;
 		if(channelName == "master"){
 			outBus = 0; // main output channel
 		}{
@@ -107,6 +106,17 @@ MixerChannel {
 		this.class.incrementChannelNumber(numChannels); // "static" method
 		lastInBus = inBus + numChannels;
 		this.startChannel(addTarget, group, channels);
+	}
+	
+	getMixerInserts {
+		var ret;
+		ret = Array.new;
+		EffectBase.allSubclasses.do{ |obj| 
+			ret = ret.add(obj.class.asString.split($_)[1]); 
+		};
+		ret = ["*none*"] ++ ret;
+		ret.postln;
+		^ret;
 	}
 	
 	startChannel { |addTarget=0, group=1, channels=1|
@@ -144,6 +154,10 @@ MixerChannel {
 		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(pan));
 	}
 	
+	doSynthWindow {
+		channelName.interpret.relaunchWindow;
+	}
+	
 	makeChannelGUI { |win, groups|
 
 		channel = GUI.vLayoutView.new(win, Rect.new(0, 0, channelWidth, channelHeight))
@@ -151,8 +165,9 @@ MixerChannel {
 		
 		label = GUI.hLayoutView.new(channel, Rect.new(0, 0, channelWidth, 25))
 			.background_(Color.white);
-		labelText = GUI.staticText.new(label, label.bounds)
-			.string_(channelName);
+		labelButton = GUI.button.new(label, label.bounds)
+			.states_([[channelName, Color.black, Color.clear]])
+			.action_({ |obj| this.doSynthWindow; });
 
 		inserts = GUI.vLayoutView.new(channel, 155)
 			.background_(Color.black.alpha_(0.95));
@@ -161,11 +176,12 @@ MixerChannel {
 			var menu;
 			GUI.button.new(inserts, Rect.new(0, 0, 0, 8))
 				.states_([["", Color.black, Color.white]])
-				.action_({ |obj| this.launchFXWindow(menu, ind, groups[ind]) });
+				.action_({ |obj| this.launchWindow(menu, ind, groups[ind]) });
 			menu = GUI.popUpMenu.new(inserts, Rect.new(0, 0, 0, 20)) 
 				.items_(insertList)
 				.stringColor_(Color.white)
-				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
+				.action_({ |obj| this.launchEffect(obj, ind, groups[ind]); });
+//				.action_({ |obj| this.launchFXWindow(obj, ind, groups[ind]); });
 		});
 
 		faders = GUI.vLayoutView.new(channel, channelHeight * 0.725)
@@ -189,7 +205,7 @@ MixerChannel {
 		
 	}
 	
-	launchFXWindow { |menu, ind, group|
+	launchEffect { |menu, ind, group|
 		if(menu.value > 0){
 			if(effects[ind].notNil){
 				effects[ind].releaseSynth;
@@ -200,6 +216,12 @@ MixerChannel {
 		}{
 			effects[ind].releaseSynth(ind);
 			effects[ind] = nil;
+		};
+	}
+	
+	launchWindow { |menu,ind,group|
+		if(menu.value > 0){
+			effects[ind].makeGUI(menu.item); 
 		};
 	}
 }

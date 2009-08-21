@@ -1,11 +1,3 @@
-/*
-	TODO:
-	- make the waveform controls jump to the clicked/region-delimited point
-	- preset support -- save temp buffers, 
-	- EventLooper support
-	- record offset in sync mode
-	
-*/
 
 Sampler { // container for one or more SampleLoopers
 	var parent, <>win, activeMidiChannels, <>channels, <outBus,

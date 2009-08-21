@@ -527,9 +527,7 @@ DrumSynth {
 	}
 
 	getParams {
-		var ret, drumDict, rezDict;
-		drumDict = Dictionary.new;
-		rezDict = Dictionary.new;
+		var ret;
 		drums.do{ |obj, ind|
 			ret = ret.add([
 				this.formatParams(obj.drumParams), 
@@ -680,8 +678,6 @@ DrumSynth {
 		}).load(s);
 
 		// Resonators ~~~~~~~~~~ 
-		// these resonators should have a pan parameter... 
-		// make the DrumSynth stereo after adding stereo support to the mixer
 		SynthDef.new("r_formlet", { |freq=1600, attTime=0.01, decTime=0.1,
 			outBus=0, inBus=11, lev=1, pan=0|
 			var aRez;

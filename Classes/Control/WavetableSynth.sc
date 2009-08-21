@@ -636,7 +636,7 @@ WavetableSynth {
 }
 
 WavetableSynthFilter : WavetableSynth {
-	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, filterUGens, filterSpecs, currentFilter,
+	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, currentFilter,
 	    cutoffSpec, cutoffModSpec, rezSpec;
 	*new { |par, name|
 		^super.new(par, name).init_wavetablesynthfilter;
@@ -659,47 +659,7 @@ WavetableSynthFilter : WavetableSynth {
 			s.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 
 		};
-/*  filterSpecs and filterUGens are both called by this.setFilterType(sel)
-	and so all keys must match between these two Dictionaries
-*/
-		filterUGens = Dictionary[
-			"RLPF" -> { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
-			"RHPF" -> { |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
-			"MoogFF" -> { |in, freq, gain| MoogFF.ar(in, freq, gain); },
-			"BLowPass4" -> { |in, freq, rez| BLowPass4.ar(in, freq, rez.reciprocal); },
-			"BLowPass" -> { |in, freq, rez| BLowPass.ar(in, freq, rez.reciprocal); },
-			"BHiPass4" -> { |in, freq, rez| BHiPass4.ar(in, freq, rez.reciprocal); },
-			"BHiPass" -> { |in, freq, rez| BHiPass.ar(in, freq, rez.reciprocal); },
-			"BBandPass" -> { |in, freq, q| BBandPass.ar(in, freq, q.reciprocal); }, 
-			"BAllPass" -> { |in, freq, rez| BAllPass.ar(in, freq, rez.reciprocal); },
-			"Resonz" -> { |in, freq, rez| Resonz.ar(in, freq, rez.reciprocal); }	
-		];
-		Platform.case('osx', { // some of these filters take more than (in,freq,rez), I should address this later
-			filterUGens = filterUGens.add("MoogVCF" -> { |in, freq, rez| MoogVCF.ar(in, freq, rez); });
-			filterUGens = filterUGens.add("RLPFD" -> { |in, freq, rez| RLPF.ar(in, freq, rez, 0.8); }); 
-			filterUGens = filterUGens.add("MoogLadder" -> { |in, freq, rez| MoogLadder.ar(in, freq, rez); });
-			filterUGens = filterUGens.add("BMoogLPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 0, 0.5); });
-			filterUGens = filterUGens.add("BMoogHPF" -> { |in, freq, rez| BMoog.ar(in, freq, rez, 1, 0.5); });
-			filterUGens = filterUGens.add("IIRFilter" -> { |in, freq, rez| IIRFilter.ar(in, freq, rez.reciprocal); });
-		});
-		filterSpecs = Dictionary[ 
-			"RLPFD" -> [0,1].asSpec,
-			"MoogLadder" -> [0,1].asSpec,
-			"BMoogLPF" -> [0, 1].asSpec,
-			"BMoogHPF" -> [0, 1].asSpec,
-			"IIRFilter" -> [1, 100].asSpec,
-			"RLPF" -> [1,100].asSpec,
-			"RHPF" -> [1,100].asSpec,
-			"MoogVCF" -> [0.1, 10].asSpec,
-			"MoogFF" -> [0.1, 10].asSpec,
-			"BLowPass4" -> [1,100].asSpec,
-			"BLowPass" -> [1, 100].asSpec,
-			"BHiPass4" -> [1,100].asSpec,
-			"BHiPass" -> [1,100].asSpec,
-			"BBandPass" -> [0.1, 10].asSpec,
-			"BAllPass" -> [1,100].asSpec,
-			"Resonz" -> [1,100].asSpec
-		];
+
 		cutoffSpec = [-12,12].asSpec;
 		cutoffModSpec = [0, 8].asSpec;
 
@@ -710,8 +670,8 @@ WavetableSynthFilter : WavetableSynth {
 
 	setFilterType { |sel|
 		currentFilter = sel;
-		rezKnob.spec = filterSpecs[currentFilter];
-		this.loadSynthDef(filterUGens[currentFilter]);
+		rezKnob.spec = parent.filterSpecs[currentFilter];
+		this.loadSynthDef(parent.filterUGens[currentFilter]);
 	}
 	
 	getParams  {
@@ -802,7 +762,7 @@ WavetableSynthFilter : WavetableSynth {
 			.states_([["osc1 mod", Color.black, Color.blue(0.1, alpha:0.2)],["osc2 mod", Color.blue, Color.red(0.1, alpha:0.2)]])
 			.action_({ |obj| this.setModSource(obj.value); });
 		filterTypeMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 100, 0))
-			.items_(filterUGens.keys.asArray)
+			.items_(parent.filterUGens.keys.asArray)
 			.action_({ |obj| this.setFilterType(obj.item); });
 		
 		filterControlRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 75))
@@ -832,7 +792,7 @@ WavetableSynthFilter : WavetableSynth {
 			.action_({|obj| this.setCutoffModFlag(obj.value) });
 	}
 	loadSynthDef { |filter|
-		filter = filter ? filterUGens["MoogFF"];
+		filter = filter ? parent.filterUGens["MoogFF"];
 		SynthDef.new("s_dualWavetableRLPF", { 
 			|gate, outBus=20, 
 				curve=(-1.6), lev=1,
