@@ -88,7 +88,7 @@ EffectBase {
 		}{
 			fileName = name;
 		};
-		
+7		
 		filePath = saveRoot ++ sep ++ fileName;
 		fh = File.new(filePath, "w");
 		if(fh.isOpen){
@@ -114,11 +114,18 @@ EffectBase {
 	loadPreset { |presetName|
 		var preset;
 		preset = (saveRoot ++ sep ++ presetName).load;
-		preset.do{ |obj,ind|
-			drums[ind].drumParams = obj[0];
-			drums[ind].rezParams = obj[1];
-			drums[ind].refreshValues;
-		};
+		startParams = preset;
+		this.refreshParams;
+		
+	}
+
+	refreshParams {
+		params.keysValuesDo{ |key,val,ind|
+			if(key.notNil){
+				paramsControls.value = val;
+				server.sendMsg('n_set', nodeID, key, val);
+			};
+		}
 	}
 	
 	makeGUI {

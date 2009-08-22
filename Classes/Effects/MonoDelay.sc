@@ -56,7 +56,8 @@ MonoDelay : EffectBase {
 
 	setGUIControls {
 		addGUIControls = {
-			labelRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 22))				.background_(Color.blue(0.2, alpha:0.1));
+			labelRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 22))				
+                .background_(Color.blue(0.2, alpha:0.1));
 			GUI.staticText.new(labelRow, Rect.new(0, 0, labelRow.bounds.width / 2.1, 0))
 				.string_(inputName ++ " channel, slot " ++ inputNumber)
 				.stringColor_(Color.white);
