@@ -72,8 +72,9 @@ EffectBase {
 	getParams {
 		var ret;
 		ret = Dictionary.new;
-		startParams.keysValuesDo{ |key,val,ind|
-			ret = ret.add('\'' ++ key ++ '\'' -> val);
+		// iterate over the controls, not the parameters
+		paramControls.keysValuesDo{ |key,obj,ind| 
+			ret = ret.add('\'' ++ key ++ '\'' -> obj.value);
 		};
 		^ret;
 	}
@@ -88,7 +89,7 @@ EffectBase {
 		}{
 			fileName = name;
 		};
-7		
+		
 		filePath = saveRoot ++ sep ++ fileName;
 		fh = File.new(filePath, "w");
 		if(fh.isOpen){
@@ -114,19 +115,23 @@ EffectBase {
 	loadPreset { |presetName|
 		var preset;
 		preset = (saveRoot ++ sep ++ presetName).load;
-		startParams = preset;
-		this.refreshParams;
+		preset.asInfString.postln;
+		preset.keysValuesDo{ |key,val,ind|
+			paramControls['key'].valueAction_(val);
+		}
+		//startParams = preset;
+		//this.refreshParams;
 		
 	}
 
-	refreshParams {
-		params.keysValuesDo{ |key,val,ind|
+	/*refreshParams {
+		startParams.keysValuesDo{ |key,val,ind|
 			if(key.notNil){
-				paramsControls.value = val;
+				paramControls.value = val;
 				server.sendMsg('n_set', nodeID, key, val);
 			};
 		}
-	}
+	}*/
 	
 	makeGUI {
 		if(win.isNil){

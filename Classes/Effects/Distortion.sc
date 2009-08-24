@@ -13,6 +13,7 @@ Distortion : EffectBase {
 	
 	init_distortion {
 		synthdefName = 'fx_distortion';
+		paramControls = Dictionary.new;
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
 		postln("parent.mixer is this: " ++ parent.mixer.class);
 		chebyArr = Array.new;
@@ -166,29 +167,39 @@ Distortion : EffectBase {
 				.mouseUpAction_({ |obj| this.setChebyAmps(obj.value); });
 	
 			chebyAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-			GUI.slider.new(chebyAmtSlider, Rect.new(0, 0, 200, 0))
-				.value_(chebyAmt)
-				.mouseUpAction_({ |obj| this.setChebyAmt(obj.value); });
+			paramControls = paramControls.add(
+				'chebyAmt' -> GUI.slider.new(chebyAmtSlider, Rect.new(0, 0, 200, 0))
+					.value_(chebyAmt)
+					.mouseUpAction_({ |obj| this.setChebyAmt(obj.value); });
+			);
 	
 			expCurveSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-			GUI.slider.new(expCurveSlider, Rect.new(0, 0, 200, 0))
-				.value_([1, 0.001, 0.5].asSpec.unmap(curve))
-				.mouseUpAction_({ |obj| this.setCurve([0.01, 10, 0.5].asSpec.map(obj.value)) });
+			paramControls = paramControls.add(
+				'curve' -> GUI.slider.new(expCurveSlider, Rect.new(0, 0, 200, 0))
+					.value_([1, 0.001, 0.5].asSpec.unmap(curve))
+					.mouseUpAction_({ |obj| this.setCurve([0.01, 10, 0.5].asSpec.map(obj.value)) });
+			);
 			
 			expAmtSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-			GUI.slider.new(expAmtSlider, Rect.new(0, 0, 200, 0))
-				.value_(expAmt)
-				.mouseUpAction_({ |obj| this.setExpAmt(obj.value); }); 
+			paramControls = paramControls.add(
+				'expAmt' -> GUI.slider.new(expAmtSlider, Rect.new(0, 0, 200, 0))
+					.value_(expAmt)
+					.mouseUpAction_({ |obj| this.setExpAmt(obj.value); }); 
+			);
 	
 			gainSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-			GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
-				.value_([0.001, 4, 2].asSpec.unmap(startParams['gain']))
-				.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
+			paramControls = paramControls.add(
+				'gain' -> GUI.slider.new(gainSlider, Rect.new(0, 0, 200, 0))
+					.value_([0.001, 4, 2].asSpec.unmap(startParams['gain']))
+					.action_({ |obj| this.setGain([0.001, 4, 2].asSpec.map(obj.value)); }); 
+			);
 	
 			mixSlider = GUI.hLayoutView.new(sliderColumn, Rect.new(0, 0, 0, 25));
-			GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
-				.value_('pan'.asSpec.unmap(startParams['mix']))
-				.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
+			paramControls = paramControls.add(
+				'pan' -> GUI.slider.new(mixSlider, Rect.new(0, 0, 200, 0))
+					.value_('pan'.asSpec.unmap(startParams['mix']))
+					.action_({ |obj| this.setWetDryMix('pan'.asSpec.map(obj.value)); }); 
+			);
 	
 	
 			labelColumn = GUI.vLayoutView.new(win, Rect.new(0, 0, 75, 250))
