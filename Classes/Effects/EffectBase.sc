@@ -117,7 +117,7 @@ EffectBase {
 		preset = (saveRoot ++ sep ++ presetName).load;
 		preset.asInfString.postln;
 		preset.keysValuesDo{ |key,val,ind|
-			paramControls['key'].valueAction_(val);
+			paramControls[key].valueAction_(val);
 		}
 		//startParams = preset;
 		//this.refreshParams;

@@ -63,6 +63,11 @@ EZJKnob {
 		numberBox.value = prValue;
 	}
 	
+	valueAction_ { |val|
+		this.value = val;
+		this.knobValueAction;
+	}
+	
 	background_ { |color|
 		knobView.background_(color);
 	}
