@@ -16,6 +16,7 @@ EffectBase {
 		server = Server.default;
 		nodeID = server.nextNodeID;
 		winBounds = Rect.new(500.rand, 500.rand, 400, 120);
+		paramControls = Dictionary.new;
 		groupID = group;
 		inputName = name;
 		inputNumber = ind;

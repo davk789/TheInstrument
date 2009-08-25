@@ -6,7 +6,6 @@ Compressor : EffectBase {
 		var bus;
 		bus = parent.mixer.channels[inputName].inBus;
 		synthdefName = 'fx_compressor';
-		paramControls = Dictionary.new;
 		this.updateStartParams(bus);
 		this.startSynth;
 		this.setGUIControls;
@@ -67,9 +66,9 @@ Compressor : EffectBase {
 					.items_(parent.audioBusRegister.keys.asArray)
 					.action_({ |obj| this.setControlBus(parent.audioBusRegister[obj.item]); })
 			);
-			/*paramControls['controlBus'].value = 				controlMenu.items.indexOf(
+			paramControls['controlBus'].value = 				paramControls['controlBus'].items.indexOf(
 					parent.audioBusRegister.findKeyForValue(startParams['controlBus'])
-				);*/
+				);
 
 			paramControls = paramControls.add(
 				'mix' -> GUI.button.new(win, Rect.new(0, 0, 40, 20))

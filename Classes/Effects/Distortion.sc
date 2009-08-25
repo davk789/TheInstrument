@@ -13,7 +13,6 @@ Distortion : EffectBase {
 	
 	init_distortion {
 		synthdefName = 'fx_distortion';
-		paramControls = Dictionary.new;
 		chebyAmps = [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0];
 		postln("parent.mixer is this: " ++ parent.mixer.class);
 		chebyArr = Array.new;
