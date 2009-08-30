@@ -1,6 +1,6 @@
 EventLooperChannel {
 	classvar <>root;
-	var <>clock, <totalTime, index, nextTime, <eventValue, lastEvent, iterator, >action, 
+	var <>clock, <totalTime, index, nextTime, <eventValue, lastEvent, iterator, >action,
 		waitTime=0, firstEvent=true, <>isRecording=false, <eventCollection, <metaSeq,
 		<>seqMenu, <>playButton, <>recordButton, incseqButtonDown, incseqButtonUp, presetListMenu, 
 		presetListSubfolder, gate=false,
@@ -12,7 +12,7 @@ EventLooperChannel {
 		sep = Platform.pathSeparator;
 		presetListSubfolder = "trig";
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
-		totalTime = 32;
+		totalTime = 16;//32;
 		index = 0;
 		nextTime = [totalTime];
 		eventValue = [nil];
@@ -33,8 +33,10 @@ EventLooperChannel {
 			metaSeq.sIndex = index;
 			waitTime = nextTime[index];
 			if(eventValue[index] != nil){
-				action.value(eventValue[index],index);
-				postln("waiting " ++ waitTime ++ " beats");
+				if(firstEvent.not){
+					action.value(eventValue[index],index);				
+				};
+				//postln("waiting " ++ waitTime ++ " beats");
 			};
 			// metaSequence iterator
 			nextSeq = metaSeq.next;
@@ -64,10 +66,10 @@ EventLooperChannel {
 	}
 	start {
 		index = 0;
-		firstEvent = false;
 		clock = TempoClock.new(cTempo);
 		iterator.value;
 		clock.schedAbs(waitTime + clock.beats, iterator);
+		firstEvent = false;
 	}
 	stop {
 		if(gate){ this.freeAllVoices; };
@@ -100,7 +102,7 @@ EventLooperChannel {
 	}
 	loadGroup { |name|
 		var fh;
-		if(name != nil){	
+		if(name != nil){
 			fh = File.new(root ++ sep ++ presetListSubfolder ++ sep ++ name, "r");
 		}{
 			"need to provide a filename".postln;
@@ -119,7 +121,7 @@ EventLooperChannel {
 		if(name.notNil){
 			fullName = root ++ sep ++ presetListSubfolder ++ sep ++ name;
 		}{
-			fullName = root ++ sep ++ presetListSubfolder ++ sep ++ Date.localtime.stamp;			
+			fullName = root ++ sep ++ presetListSubfolder ++ sep ++ Date.localtime.stamp;
 		};
 		fh = File.new(fullName, "w");
 		if(fh.isOpen){
@@ -450,7 +452,7 @@ EventLooper {
 MetaSequence {
 	var <>seq, recordCounter=0, counter=0, index=0, superIndex=0, isPlaying=false, isRecording=false, seqSize=1,
 		<pauseButton;
-	
+
 	*new { |inSize=1, parent|
 		^super.new.ms_init(inSize, parent);
 	}

@@ -84,6 +84,7 @@ ThyInstrument {
 	
 	*initializeMIDI {
 		noteOnFunction = { |src,chan,num,vel|
+			//[src,chan,num,vel].postln;
 			lastChannel = chan;
 			switch(chan,
 				0, { // WavetableSynth

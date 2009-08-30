@@ -9,34 +9,41 @@ SimpleFilter : EffectBase {
 	init_simplefilter {
 		cutoffSpec = [-12,12].asSpec;
 		cutoffModSpec = [0, 8].asSpec;
+		synthdefName = 'simpleFilter';
 		winBounds = Rect.new(winBounds.left, winBounds.top, 275, 180);
+		Platform.case('linux', {
+			Rect.new(winBounds.left, winBounds.top, 400, 300);
+		});
 		startParams = Dictionary[
-			'gain'      -> 1,
-			'bus'       -> 20,
-			'modBus'    -> 20,
-			'modAmt'    -> 0,
-			'modLag'    -> 0.2,
-			'mix'       -> 1,
-			'freq'      -> 440,
-			'resonance' -> 1
+			'gain'       -> 1,
+			'bus'        -> parent.mixer.channels[inputName].inBus,
+			'modBus'     -> 20,
+			'modAmt'     -> 0,
+			'modLag'     -> 0.2,
+			'mix'        -> 1,
+			'freq'       -> 440,
+			'resonance'  -> 1,
+			'filterType' -> "RLPF"
 		];
-		
 		this.setGUIControls;
+		this.startSynth;
 	}
 	
 	*loadSynthDef { |filter, s|
-		filter = filter ? parent.filterUGens["RLPF"];
+		filter = filter ? ThyInstrument.filterUGens["RLPF"];
+		//filter = filter ? { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); };
 		s = s ? Server.default;
 		SynthDef.new("simpleFilter", { |gain=1, bus=20, modBus=20, modAmt=0, modLag=0.2,
-			mix=1, freq=440, resonance=1|
-			var aIn, aScaleIn, aModIn, aFreq, aSig, aOutMix;
+			mix=1, freq=440, resonance=1, gate=1|
+			var aIn, aScaleIn, aModIn, aFreq, aSig, aOutMix, aEnv;
 			aIn = In.ar(bus);
 			aScaleIn = (aIn * gain).softclip;
 			aModIn = Lag.ar(In.ar(modBus), modLag) * modAmt;
-			aFreq = freq + aModIn;
+			aFreq = Lag.ar(freq + aModIn, 1);
 			aSig = SynthDef.wrap(filter, Array.fill(filter.numArgs, {0}), [aIn, aFreq, resonance]);
 			aOutMix = (aIn * (mix - 1).abs) + (aSig * mix);
-			ReplaceOut.ar(bus, aOutMix);
+			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), gate, doneAction:2);
+			ReplaceOut.ar(bus, aOutMix * aEnv);
 		}).load(s);
 	}
 	
@@ -76,8 +83,14 @@ SimpleFilter : EffectBase {
 	}
 	
 	setFilterType { |name|
-		// finish ...
-		//startParams['']	
+		startParams['filterType'] = name;
+		server.sendMsg('n_set', nodeID, 'gate', 0);
+		this.loadSynthDef(parent.filterUGens[startParams['filterType']]);
+		AppClock.sched( 0.15, {
+			server.sendMsg('n_free', nodeID);
+			this.startSynth;
+			nil;
+		});
 	}
 	
 	setGUIControls {

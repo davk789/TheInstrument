@@ -120,19 +120,8 @@ EffectBase {
 		preset.keysValuesDo{ |key,val,ind|
 			paramControls[key].valueAction_(val);
 		}
-		//startParams = preset;
-		//this.refreshParams;
 		
 	}
-
-	/*refreshParams {
-		startParams.keysValuesDo{ |key,val,ind|
-			if(key.notNil){
-				paramControls.value = val;
-				server.sendMsg('n_set', nodeID, key, val);
-			};
-		}
-	}*/
 	
 	makeGUI {
 		if(win.isNil){
