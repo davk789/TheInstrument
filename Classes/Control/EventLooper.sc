@@ -12,7 +12,7 @@ EventLooperChannel {
 		sep = Platform.pathSeparator;
 		presetListSubfolder = "trig";
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
-		totalTime = 16;//32;
+		totalTime = 4;//32;
 		index = 0;
 		nextTime = [totalTime];
 		eventValue = [nil];

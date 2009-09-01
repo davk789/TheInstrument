@@ -7,17 +7,19 @@ SimpleFilter : EffectBase {
 	}
 	
 	init_simplefilter {
+		var bus;
 		cutoffSpec = [-12,12].asSpec;
 		cutoffModSpec = [0, 8].asSpec;
 		synthdefName = 'simpleFilter';
-		winBounds = Rect.new(winBounds.left, winBounds.top, 275, 180);
-		Platform.case('linux', {
-			Rect.new(winBounds.left, winBounds.top, 400, 300);
-		});
+		//winBounds = Rect.new(winBounds.left, winBounds.top, 275, 180);
+		//Platform.case('linux', {
+			winBounds = Rect.new(winBounds.left, winBounds.top, 350, 215);
+		//});
+		bus = parent.mixer.channels[inputName].inBus;
 		startParams = Dictionary[
 			'gain'       -> 1,
-			'bus'        -> parent.mixer.channels[inputName].inBus,
-			'modBus'     -> 20,
+			'bus'        -> bus,
+			'modBus'     -> bus,
 			'modAmt'     -> 0,
 			'modLag'     -> 0.2,
 			'mix'        -> 1,
@@ -30,8 +32,9 @@ SimpleFilter : EffectBase {
 	}
 	
 	*loadSynthDef { |filter, s|
+		// this works because ThyInstrument calls this synth after initializing 
+		// its member variables
 		filter = filter ? ThyInstrument.filterUGens["RLPF"];
-		//filter = filter ? { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); };
 		s = s ? Server.default;
 		SynthDef.new("simpleFilter", { |gain=1, bus=20, modBus=20, modAmt=0, modLag=0.2,
 			mix=1, freq=440, resonance=1, gate=1|
@@ -85,7 +88,8 @@ SimpleFilter : EffectBase {
 	setFilterType { |name|
 		startParams['filterType'] = name;
 		server.sendMsg('n_set', nodeID, 'gate', 0);
-		this.loadSynthDef(parent.filterUGens[startParams['filterType']]);
+		paramControls['resonance'].spec = parent.filterSpecs[startParams['filterType']];
+		this.class.loadSynthDef(parent.filterUGens[startParams['filterType']]);
 		AppClock.sched( 0.15, {
 			server.sendMsg('n_free', nodeID);
 			this.startSynth;
@@ -103,6 +107,7 @@ SimpleFilter : EffectBase {
 					.stringColor_(Color.white)
 					.knob.step_(0.005)
 			);
+ 
 			paramControls = paramControls.add(
 				'gain' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "gain")
 					.value_(startParams['gain'])
@@ -149,6 +154,8 @@ SimpleFilter : EffectBase {
 					.knobAction_({ |val| this.setResonance(val); })
 					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
 					.stringColor_(Color.white)
+					.spec_(parent.filterSpecs[startParams['filterType']])
+					.value_(startParams['resonance'])
 			);
 			
 			GUI.staticText.new(win, Rect.new(0, 0, 100, 25))
@@ -157,7 +164,7 @@ SimpleFilter : EffectBase {
 				.align_('right')
 				.string_("mod source");
 			paramControls = paramControls.add(
-				'modBus' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 130, 25))
+				'modBus' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 150, 25))
 					.stringColor_(Color.white)
 					.font_(parent.controlFont)
 					.items_(parent.audioBusRegister.keys.asArray)
@@ -171,7 +178,7 @@ SimpleFilter : EffectBase {
 				.align_('right')
 				.string_("filter type");
 			paramControls = paramControls.add(
-				'filterType' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 130, 25))
+				'filterType' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 150, 25))
 					.stringColor_(Color.white)
 					.font_(parent.controlFont)
 					.items_(parent.filterSpecs.keys.asArray)
