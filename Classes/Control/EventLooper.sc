@@ -4,11 +4,11 @@ EventLooperChannel {
 		waitTime=0, firstEvent=true, <>isRecording=false, <eventCollection, <metaSeq,
 		<>seqMenu, <>playButton, <>recordButton, incseqButtonDown, incseqButtonUp, presetListMenu, 
 		presetListSubfolder, gate=false,
-		currSeq=0, cTempo=1, sep;
-	*new { |name, win|
-		^super.new.init_eventLooperChannel(name, win);
+		currSeq=0, cTempo=1, sep, <>synthGroup;
+	*new { |name, win, group|
+		^super.new.init_eventLooperChannel(name, win, group);
 	}
-	init_eventLooperChannel { |name,win|
+	init_eventLooperChannel { |name,win,group|
 		sep = Platform.pathSeparator;
 		presetListSubfolder = "trig";
 		root = Platform.userAppSupportDir ++ sep ++ "EventLooperGroups";
@@ -20,22 +20,29 @@ EventLooperChannel {
 		/*action = { |id,beat|
 		    postln("waiting " ++ waitTime ++ " beats");
 		};*/
-		iterator = this.itr;
+		iterator = this.getIterator;
 		this.makeGUI(name, win);
 		this.populatePresetListMenu;
 		metaSeq = MetaSequence.new(eventValue.size, win);
+		/// existence of a group argument determines whether or not to allow gating
+		if(group.notNil){
+			synthGroup = group;
+			presetListSubfolder = "gate";
+			gate = true;
+		};
+
 	}
-	itr {
+
+	getIterator {
 		^{
 			var nextSeq;
 			lastEvent = clock.beats;
 			index = (index + 1) % nextTime.size;
 			metaSeq.sIndex = index;
 			waitTime = nextTime[index];
-			if(eventValue[index] != nil){
-				if(firstEvent.not){
-					action.value(eventValue[index],index);				
-				};
+			// still don't know why i have to check for firstEvent.not but if it works...
+			if(eventValue[index].notNil && firstEvent.not){
+				action.value(eventValue[index],index);
 				//postln("waiting " ++ waitTime ++ " beats");
 			};
 			// metaSequence iterator
@@ -48,22 +55,27 @@ EventLooperChannel {
 			waitTime;
 		};
 	}
+
 	tempo_ { |val|
 		cTempo = val;
 		clock.tempo = cTempo;
 	}
+
 	tempo {
 		^cTempo;
 	}
+
 	startRecording {
 		isRecording = true;
 		if(iterator.isNil){
 			this.start;
 		};
 	}
+
 	stopRecording {
 		isRecording = false;
 	}
+
 	start {
 		index = 0;
 		clock = TempoClock.new(cTempo);
@@ -71,12 +83,14 @@ EventLooperChannel {
 		clock.schedAbs(waitTime + clock.beats, iterator);
 		firstEvent = false;
 	}
+
 	stop {
 		if(gate){ this.freeAllVoices; };
 		isRecording = false;
 		//clock.tempo = 0;
 		clock.stop;
 	}
+
 	addEvent { |id|
 		var lastDelta, currDelta, totalDelta, currBeat, kludge;
 		kludge = eventCollection.asInfString;
@@ -128,7 +142,7 @@ EventLooperChannel {
 			fh.write(eventCollection.asInfString);
 			fh.close;
 		}{
-			postln("please create this directory manually to save loop set:\n"++root);
+			postln("please create this directory manually to save loop set:"++root);
 		}; 
 		^fullName;
 	}
@@ -196,8 +210,6 @@ EventLooperChannel {
 			seqMenu.enabled = true;
 			incseqButtonUp.enabled = true;
 			incseqButtonDown.enabled = true;
-		}{
-			postln("seqmenu not not enabled");
 		};
 		this.addToGroup;
 		seqMenu.items = seqMenu.items.add(seqMenu.items.size.asString);
@@ -221,9 +233,11 @@ EventLooperChannel {
 			presetListMenu.items = presetListMenu.items.add(fileName);
 		};
 	}
+
 	freeAllVoices {
-		postln("this is kind of like a virtual function i guess");
+		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
 	}
+
 	makeGUI { |id,parent|
 		var idDisplay, idText, transport, clearButton, groups,
 		addSeqGroupButton, presets, 
@@ -302,28 +316,12 @@ EventLooperChannel {
 	}
 }
 
-SynthEventLooperChannel : EventLooperChannel {
-	var <>synthGroup;
-	*init { |group|
-		^super.new.init_synthEventLooper(group);
-	}
-	init_synthEventLooper { |group|
-		if(group.notNil){
-			synthGroup = group;
-		};
-		presetListSubfolder = "gate";
-		gate = true;
-	}
-	freeAllVoices {
-		Server.default.sendMsg('n_set', synthGroup, 'gate', 0);
-	}
-}
-
 EventLooper {
 	var channelIndex=0, win, <channels, largestCollection=0, <setSeqMenu;
 	*new { |...args|
 		^super.new.init_eventLooper(args);
 	}
+
 	init_eventLooper { |args|
 		channels = Dictionary.new;
 		if(args.size > 0){
@@ -332,29 +330,35 @@ EventLooper {
 			};
 		};
 	}
-	addChannel { |type, name|
+
+	addChannel { |type, name, group|
 		if(win.isNil){
 			this.initGUI;
 		};
+
 		switch( type,
 			0, {
 				channels = channels.add(name -> EventLooperChannel.new(name, win));
 			},
 			1, {
-				channels = channels.add(name -> SynthEventLooperChannel.new(name, win));
+				channels = channels.add(name -> EventLooperChannel.new(name, win, group));
 			}
 		);
 		^channelIndex;
 	}
+
 	incrementAllSequences {
 		channels.values.do{ |obj,ind| obj.incrementSequence; }
 	}
+
 	decrementAllSequences {
 		channels.values.do{ |obj,ind| obj.decrementSequence; }
 	}
+
 	setAllSequences { |seq|
 		channels.values.do{ |obj,ind| obj.load(seq) }; // not working
 	}
+
 	updateLargestCollection {
 		channels.values.do{ |obj,ind|
 			var size=0;
@@ -366,28 +370,36 @@ EventLooper {
 		setSeqMenu.items = Array.series(largestCollection, 0, 1);
 		^largestCollection;
 	}
+
 	setAllMetaPlay { |val, button|
 		channels.values.do{ |obj,ind| obj.metaSeq.setPlay(val, obj.metaSeq.pauseButton); };
 		button.enabled = (val == 1);
 	}
+
 	setAllMetaPause { |val|
 		channels.values.do{ |obj,ind| obj.metaSeq.setPause(val) };
 	}
+
 	setAllMetaRecord { |val|
 		channels.values.do{ |obj,ind| obj.metaSeq.setRecord(val); };
 	}
+
 	setAllRecord { |val|
 		channels.values.do{ |obj,ind| obj.setRecord(val); };
 	}
+
 	setAllPlay { |val|
 		channels.values.do{ |obj,ind| obj.setPlay(val); };
 	}
+
 	setAllClear {
 		channels.values.do{ |obj,ind| obj.clear; }
 	}
+
 	setAllTempi { |val|
 		channels.values.do{ |obj,ind| obj.clock.tempo = val; }
 	}
+
 	initGUI {
 		var masterView, masterRecordButton, masterPlayButton, masterClearButton, 
 			nextSeqButton, prevSeqButton, pauseButton, masterTempoSlider;
@@ -444,9 +456,11 @@ EventLooper {
 			.stringColor_(Color.white)
 			.string_("Master MetaSeq");
 	}
+
 	makeGUI { |id,parent|
 		channels[id].makeGUI(id,parent);
 	}
+
 }
 
 MetaSequence {
@@ -475,25 +489,32 @@ MetaSequence {
 		};
 		^ret;
 	}
+
 	play {
 		isPlaying = true;
 	}
+
 	stop {
 		counter = 0;
 		isPlaying = false;
 	}
+
 	pause {
 		isPlaying = false;
 	}
+
 	record { |sel|
 		if(isRecording){ seq = seq.add([recordCounter, sel]); };
 	}
+
 	loopSize_ { |inSize|
 		seqSize = inSize;
 	}
+
 	sIndex_ { |ind|
 		superIndex = ind;
 	}
+
 	setPlay { |val, button|
 		if(val == 1){ 
 			this.play;
@@ -503,17 +524,21 @@ MetaSequence {
 			button.enabled = false;
 		};
 	}
+
 	setPause { |val|
 		if(val == 1){ this.play; }{	this.pause; };
 	}
+
 	setSeq { |set|
 		seq = set;
 		seq.postln;
 	}
+
 	setRecord { |choice|
 		isRecording = (choice == 1);
 		if(isRecording){recordCounter = 0};
 	}
+
 	makeEditWindow {
 		var editWin, editValue;
 		editWin = GUI.window.new("edit MetaSequence", Rect.new(500.rand, 500.rand, 300, 200))
@@ -525,6 +550,7 @@ MetaSequence {
 			.action_({ |obj| this.setSeq(obj.value.interpret)})
 			.value_(seq.asInfString);
 	}
+
 	makeGUI { |parent|
 		var controlRow;
 		controlRow = GUI.hLayoutView.new(parent, Rect.new(0, 0, parent.view.bounds.width, 25))
@@ -546,11 +572,5 @@ MetaSequence {
 			.string_("MetaSeq");
 	}
 }
-/*
-  ...to do later:
-  add pause/resume
-  fix the hiccup on starting the sequence
- */
 
-                                                                                      
    

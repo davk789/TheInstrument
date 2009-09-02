@@ -5,11 +5,12 @@
 		the filter type menu does not update when the paramters are 
 			changed automatically (preset loading/initialization)
 	    some of the filters need extra parameters/different settings
+	EventLooper
+	    the first noteOn of the sequence gets dropped on playback
 		
 
 	TODO:
 	window management for synths
-	preset support for effects
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  
 	 -figure out some way to use CCs that can work with the wavetable synth

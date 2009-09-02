@@ -216,14 +216,20 @@ WavetableSynth {
 		this.setParams(preset);
 	}
 	initLooper {
-		parent.eventLooper.addChannel(1, recorderID);
+		postln("calling parent.eventLooper.addChannel(1, " ++ recorderID ++ "); from " ++ this.class.asString);
+		parent.eventLooper.addChannel(1, recorderID, instGroup);
 		parent.eventLooper.channels[recorderID].action = { |values,index|
+			postln("back to a function defined in WavetableSynth the values are " ++ values);
 			switch(values[0],
 				0, {
+					postln("calling noteOn with these args" ++ [values[1], values[2], values[3], values[4]]);
 					this.noteOn(values[1], values[2], values[3], values[4]);
+					postln("successfully called this noteon");
 				},
 				1, {
+					postln("calling noteOff with these args" ++ [values[1], values[2], values[3], values[4]]);
 					this.noteOff(values[1], values[2], values[3], values[4]);
+					postln("successfully called this noteoff");
 				},
 				2, {
 					this.cc(values[1], values[2], values[3], values[4]);
@@ -387,12 +393,16 @@ WavetableSynth {
 	}
 	noteOff { |src,chan,num,vel|
 		var lastNote;
-		lastNote = activeNotes[num];
-		noteOffCommand.(lastNote[0]);
-		if(lastNote.size == 1){
-			activeNotes.removeAt(num);
+		if(activeNotes[num].notNil){
+			lastNote = activeNotes[num];
+			noteOffCommand.value(lastNote[0]);
+			if(lastNote.size == 1){
+				activeNotes.removeAt(num);
+			}{
+				activeNotes[num].removeAt(0);
+			};
 		}{
-			activeNotes[num].removeAt(0);
+			postln("The EventLooper is dropping the first note of the sequence now, but at least it basically works.");
 		};
 	}
 	handleMIDI { |controls,value|
