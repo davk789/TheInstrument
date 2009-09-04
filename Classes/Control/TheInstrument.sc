@@ -7,6 +7,8 @@
 	    some of the filters need extra parameters/different settings
 	EventLooper
 	    the first noteOn of the sequence gets dropped on playback
+	DrumSynth
+		Klunk resonators -- pan doesn't work
 		
 
 	TODO:
@@ -19,6 +21,8 @@
 	 - EventLooper support
 	 - record offset in sync mode
 	 - key switched should automatically be generated based on number of channels
+	EventLoopers
+	 - add tempo change on a per-nstance basis
 
 */
 ThyInstrument {

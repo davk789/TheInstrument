@@ -318,17 +318,12 @@ EventLooperChannel {
 
 EventLooper {
 	var channelIndex=0, win, <channels, largestCollection=0, <setSeqMenu;
-	*new { |...args|
-		^super.new.init_eventLooper(args);
+	*new {
+		^super.new.init_eventLooper;
 	}
 
-	init_eventLooper { |args|
+	init_eventLooper {
 		channels = Dictionary.new;
-		if(args.size > 0){
-			args.do{ |obj,ind|
-				this.addChannel(obj, ind);
-			};
-		};
 	}
 
 	addChannel { |type, name, group|
@@ -397,7 +392,9 @@ EventLooper {
 	}
 
 	setAllTempi { |val|
-		channels.values.do{ |obj,ind| obj.clock.tempo = val; }
+		channels.values.do{ |obj,ind| 
+			if(obj.clock.notNil){ obj.clock.tempo = val; }; 
+		}
 	}
 
 	initGUI {
