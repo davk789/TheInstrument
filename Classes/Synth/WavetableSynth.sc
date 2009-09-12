@@ -8,21 +8,22 @@ WavetableSynth {
  		fmEnvFlag=0, envScale=1, midiCCSources, midiListMenu, 
 		modulatorSources, currentModulators, xfadeKnob, fbMulKnob, freq2Knob, fm2Knob,
 		noteOnCommand, noteOffCommand, <>saveRoot, sep, 
-	    xfadeSpec, fbLagSpec, fbMulSpec, freq2Spec, fm2Spec,
+	    xfadeSpec, fbLagSpec, fbMulSpec, freq2Spec, fm2Spec, 
+	    midiThru=false, midiOut,
 		presetRow, presetNameField, saveButton, presetMenu, modeRow, modeMenu, fbLagKnob, partialRow1, partialAAmps, partialAFreqs, pr2AuxControls, xFadeMenu, fbMulMenu, freq2Menu, fm2Menu, partialRow2, syncModeMenu, partialBAmps, partialBFreqs, envelopeView, waveformDraw, targetColumn, targetAButton, targetBButton, pr2EnvRow, fbMulEnvButton, freq2EnvButton, fm2EnvButton, envScaleSlider, envScaleSpec, bendButton;
 	// 	16 18 12 17 19 13 // transport cc
 	// 72  8 74 71  20 22 86 73 //   cc numbers 
-	*new { |par, name|
-		^super.new.init_wavetablesynth(par, name);
+	*new { |par, midi|
+		^super.new.init_wavetablesynth(par, midi);
 	}
-	init_wavetablesynth { |par, name|
+	init_wavetablesynth { |par, midi|
 		s = Server.default;
 		parent = par;
+		if(midi.notNil){ midiThru = midi; };
 		activeNotes = Dictionary.new;
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "WavetableSynth";
-		recorderID = name ? "Wavetable Synth";
-		if(name.notNil){ recorderID = name; };
+		recorderID = "Wavetable Synth";
 		modulatorSources = Dictionary[
 			'mod wheel'-> [], 
 			'aftertouch'-> [], 
@@ -123,7 +124,9 @@ WavetableSynth {
 		fbMulSpec = [0, 256].asSpec;
 		freq2Spec = [-12, 12].asSpec;
 		fm2Spec = [0, 12].asSpec;
-
+		if(midiThru){
+			midiOut = MIDIOut.new(2);
+		};
 		s.sendMsg('g_new', classGroup, 0, 1);
 		s.sendMsg('b_alloc', bufferA, 1024);
 		s.sendMsg('b_gen', bufferA, 'sine2', 4, 1, 1);
@@ -222,14 +225,10 @@ WavetableSynth {
 			postln("back to a function defined in WavetableSynth the values are " ++ values);
 			switch(values[0],
 				0, {
-					postln("calling noteOn with these args" ++ [values[1], values[2], values[3], values[4]]);
 					this.noteOn(values[1], values[2], values[3], values[4]);
-					postln("successfully called this noteon");
 				},
 				1, {
-					postln("calling noteOff with these args" ++ [values[1], values[2], values[3], values[4]]);
 					this.noteOff(values[1], values[2], values[3], values[4]);
-					postln("successfully called this noteoff");
 				},
 				2, {
 					this.cc(values[1], values[2], values[3], values[4]);
@@ -390,7 +389,11 @@ WavetableSynth {
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
 		this.addActiveNote(num, s.nextNodeID);
 		noteOnCommand.value(num, vel, pitch);
+		if(midiThru){
+			midiOut.noteOn(1, num, vel);
+		};
 	}
+	
 	noteOff { |src,chan,num,vel|
 		var lastNote;
 		if(activeNotes[num].notNil){
@@ -401,10 +404,14 @@ WavetableSynth {
 			}{
 				activeNotes[num].removeAt(0);
 			};
+			if(midiThru){
+				midiOut.noteOff(1, num, vel);
+			};
 		}{
 			postln("The EventLooper is dropping the first note of the sequence now, but at least it basically works.");
 		};
 	}
+	
 	handleMIDI { |controls,value|
 		if(controls.size > 0){
 			controls.do{ |obj,ind|
@@ -432,13 +439,15 @@ WavetableSynth {
 			}
 		};
 	}
+	
 	bend { |src,chan,val|
 		this.handleMIDI(modulatorSources['bend'], val / 16384);
-		
 	}
+	
 	afterTouch { |src,chan,val|
 		this.handleMIDI(modulatorSources['aftertouch'], val / 127);
 	}
+	
 	cc { |src,chan,num,val|
 		if(midiCCSources[num].notNil){
 			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
@@ -648,8 +657,8 @@ WavetableSynth {
 WavetableSynthFilter : WavetableSynth {
 	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, currentFilter,
 	    cutoffSpec, cutoffModSpec, rezSpec;
-	*new { |par, name|
-		^super.new(par, name).init_wavetablesynthfilter;
+	*new { |par,midi|
+		^super.new(par, midi).init_wavetablesynthfilter;
 	}
 	
 	init_wavetablesynthfilter {

@@ -1,22 +1,24 @@
 // SETUP //////////////////////////////////////////////////////////////////
-//MIDIClient.init;
-s.waitForBoot{
-	TheInstrument.new;
+MIDIClient.init;
+//s.waitForBoot{
+	//TheInstrument.new;
 	q = QuickKeyboard.new;
-	//m = MIDIOut.new(0,MIDIClient.destinations[1].uid);
+	
+	m = MIDIOut.new(2/*,MIDIClient.destinations[2].uid*/);
 	~monoSeq = MonoSequencer.new;
 	~monoSeq.onsetAction = { |num,vel|
-		//m.noteOn(1, num, vel);
-		TheInstrument.noteOn(nil, 0, num, vel);
+		m.noteOn(1, num, vel);
+		//TheInstrument.noteOn(nil, 0, num, vel);
 	};
 	~monoSeq.releaseAction = { |num|
-		//m.noteOff(1, num, 0);
-		TheInstrument.noteOff(nil, 0, num, 0)
+		m.noteOff(1, num, 0);
+		//TheInstrument.noteOff(nil, 0, num, 0)
 	};
-};
+//};
 
 // SEQUENCES ///////////////////////////////////////////////////////////////
-// seq 5 ///////////////////////////////////////////////////////////////////
+// LIFE SEQ ///////////////////////////////////////////////////////////////////
+(
 ~life = ConwayLife.new(8, GUI.window.new("dsf", Rect.new(500.rand, 500.rand, 150, 150)).front, Rect.new(0,0,140,140));
 ~life.rule_('Coagulations');
 ~lifeVel = ConwayLife.new(8, GUI.window.new("vel", Rect.new(500.rand, 500.rand, 150, 150)).front, Rect.new(0,0,140,140));
@@ -48,8 +50,8 @@ s.waitForBoot{
 ~monoSeq.length = Array.fill(64, {
 	{[0.05, 0.1, 0.1, 0.25, 0.1, 0.1, 0.05].choose}
 });
-
-// seq 4
+)
+// seq 4 ///////////////////////////////////////////////////////////////////
 ~monoSeq.sequence = (Array.fill(64, {
 	{[0,0,0,0,1,1,-2].choose}
 }).flatten + 3) + 25;

@@ -180,9 +180,9 @@ ThyInstrument {
 				
 		eventLooper = EventLooper.new(this);
 		
-		//monoInputChannel = MonoInputChannel.new(this);
+		monoInputChannel = MonoInputChannel.new(this);
 
-		polySynth = WavetableSynthFilter.new(this);
+		polySynth = WavetableSynthFilter.new(this, true);
 //		polySynth = WavetableSynth.new(this);
 
 		drumSynth = DrumSynth.new(this);

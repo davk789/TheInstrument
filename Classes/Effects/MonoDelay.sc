@@ -11,7 +11,8 @@ MonoDelay : EffectBase {
 		synthdefName = 'fx_monoDelay';
 		startParams = Dictionary[
 			'bus' -> bus, 
-			'mix' -> 0.5,
+			'inLev' -> 1,
+			'delayLev' -> 0.3,
 			'delayTime' -> 0.1, 
 			'feedback' -> 0, 
 			'modBus' -> bus, 
@@ -29,9 +30,14 @@ MonoDelay : EffectBase {
 		server.sendMsg('n_set', nodeID, 'modBus', startParams['modBus']);
 	}
 	
-	setMix { |val|
-		startParams['mix'] = val;
-		server.sendMsg('n_set', nodeID, 'mix', startParams['mix']);
+	setInLev { |val|
+		startParams['inLev'] = val;
+		server.sendMsg('n_set', nodeID, 'inLev', startParams['inLev']);
+	}
+	
+	setDelayLev { |val|
+		startParams['delayLev'] = val;
+		server.sendMsg('n_set', nodeID, 'delayLev', startParams['delayLev']);
 	}
 	
 	setDelayTime { |val|
@@ -66,9 +72,15 @@ MonoDelay : EffectBase {
 					.items_(parent.audioBusRegister.keys.asArray)
 					.action_({ |obj| this.setModBus(obj); })
 					.stringColor_(Color.white),
-				'mix' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
-					.value_(startParams['mix'])
-					.knobAction_({ |val| this.setMix(val); })
+				'inLev' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "in")
+					.value_(startParams['inLev'])
+					.knobAction_({ |val| this.setInLev(val); })
+					.knobColor_([Color.black, Color.yellow, Color.grey, Color.yellow])
+					.stringColor_(Color.white)
+					.knob.step_(0.005),
+				'delayLev' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "delLev")
+					.value_(startParams['delayLev'])
+					.knobAction_({ |val| this.setDelayLev(val); })
 					.knobColor_([Color.black, Color.yellow, Color.grey, Color.yellow])
 					.stringColor_(Color.white)
 					.knob.step_(0.005),
@@ -108,8 +120,9 @@ MonoDelay : EffectBase {
 	
 	*loadSynthDef { |s|
 		s = s ? Server.default;
-		SynthDef.new("fx_monoDelay", { |bus=20, mix=1, delayTime=0.1, feedback=0, 
-								modBus=20, modAmt=0, modLag=1|
+		SynthDef.new("fx_monoDelay", { |bus=20, inLev=1, 
+				delayLev=0.3, delayTime=0.1, feedback=0, 
+				modBus=20, modAmt=0, modLag=1|
 		    var aIn, aDelay, aDelayIn, aLocalIn, aOutMix, aModIn;
 		    aModIn = Lag.ar(InFeedback.ar(modBus) * modAmt, modLag);
 			aLocalIn = LocalIn.ar(1);
@@ -117,7 +130,7 @@ MonoDelay : EffectBase {
 			aDelayIn = (aIn * (feedback - 1).abs) + (aLocalIn * feedback);
 		    aDelay = DelayC.ar(aDelayIn, 10, delayTime + aModIn);
 			LocalOut.ar(aDelay);
-			aOutMix = (aIn * (mix - 1).abs) + (aDelay * mix);
+			aOutMix = (aIn * inLev) + (aDelay * delayLev);
 		    ReplaceOut.ar(bus, aOutMix.softclip);
 		}).load(s);
 
