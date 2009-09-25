@@ -176,13 +176,13 @@ SampleLooper {
 			2 -> { |bus,sig| Out.ar(bus, sig); }
 		];
 		synthInputs = Dictionary[
-			1 -> { |bus, phase, bufnum, inLev, preLev, stereo| 
-				[(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)] 
+			1 -> { |bus, phase, bufnum, inLev, preLev, stereo, env| 
+				[(InFeedback.ar(bus, 1) * inLev * env) + (BufRd.ar(1, bufnum, phase) * preLev)];
 			},
-			2 -> { |bus, phase, bufnum, inLev, preLev, stereo| 
+			2 -> { |bus, phase, bufnum, inLev, preLev, stereo, env|
 				[
-					(InFeedback.ar(bus, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev), 
-					(InFeedback.ar(bus + stereo, 1) * inLev) + (BufRd.ar(1, bufnum, phase) * preLev)
+					(InFeedback.ar(bus, 1) * inLev * env) + (BufRd.ar(1, bufnum, phase) * preLev), 
+					(InFeedback.ar(bus + stereo, 1) * inLev * env) + (BufRd.ar(1, bufnum, phase) * preLev)
 				]
 			}
 		];
@@ -218,7 +218,7 @@ SampleLooper {
 		if(isRecording){
 			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
 		}{
-			s.sendMsg('n_free', recorderNodeNum);
+			s.sendMsg('n_set', recorderNodeNum, 'trig', 0);
 			this.drawWaveformView(false);
 		};
 	}
@@ -527,9 +527,9 @@ SampleLooper {
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
-			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0;
+			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0, trig=1;
 			
-			var aRecordHead, skEnd, inSig, skTrig, kNumFrames, skStart, kZero;
+			var aRecordHead, skEnd, inSig, skTrig, kNumFrames, skStart, kZero, aEnv;
 			kZero = DC.kr(0);
 			kNumFrames = BufFrames.kr(bufnum);
 			
@@ -539,8 +539,8 @@ SampleLooper {
 			skEnd   = Select.kr(recordMode, [kNumFrames, In.kr(endPointBus)]);
 
 			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, skEnd);
-			
-			BufWr.ar(SynthDef.wrap(synthInputs[numChan], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo]), bufnum, aRecordHead);
+			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), trig); // declick the start and stop of the recording
+			BufWr.ar(SynthDef.wrap(synthInputs[numChan], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo, aEnv]), bufnum, aRecordHead);
 
 		}).load(s);
 		
