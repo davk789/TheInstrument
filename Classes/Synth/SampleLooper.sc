@@ -217,6 +217,7 @@ SampleLooper {
 		isRecording = val ? true;
 		if(isRecording){
 			s.listSendMsg(['s_new', 'SampleLooperRecorder', recorderNodeNum, 1, groupNum] ++ recorderParams.getPairs);
+			s.sendMsg('n_set', recorderNodeNum, 'trig', 1);
 		}{
 			s.sendMsg('n_set', recorderNodeNum, 'trig', 0);
 			this.drawWaveformView(false);
@@ -480,12 +481,12 @@ SampleLooper {
 	
 	setInputLevel { |val| 
 		recorderParams['inLev'] = val;
-		s.sendMsg('n_set', recorderNodeNum, 'inLev', playerParams['inLev']);
+		s.sendMsg('n_set', recorderNodeNum, 'inLev', recorderParams['inLev']);
 	}
 
 	setPreLevel { |val| 
 		recorderParams['preLev'] = val;
-		s.sendMsg('n_set', recorderNodeNum, 'preLev', playerParams['preLev']);
+		s.sendMsg('n_set', recorderNodeNum, 'preLev', recorderParams['preLev']);
 	}
 
 /*	setRecordOffset { |val| // not using a record offset for now
@@ -527,7 +528,7 @@ SampleLooper {
 		}).load(s);
 		
 		SynthDef.new("SampleLooperRecorder", { 
-			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0, trig=1;
+			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0, trig=0;
 			
 			var aRecordHead, skEnd, inSig, skTrig, kNumFrames, skStart, kZero, aEnv;
 			kZero = DC.kr(0);
@@ -539,7 +540,7 @@ SampleLooper {
 			skEnd   = Select.kr(recordMode, [kNumFrames, In.kr(endPointBus)]);
 
 			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, skEnd);
-			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), trig); // declick the start and stop of the recording
+			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), trig, doneAction:2);
 			BufWr.ar(SynthDef.wrap(synthInputs[numChan], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo, aEnv]), bufnum, aRecordHead);
 
 		}).load(s);
