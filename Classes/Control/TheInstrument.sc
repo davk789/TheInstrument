@@ -9,20 +9,23 @@
 	    the first noteOn of the sequence gets dropped on playback
 	DrumSynth
 		Klunk resonators -- pan doesn't work
+	SampleLooper
+		key switched should automatically be generated based on number of channels  (not hard coded)
+		
+
 		
 
 	TODO:
 	window management for synths
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  
-	 -figure out some way to use CCs that can work with the wavetable synth
+	 - figure out some way to use CCs that can work with the wavetable synth
 	 - make the waveform controls jump to the clicked/region-delimited point
 	 - preset support -- save temp buffers, 
 	 - EventLooper support
-	 - record offset in sync mode
-	 - key switched should automatically be generated based on number of channels
-	EventLoopers
-	 - add tempo change on a per-nstance basis
+	 - "Quick Loop" handle levels/fade-in for laying down a single loop
+	EventLooper
+	 - add tempo change on a per-instance basis
 
 */
 ThyInstrument {
@@ -43,8 +46,8 @@ ThyInstrument {
 	
 	*createFilters {
 	/*  filterSpecs and filterUGens are both called by this.setFilterType(sel)
-	and so all keys must match between these two Dictionaries
-*/
+		and so all keys must match between these two Dictionaries. Also, it's fairly gnarly having ugen code in
+		my object launcher */
 		filterUGens = Dictionary[
 			"RLPF" -> { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
 			"RHPF" -> { |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
@@ -182,7 +185,7 @@ ThyInstrument {
 		
 		monoInputChannel = MonoInputChannel.new(this);
 
-		polySynth = WavetableSynthFilter.new(this, true);
+		polySynth = WavetableSynthFilter.new(this);//, true);
 //		polySynth = WavetableSynth.new(this);
 
 		drumSynth = DrumSynth.new(this);

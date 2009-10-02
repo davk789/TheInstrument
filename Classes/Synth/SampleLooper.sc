@@ -489,16 +489,6 @@ SampleLooper {
 		s.sendMsg('n_set', recorderNodeNum, 'preLev', recorderParams['preLev']);
 	}
 
-/*	setRecordOffset { |val| // not using a record offset for now
-		playerParams['recordOffset'] = val;
-		s.sendMsg('n_set', playerNodeNum, 'recordOffset', playerParams['recordOffset']);
-	}*/
-
-	setRecordMode { |sel|
-		recorderParams['recordMode'] = sel;
-		s.sendMsg('n_set', recorderNodeNum, 'recordMode', playerParams['recordMode']);
-	}
-
 	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
 		postln("inside this.loadSynthDef(" ++ numChan ++ ");");
 		SynthDef.new( "SampleLooperPlayer", {
@@ -530,16 +520,13 @@ SampleLooper {
 		SynthDef.new("SampleLooperRecorder", { 
 			arg bufnum, inBus=20, stereo=0, inNumChannels=1, inLev=1, preLev=0, recordMode=0, trig=0;
 			
-			var aRecordHead, skEnd, inSig, skTrig, kNumFrames, skStart, kZero, aEnv;
+			var aRecordHead, inSig, skTrig, kNumFrames, kZero, aEnv;
 			kZero = DC.kr(0);
 			kNumFrames = BufFrames.kr(bufnum);
 			
 			skTrig = Select.kr(recordMode, [kZero, InTrig.kr(trigBus)]);
 
-			skStart = Select.kr(recordMode, [kZero, In.kr(startPointBus)]);
-			skEnd   = Select.kr(recordMode, [kNumFrames, In.kr(endPointBus)]);
-
-			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), skStart, skEnd);
+			aRecordHead = Phasor.ar(skTrig, BufRateScale.kr(bufnum), kZero, kNumFrames);
 			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), trig, doneAction:2);
 			BufWr.ar(SynthDef.wrap(synthInputs[numChan], nil, [inBus, aRecordHead, bufnum, inLev, preLev, stereo, aEnv]), bufnum, aRecordHead);
 
@@ -768,22 +755,6 @@ SampleLooper {
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| this.setPreLevel(obj.value); });
-/*		// it might be nice to have a record offset to get delay effects with a short record sync
-		recordOffsetKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "offset")
-			.spec_([0, 1].asSpec)
-			.value_(0.2)
-			.stringColor_(Color.white)
-		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
-			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setRecordOffset(obj.value); });*/
-		recordModeButton = GUI.button.new(controlView, Rect.new(0, 0, 50, 25))
-			.states_([
-				["full", Color.yellow, controlBackgroundColor],
-				["sync", Color.black, Color.yellow]
-			])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.setRecordMode(obj.value); });
 
 		    
 	}
