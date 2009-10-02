@@ -138,10 +138,7 @@ SampleLooper {
 			'inBus'        -> 20,
 			'stereo'       -> 0,
 			'inLev'        -> 1,
-			'preLev'       -> 0,
-//			'recordOffset' -> 0.1, // not using this for now
-			'recordMode'   -> 0
-			
+			'preLev'       -> 0			
 		];
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
@@ -404,7 +401,7 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	
-	setLoopRange { |start, end|
+	setLoopRange { |start, end, trigStart|
 		var startMarker, endMarker;
 		if(waveformMarkerBar.value.size > 0){
 			startMarker = waveformMarkerBar.getIndexForLocation(start);
@@ -413,7 +410,7 @@ SampleLooper {
 			waveformMarkerBar.setHighlightRange(startMarker, endMarker);
 		};
 		
-		this.setLoopPointParams(start);
+		this.setLoopPointParams(trigStart);
 		
 	}
 	
@@ -427,7 +424,8 @@ SampleLooper {
 
 		startPoint = start ? playerParams['start'];
 
-		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'trig', 1, 'start', playerParams['start'], 'end', playerParams['end']);
+		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'start', playerParams['start'], 'end', playerParams['end']);
+		s.sendMsg('n_set', playerNodeNum, 'trig', 1);
 	
 	}
 	
@@ -492,7 +490,7 @@ SampleLooper {
 	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
 		postln("inside this.loadSynthDef(" ++ numChan ++ ");");
 		SynthDef.new( "SampleLooperPlayer", {
-			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=1, resetPos=0, 
+			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=0, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
 				inBus=1, recordOffset=0.1, gain=1;
 			
@@ -602,7 +600,7 @@ SampleLooper {
 				var start,end;
 				start = this.zoomToAbs(obj.index / obj.value.size);
 				end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-				this.setLoopRange(start, end); 
+				this.setLoopRange(start, end, obj.currentvalue);
 			})
 			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 

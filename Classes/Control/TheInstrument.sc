@@ -24,6 +24,7 @@
 	 - preset support -- save temp buffers, 
 	 - EventLooper support
 	 - "Quick Loop" handle levels/fade-in for laying down a single loop
+	 - loops shorter than the full sample length should not click on loop
 	EventLooper
 	 - add tempo change on a per-instance basis
 
