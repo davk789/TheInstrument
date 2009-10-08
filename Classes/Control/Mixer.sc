@@ -1,6 +1,6 @@
 
 Mixer {
-	var s, <channels, <>win, windowHeight=570, parent,
+	var s, <channels, <>win, windowHeight=600, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
 	
 	*new { |par|
@@ -87,11 +87,11 @@ MixerChannel {
 		s = Server.default;
 		parent = par;
 		params = Dictionary[
-		    'pan', 0, 
-			'lev', 1,
-			'auxOut', 0,
-			'inBus', 22, 
-			'outBus', 20
+		    'pan' -> 0, 
+			'lev' -> 1,
+			'auxOut' -> 0,
+			'inBus' -> 22, 
+			'outBus' -> 20
 		];
 		numChannels = channels;
 		channelName = name ? "master"; 
@@ -110,6 +110,10 @@ MixerChannel {
 		this.class.incrementChannelNumber(numChannels); // "static" method
 		lastInBus = params['inBus'] + numChannels;
 		this.startChannel(addTarget, group, channels);
+	}
+
+	inBus {
+		^params['inBus'];
 	}
 	
 	getMixerInserts {
@@ -162,8 +166,8 @@ MixerChannel {
 	}
 		
 	setPan { |pan|
-		params['pan'] = pan;
-		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(params['pan']));
+		params['pan'] = panSpec.map(pan);
+		s.sendMsg('n_set', nodeID, 'pan', params['pan']);
 	}
 
 	setAuxOut { |val|
