@@ -506,7 +506,7 @@ DrumSynth {
 	}
 
 	addMixerChannel {
-		parent.mixer.addStereoChannel("DrumSynth", 0, true);
+		parent.mixer.addStereoChannel("DrumSynth", 0);
 		outBus = parent.mixer.channels["DrumSynth"].inBus;
 	}
 

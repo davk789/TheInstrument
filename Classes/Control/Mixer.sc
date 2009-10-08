@@ -7,26 +7,22 @@ Mixer {
 		^super.new.init_mixer(par);
 	}
 	
-	*loadSynthDefs { |server|
-		server = server ? Server.default;
-		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+	*loadSynthDefs { |auxOutBus=3|
+		var server;
+		server = Server.default;
+		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, auxOut=0, inBus=22, outBus=20|
 		    var aSig, aIn;
-			aIn = (In.ar(inBus, 1) * gain).softclip;
+			aIn = In.ar(inBus, 1).softclip;
 		    aSig = Pan2.ar(aIn, pan, lev);
 		    Out.ar(outBus, aSig);
-			Out.ar(3, aSig);
+			Out.ar(auxOutBus, aSig * auxOut);
 		}).load(server);
-		SynthDef.new("monoMixerChannelNoAuxOut", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
+		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOut=0, inBus=22, outBus=20|
 		    var aSig, aIn;
-			aIn = (In.ar(inBus, 1) * gain).softclip;
-		    aSig = Pan2.ar(aIn, pan, lev);
-		    Out.ar(outBus, aSig);
-		}).load(server);
-		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, gain=1, inBus=22, outBus=20|
-		    var aSig, aIn;
-			aIn = (In.ar(inBus, 2) * gain).softclip;
+			aIn = In.ar(inBus, 2).softclip;
 		    aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
 		    Out.ar(outBus, aSig.softclip);
+			Out.ar(auxOutBus, aSig * auxOut);
 		}).load(server);
 	}
 	
@@ -48,7 +44,7 @@ Mixer {
 			s.sendMsg('g_new', masterSubGroups[ind], 1, masterGroup);
 		};
 		this.initGUI;
-		this.addStereoChannel("master", 0, true);
+		this.addStereoChannel("master", 0);
 	}
 	
 	initGUI {
@@ -56,39 +52,47 @@ Mixer {
 		win.view.decorator = FlowLayout(win.view.bounds);
 	}
 	
-	addMonoChannel { |name, addTarget=0, noAux=false|
+	addMonoChannel { |name, addTarget=0|
 		// this doesn't work... WHAT. THE. FUCK.
 		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + 100, win.bounds.height);
-		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 1, noAux));
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 1));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 	
-	addStereoChannel { |name, addTarget=0, noAux=false|
+	addStereoChannel { |name, addTarget=0|
 		// this doesn't work... WHAT. THE. FUCK.
 		win.bounds = Rect.new(win.bounds.left, win.bounds.top, win.bounds.width + 100, win.bounds.height);
-		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 2, noAux));
+		channels = channels.add(name -> MixerChannel.new(parent, name, addTarget, mixGroup, 2));
 		channels[name].makeChannelGUI(win, fxGroups);
 	}
 }
 
 MixerChannel {
 	classvar lastInBus=20, channelWidth=100, channelHeight=565;
-	var parent, s, <nodeID, insertList, panSpec, <inBus, <outBus, effects, channelName, 
+	var parent, s, <nodeID, insertList, panSpec, effects, channelName, 
 		dbSpec, displayBox, <numChannels=1,
+	    params,
 		channel, inserts, insertMenus, label, labelButton, 
-		faders, panFaderView, panFader, levelFader;
+		faders, panFaderView, panFader, auxFaderView, auxFader, levelFader;
 
-	*new { |par, name, addTarget, group, channels, noAux=false|
-		^super.new.init_mixerChannel(par, name, addTarget, group, channels, noAux);
+	*new { |par, name, addTarget, group, channels|
+		^super.new.init_mixerChannel(par, name, addTarget, group, channels);
 	}
 	
 	*incrementChannelNumber { |channels|
 		lastInBus = lastInBus + channels;
 	}
 
-	init_mixerChannel { |par, name, addTarget, group, channels, noAux=false|
+	init_mixerChannel { |par, name, addTarget, group, channels|
 		s = Server.default;
 		parent = par;
+		params = Dictionary[
+		    'pan', 0, 
+			'lev', 1,
+			'auxOut', 0,
+			'inBus', 22, 
+			'outBus', 20
+		];
 		numChannels = channels;
 		channelName = name ? "master"; 
 		panSpec = 'pan'.asSpec;
@@ -96,15 +100,15 @@ MixerChannel {
 		nodeID = s.nextNodeID;
 		insertList = this.getMixerInserts;
 		if(channelName == "master"){
-			outBus = 0; // main output channel
+			params['outBus'] = 0; // main output channel
 		}{
-			outBus = 20;
+			params['outBus'] = 20;
 		};
-		inBus = lastInBus;
-		parent.audioBusRegister = parent.audioBusRegister.add(name -> inBus);
+		params['inBus'] = lastInBus;
+		parent.audioBusRegister = parent.audioBusRegister.add(name -> params['inBus']);
 		effects = [nil, nil, nil, nil];
 		this.class.incrementChannelNumber(numChannels); // "static" method
-		lastInBus = inBus + numChannels;
+		lastInBus = params['inBus'] + numChannels;
 		this.startChannel(addTarget, group, channels);
 	}
 	
@@ -122,10 +126,10 @@ MixerChannel {
 	startChannel { |addTarget=0, group=1, channels=1|
 		channels.switch(
 			1, {
-				s.sendMsg('s_new', 'monoMixerChannel', nodeID, addTarget, group, 'inBus', inBus, 'outBus', outBus);
+				s.listSendMsg(['s_new', 'monoMixerChannel', nodeID, addTarget, group] ++ params.getPairs);
 			},
 			2, {
-				s.sendMsg('s_new', 'stereoMixerChannel', nodeID, addTarget, group, 'inBus', inBus, 'outBus', outBus);
+				s.listSendMsg(['s_new', 'stereoMixerChannel', nodeID, addTarget, group] ++ params.getPairs);
 			}
 		);
 	}
@@ -142,16 +146,29 @@ MixerChannel {
 			db = dbSpec.map(volume);
 		};
 		displayBox.value = db;
-		s.sendMsg('n_set', nodeID, 'lev', db.dbamp);
+		this.setVolume(db.dbAmp);
 	}
 	
 	setVolumeFromNumberBox { |val|
-		levelFader.value = dbSpec.unmap(val);
-		s.sendMsg('n_set', nodeID, 'lev', val);
+		var amp;
+		amp = dbSpec.unmap(val);
+		levelFader.value = amp;
+		this.setVolume(amp);
+	}
+	
+	setVolume { |val|
+	    params['lev'] = val;
+		s.sendMsg('n_set', nodeID, 'lev', params['lev']);
 	}
 		
 	setPan { |pan|
-		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(pan));
+		params['pan'] = pan;
+		s.sendMsg('n_set', nodeID, 'pan', panSpec.map(params['pan']));
+	}
+
+	setAuxOut { |val|
+		params['auxOut'] = val;
+		s.sendMsg('n_set', nodeID, 'auxOut', params['auxOut']);
 	}
 	
 	doSynthWindow {
@@ -192,7 +209,15 @@ MixerChannel {
 		panFader = GUI.slider.new(panFaderView, Rect.new(0, 0, channelWidth, 0)).value_(0.5);
 		panFader.action = { |obj|
 			this.setPan(obj.value);
-		};		
+		};
+		// forcing the slider to be horizontal
+		auxFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30));
+		auxFader = GUI.slider.new(auxFaderView, Rect.new(0, 0, channelWidth, 0)).value_(0.5)
+		    .background_(Color.yellow)
+            .value_(0)
+		    .action_({ |obj|
+				this.setAuxOut(dbSpec.map(obj.value));
+			});
 		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, 315))
 			.knobColor_(Color.new255(50,50,50))
 			.background_(Color.blue.alpha_(0.25))

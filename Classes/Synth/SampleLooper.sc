@@ -56,7 +56,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	addMixerChannel {
-		parent.mixer.addStereoChannel("Sampler", 0, true);
+		parent.mixer.addStereoChannel("Sampler", 0);
 		outBus = parent.mixer.channels["Sampler"].inBus;
 		channels.do{ |obj,ind|
 			obj.outBus = outBus;
