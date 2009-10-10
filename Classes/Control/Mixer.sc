@@ -1,28 +1,28 @@
 
 Mixer {
-	var s, <channels, <>win, windowHeight=600, parent,
+	var s, <channels, <>win, windowHeight=630, parent,
 		<fxGroups, <mixGroup, <masterGroup, <masterSubGroups;
 	
 	*new { |par|
 		^super.new.init_mixer(par);
 	}
 	
-	*loadSynthDefs { |auxOutBus=3|
+	*loadSynthDefs {
 		var server;
 		server = Server.default;
-		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, auxOut=0, inBus=22, outBus=20|
+		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=3, inBus=22, outBus=20|
 		    var aSig, aIn;
 			aIn = In.ar(inBus, 1).softclip;
 		    aSig = Pan2.ar(aIn, pan, lev);
 		    Out.ar(outBus, aSig);
-			Out.ar(auxOutBus, aSig * auxOut);
+			Out.ar(auxOutBus, aSig * auxOutLevel);
 		}).load(server);
-		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOut=0, inBus=22, outBus=20|
+		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=3, inBus=22, outBus=20|
 		    var aSig, aIn;
 			aIn = In.ar(inBus, 2).softclip;
 		    aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
 		    Out.ar(outBus, aSig.softclip);
-			Out.ar(auxOutBus, aSig * auxOut);
+			Out.ar(auxOutBus, aSig * auxOutLevel);
 		}).load(server);
 	}
 	
@@ -73,7 +73,7 @@ MixerChannel {
 		dbSpec, displayBox, <numChannels=1,
 	    params,
 		channel, inserts, insertMenus, label, labelButton, 
-		faders, panFaderView, panFader, auxFaderView, auxFader, levelFader;
+		faders, panFaderView, panFader, auxFaderView, auxFader, auxOutBusMenu, levelFader;
 
 	*new { |par, name, addTarget, group, channels|
 		^super.new.init_mixerChannel(par, name, addTarget, group, channels);
@@ -89,7 +89,8 @@ MixerChannel {
 		params = Dictionary[
 		    'pan' -> 0, 
 			'lev' -> 1,
-			'auxOut' -> 0,
+			'auxOutLevel' -> 0,
+			'auxOutBus' -> 3,
 			'inBus' -> 22, 
 			'outBus' -> 20
 		];
@@ -170,13 +171,18 @@ MixerChannel {
 		s.sendMsg('n_set', nodeID, 'pan', params['pan']);
 	}
 
-	setAuxOut { |val|
-		params['auxOut'] = val;
-		s.sendMsg('n_set', nodeID, 'auxOut', params['auxOut']);
+	setauxOutLevel { |val|
+		params['auxOutLevel'] = val;
+		s.sendMsg('n_set', nodeID, 'auxOutLevel', params['auxOutLevel']);
 	}
 	
 	doSynthWindow {
 		channelName.interpret.relaunchWindow;
+	}
+	
+	setauxOutBus { |val|
+		params['auxOutBus'] = val;
+		s.sendMsg('n_set', nodeID, 'auxOutBus', params['auxOutBus']);
 	}
 	
 	makeChannelGUI { |win, groups|
@@ -215,12 +221,15 @@ MixerChannel {
 			this.setPan(obj.value);
 		};
 		// forcing the slider to be horizontal
-		auxFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30));
-		auxFader = GUI.slider.new(auxFaderView, Rect.new(0, 0, channelWidth, 0)).value_(0.5)
-		    .background_(Color.yellow)
+		auxFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30))		    .background_(Color.yellow);
+		auxOutBusMenu = GUI.popUpMenu.new(auxFaderView, Rect.new(0, 0, 23, 0))
+			.items_(Array.fill(s.options.numOutputBusChannels, { |ind| (ind + 1).asString; }))
+			.value_(2)
+			.action_({ |obj| this.setauxOutBus(obj.value + 1); });
+		auxFader = GUI.slider.new(auxFaderView, Rect.new(0, 0, 73, 0)).value_(0.5)
             .value_(0)
 		    .action_({ |obj|
-				this.setAuxOut(dbSpec.map(obj.value));
+				this.setauxOutLevel(dbSpec.map(obj.value));
 			});
 		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, 315))
 			.knobColor_(Color.new255(50,50,50))

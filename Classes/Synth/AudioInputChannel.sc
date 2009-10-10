@@ -1,12 +1,27 @@
 AudioInputChannel {
-	classvar classGroup=102, id=0;
+	classvar classGroup=102, id=0, server;
 	var parent, <numChannels=8, instGroup=104, synthDefName, addCommand,
-		win, inputMenu, windowName="Input Channel", server, nodeID, groupID, 
+		win, inputMenu, windowName="Input Channel", nodeID, groupID, 
 		inputChannel=0, outBus=20, instanceNum, instanceName;
 	*new { |par|
 		id = id + 1;
 		^super.new.init_audioinchannel(par);
 	}
+	
+	*loadSynthDefs {
+		SynthDef.new("s_monoInputChannel", { |outBus=20, inputChannel=0|
+			var aSig;
+			aSig = SoundIn.ar(inputChannel);
+			Out.ar(outBus, aSig);
+		}).load(server);
+
+		SynthDef.new("s_stereoInputChannel", { |outBus=20, inputChannel=0|
+			var aSig;
+			aSig = SoundIn.ar([inputChannel, inputChannel + 1]);
+			Out.ar(outBus, aSig);
+		}).load(server);
+	}
+	
 	init_audioinchannel { |par|
 		parent = par;
 		server = Server.default;
@@ -26,7 +41,8 @@ AudioInputChannel {
 			.decorator_(FlowLayout(win.view.bounds))
 			.background_(Color.black);
 		inputMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 200, 20))
-			.action_({ |obj| this.setInputChannel(obj.value); });
+			.action_({ |obj| this.setInputChannel(obj.value); })
+			.stringColor_(Color.white);
 	}
 	releaseSynth {
 		server.sendMsg('n_free', nodeID);
