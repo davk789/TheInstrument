@@ -15,14 +15,14 @@ Mixer {
 			aIn = In.ar(inBus, 1).softclip;
 		    aSig = Pan2.ar(aIn, pan, lev);
 		    Out.ar(outBus, aSig);
-			Out.ar(auxOutBus, aSig * auxOutLevel);
+			Out.ar(auxOutBus, aIn * auxOutLevel);
 		}).load(server);
 		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=3, inBus=22, outBus=20|
 		    var aSig, aIn;
 			aIn = In.ar(inBus, 2).softclip;
 		    aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
 		    Out.ar(outBus, aSig.softclip);
-			Out.ar(auxOutBus, aSig * auxOutLevel);
+			Out.ar(auxOutBus, aIn[0] * auxOutLevel);
 		}).load(server);
 	}
 	
@@ -151,7 +151,7 @@ MixerChannel {
 			db = dbSpec.map(volume);
 		};
 		displayBox.value = db;
-		this.setVolume(db.dbAmp);
+		this.setVolume(db.dbamp);
 	}
 	
 	setVolumeFromNumberBox { |val|
@@ -172,7 +172,7 @@ MixerChannel {
 	}
 
 	setauxOutLevel { |val|
-		params['auxOutLevel'] = val;
+		params['auxOutLevel'] = val;//.dbamp;
 		s.sendMsg('n_set', nodeID, 'auxOutLevel', params['auxOutLevel']);
 	}
 	
@@ -221,15 +221,17 @@ MixerChannel {
 			this.setPan(obj.value);
 		};
 		// forcing the slider to be horizontal
-		auxFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30))		    .background_(Color.yellow);
+		auxFaderView = GUI.hLayoutView.new(faders, Rect.new(0, 0, 0, 30))		    
+		    .background_(Color.yellow);
 		auxOutBusMenu = GUI.popUpMenu.new(auxFaderView, Rect.new(0, 0, 23, 0))
 			.items_(Array.fill(s.options.numOutputBusChannels, { |ind| (ind + 1).asString; }))
 			.value_(2)
-			.action_({ |obj| this.setauxOutBus(obj.value + 1); });
+			.action_({ |obj| this.setauxOutBus(obj.value); });
 		auxFader = GUI.slider.new(auxFaderView, Rect.new(0, 0, 73, 0)).value_(0.5)
             .value_(0)
 		    .action_({ |obj|
-				this.setauxOutLevel(dbSpec.map(obj.value));
+				//this.setauxOutLevel(dbSpec.map(obj.value));
+				this.setauxOutLevel(obj.value);
 			});
 		levelFader = GUI.slider.new(faders, Rect.new(0, 0, 0, 315))
 			.knobColor_(Color.new255(50,50,50))
