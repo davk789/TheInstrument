@@ -102,7 +102,7 @@ ThyInstrument {
 						polySynth.looper.addEvent([0,src,chan,num,vel]);
 					};
 				},
-				9, { // DurmSynth
+				9, { // DrumSynth
 					drumSynth.noteOn(src, chan, num, vel);
 					if(drumSynth.looper.notNil){
 						drumSynth.looper.addEvent([num, vel]);
