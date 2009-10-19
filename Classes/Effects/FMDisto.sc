@@ -1,9 +1,9 @@
-FMDisto {
+/*FMDisto {
 	*new { 
 	 // dummy
 	}
-}
-/*FMDisto : EffectBase {
+}*/
+FMDisto : EffectBase {
 	var cutoffSpec, cutoffModSpec, server;
 	/* a selection of filters that use the same types of arguments: 
 		in, freq rez, aka lowpass highpass and bandpass filters */
@@ -29,8 +29,7 @@ FMDisto {
 			'modLag'     -> 0.2,
 			'mix'        -> 1,
 			'freq'       -> 440,
-			'resonance'  -> 1,
-			'filterType' -> "RLPF"
+			'resonance'  -> 1
 		];
 		this.setGUIControls;
 		this.startSynth;
@@ -205,4 +204,4 @@ FMDisto {
 		};
 	}
 
-}*/
+}
