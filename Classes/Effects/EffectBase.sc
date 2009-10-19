@@ -80,6 +80,11 @@ EffectBase {
 		^ret;
 	}
 	
+	setParam { |param, val|
+		startParams[param] = val;
+		server.sendMsg('n_set', nodeID, param, startParams[param]);
+	}
+	
 	savePreset { |name| 
 		// copied from DrumSynth... preset support should exist as a static class or a global object
 		var params, fileName, filePath, fh, pipe;
