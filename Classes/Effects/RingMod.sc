@@ -8,7 +8,7 @@ RingMod : EffectBase {
 	init_ringmod {
 		var bus;
 		dbSpec = [-60, 24].asSpec;
-		modSpec = [0, 8].asSpec;
+		modSpec = [0, 6].asSpec;
 		lagSpec = [0, 4].asSpec;
 		synthdefName = 'ringMod';
 		winBounds = Rect.new(winBounds.left, winBounds.top, 450, 275);
@@ -36,8 +36,8 @@ RingMod : EffectBase {
 			aIn = In.ar(bus) * gain;
 			aModIn = In.ar(modBus);
 			aRingIn = In.ar(ringBus);
-			aFreq = freq + Lag.ar(aModIn * modAmt, modLag);
-			aOsc = Select.ar(shape, [LFCub.ar(aFreq), LFPar.ar(aFreq), LFTri.ar(aFreq), Pulse.ar(aFreq, 0.5),  aRingIn]) * modAmt;
+			aFreq = freq + Lag.ar(aModIn * modAmt * freq, modLag);
+			aOsc = Select.ar(shape, [LFCub.ar(aFreq), LFPar.ar(aFreq), LFTri.ar(aFreq), Pulse.ar(aFreq, 0.5),  aRingIn]) * ringAmt;
 			aSig = aIn * aOsc;
 			aOutMix = (aIn * (mix - 1).abs) + (aSig * mix);
 			Out.ar(bus, aOutMix.softclip);
@@ -85,6 +85,26 @@ RingMod : EffectBase {
 					.value_(startParams['ringAmt'].ampdb.max(-60))
 			);
 			
+			paramControls = paramControls.add(
+				'modAmt' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mod")
+					.knobAction_({ |val| this.setParam('modAmt', val); })
+				    .spec_(modSpec)
+					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
+					.stringColor_(Color.white)
+				    .font_(parent.controlFont)
+					.value_(startParams['modAmt'])
+			);
+
+			paramControls = paramControls.add(
+				'modlag' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "lag")
+					.knobAction_({ |val| this.setParam('modLag', val); })
+				    .spec_(lagSpec)
+					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
+					.stringColor_(Color.white)
+				    .font_(parent.controlFont)
+					.value_(startParams['modLag'])
+			);	
+			
 			GUI.staticText.new(win, Rect.new(0, 0, 50, 25))
 				.stringColor_(Color.white)
 				.font_(parent.controlFont)
@@ -113,26 +133,6 @@ RingMod : EffectBase {
 					.background_(Color.clear)
 					.action_({ |obj| this.setParam('modBus', parent.audioBusRegister[obj.item]) });
 			);
-			
-			paramControls = paramControls.add(
-				'modAmt' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mod")
-					.knobAction_({ |val| this.setparam('modAmt', val); })
-				    .spec_(modSpec)
-					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
-					.stringColor_(Color.white)
-				    .font_(parent.controlFont)
-					.value_(startParams['modAmt'])
-			);
-
-			paramControls = paramControls.add(
-				'modlag' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "lag")
-					.knobAction_({ |val| this.setModLag('modLag', val); })
-				    .spec_(lagSpec)
-					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
-					.stringColor_(Color.white)
-				    .font_(parent.controlFont)
-					.value_(startParams['modLag'])
-			);	
 			
 			GUI.staticText.new(win, Rect.new(0, 0, 150, 25))
 				.stringColor_(Color.white)
