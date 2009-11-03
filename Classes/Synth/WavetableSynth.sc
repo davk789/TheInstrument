@@ -104,7 +104,7 @@ WavetableSynth {
 		];
 		currentModulators = Dictionary['xFade' -> nil, 'fbMul' -> nil, 'freq2' -> nil, 'fm2' -> nil, 'cutoff' -> nil, 'cutoffMod' -> nil];
 		midiCCSources = Dictionary[1 -> 'mod wheel', 72 ->  'knob 1', 8 -> 'knob 2', 74 -> 'knob 3', 71 -> 'knob 4', 20 -> 'knob 5', 22 -> 'knob 6', 86 -> 'knob 7', 73 -> 'knob 8'];
-		midiListMenu = ['<none>', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8'];
+		midiListMenu = ['*none*', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8'];
 		noteOnCommand = { |num,vel,pitch|
 			s.sendMsg('s_new', 's_dualWavetable', activeNotes[num].last, 0, instGroup,
 				'outBus', outBus, 'freq1', pitch, 'lev', (vel / 127).pow(2.2),
@@ -171,24 +171,24 @@ WavetableSynth {
 		partialBFreqs.value = values[23];
 		partialBAmps.value = values[24];
 		this.generatePartials(partialBFreqs.value, partialBAmps.value, bufferB);
-		waveformDraw.value = values[25];
-		targetAButton.value = values[26];
-		targetBButton.value = values[27];
-		xFadeMenu.value = values[28];
-		fbMulMenu.value = values[29];
-		freq2Menu.value = values[30];
-		fm2Menu.value = values[31];
-		syncModeMenu.value = values[32];
+		waveformDraw.valueAction = values[25];
+		targetAButton.valueAction = values[26];
+		targetBButton.valueAction = values[27];
+		xFadeMenu.valueAction = values[28];
+		fbMulMenu.valueAction = values[29];
+		freq2Menu.valueAction = values[30];
+		fm2Menu.valueAction = values[31];
+		syncModeMenu.valueAction = values[32];
 		xfadeKnob.value = values[33];
 		fbLagKnob.value = values[34];
 		fbMulKnob.value = values[35];
 		freq2Knob.value = values[36];
 		fm2Knob.value = values[37];
 		envelopeView.value = values[38];
-		bendButton.value = values[39];
-		fbMulEnvButton.value = values[40];
-		freq2EnvButton.value = values[41];
-		fm2EnvButton.value = values[42];
+		bendButton.valueAction = values[39];
+		fbMulEnvButton.valueAction = values[40];
+		freq2EnvButton.valueAction = values[41];
+		fm2EnvButton.valueAction = values[42];
 		envScaleSlider.value = values[43];
 	}
 	savePreset { |name|
@@ -694,7 +694,8 @@ WavetableSynthFilter : WavetableSynth {
 	}
 	
 	getParams  {
-		^super.getParams ++ [cutoff, cutoffMod, cutoffFlag, cutoffModFlag, resonance, modSource, cutoffMenu.value, cutoffModSourceButton.value, cutoffKnob.value, cutoffModKnob.value, rezKnob.value, cutoffEnvButton.value, cutoffModEnvButton.value, currentFilter];
+		("getting " ++ currentFilter ++ " to save").postln;
+		^super.getParams ++ [cutoff, cutoffMod, cutoffFlag, cutoffModFlag, resonance, modSource, cutoffMenu.value, cutoffModSourceButton.value, cutoffKnob.value, cutoffModMenu.value, cutoffModKnob.value, rezKnob.value, cutoffEnvButton.value, cutoffModEnvButton.value, currentFilter, filterTypeMenu.value]; // this doesn't fix the problem
 	}
 	
 	setParams { |values|
@@ -705,14 +706,16 @@ WavetableSynthFilter : WavetableSynth {
 		cutoffModFlag = values[47];
 		resonance = values[48];
 		modSource = values[49];
-		cutoffMenu.value = values[50];
+		cutoffMenu.valueAction = values[50];
 		cutoffModSourceButton = values[51];
 		cutoffKnob.value = values[52];
-		cutoffModKnob.value = values[53];
-		rezKnob.value = values[54];
-		cutoffEnvButton.value = values[55];
-		cutoffModEnvButton.value = values[56];
-		this.setFilterType(values[57]); filterTypeMenu.value_(values[57]);
+		cutoffModMenu.valueAction = values[53];
+		cutoffModKnob.value = values[54];
+		rezKnob.value = values[55];
+		cutoffEnvButton.value = values[56];
+		cutoffModEnvButton.value = values[57];
+		this.setFilterType(values[58].asString); 
+		filterTypeMenu.value = values[59]; // probably can't rely on the menu order being the same each time
 		
 	}
 	
@@ -767,7 +770,7 @@ WavetableSynthFilter : WavetableSynth {
 	
 	addGUI {
 		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 135);
-		presetMenu.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; });
+		presetMenu.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last.asSymbol; });
 		filterMidiRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 25))
 			.background_(Color.blue(0.1, alpha:0.2));
 		cutoffMenu = GUI.popUpMenu.new(filterMidiRow, Rect.new(0, 0, 37.5, 0))

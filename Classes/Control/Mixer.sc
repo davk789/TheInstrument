@@ -10,14 +10,14 @@ Mixer {
 	*loadSynthDefs {
 		var server;
 		server = Server.default;
-		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=3, inBus=22, outBus=20|
+		SynthDef.new("monoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=2, inBus=22, outBus=20|
 		    var aSig, aIn;
 			aIn = In.ar(inBus, 1).softclip;
 		    aSig = Pan2.ar(aIn, pan, lev);
 		    Out.ar(outBus, aSig);
 			Out.ar(auxOutBus, aIn * auxOutLevel);
 		}).load(server);
-		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=3, inBus=22, outBus=20|
+		SynthDef.new("stereoMixerChannel", { |pan=0, lev=1, auxOutLevel=0, auxOutBus=2, inBus=22, outBus=20|
 		    var aSig, aIn;
 			aIn = In.ar(inBus, 2).softclip;
 		    aSig = Balance2.ar(aIn[0], aIn[1], pan, lev);
@@ -90,7 +90,7 @@ MixerChannel {
 		    'pan' -> 0, 
 			'lev' -> 1,
 			'auxOutLevel' -> 0,
-			'auxOutBus' -> 3,
+			'auxOutBus' -> 2,
 			'inBus' -> 22, 
 			'outBus' -> 20
 		];

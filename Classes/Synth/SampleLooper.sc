@@ -360,9 +360,16 @@ SampleLooper {
 			waveformDisplayResolution.do{ |ind|
 				var bufferIndex;
 				bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
-				buffers[activeBufferIndex].get(bufferIndex, { |msg|
-					currentBufferArray[ind] = (msg * 0.5) + 0.5;
-				});
+				Platform.case(
+					'linux', {
+						buffers[activeBufferIndex].get(bufferIndex, { |msg|
+							currentBufferArray[ind] = (msg * 0.5) + 0.5;
+						});
+					},
+					'osx', {
+						currentBufferArray[ind] = 1.0.rand;
+					}
+				);
 				0.0005.wait;
 			};
 

@@ -5,8 +5,6 @@
 }*/
 FMDisto : EffectBase {
 	var cutoffSpec, cutoffModSpec, server;
-	/* a selection of filters that use the same types of arguments: 
-		in, freq rez, aka lowpass highpass and bandpass filters */
 	*new { |par, group, name, ind|
 		^super.new(par, group, name, ind).init_simplefilter;
 	}
@@ -15,11 +13,8 @@ FMDisto : EffectBase {
 		var bus;
 		cutoffSpec = [-12,12].asSpec;
 		cutoffModSpec = [0, 8].asSpec;
-		synthdefName = 'simpleFilter';
-		//winBounds = Rect.new(winBounds.left, winBounds.top, 275, 180);
-		//Platform.case('linux', {
-			winBounds = Rect.new(winBounds.left, winBounds.top, 350, 215);
-		//});
+		synthdefName = 'fmDisto';
+		winBounds = Rect.new(winBounds.left, winBounds.top, 350, 215);
 		bus = parent.mixer.channels[inputName].inBus;
 		startParams = Dictionary[
 			'gain'       -> 1,
@@ -35,70 +30,17 @@ FMDisto : EffectBase {
 		this.startSynth;
 	}
 	
-	*loadSynthDef { |filter, s|
-		// this works because ThyInstrument calls this synth after initializing 
-		// its member variables
-		filter = filter ? ThyInstrument.filterUGens["RLPF"];
+	*loadSynthDef { |s|
 		s = s ? Server.default;
-		SynthDef.new("simpleFilter", { |gain=1, bus=20, modBus=20, modAmt=0, modLag=0.2,
-			mix=1, freq=440, resonance=1, gate=1|
-			var aIn, aScaleIn, aModIn, aFreq, aSig, aOutMix, aEnv;
+		SythDef.new("fmDisto", { |bus, modAmt=0, waveform=0, freq=440, mix=1|
+			var aIn, aSig, asOsc, aFreq, aOutMix;
 			aIn = In.ar(bus);
-			aScaleIn = (aIn * gain).softclip;
-			aModIn = Lag.ar(In.ar(modBus), modLag) * modAmt;
-			aFreq = Lag.ar(freq + aModIn, 1);
-			aSig = SynthDef.wrap(filter, Array.fill(filter.numArgs, {0}), [aIn, aFreq, resonance]);
+			aFreq = freq;
+			asOsc = Select.ar(waveform, [LFCub.ar(aFreq), LFPar.ar(aFreq), LFTri.ar(aFreq), Pulse.ar(aFreq, 0.5)]);
+			aSig = asOsc;
 			aOutMix = (aIn * (mix - 1).abs) + (aSig * mix);
-			aEnv = EnvGen.ar(Env.asr(0.1, 1, 0.1), gate, doneAction:2);
-			ReplaceOut.ar(bus, aOutMix * aEnv);
-		}).load(s);
-	}
-	
-	setMix { |val|
-		startParams['mix'] = val;
-		server.sendMsg('n_set', nodeID, 'mix', startParams['mix']);
-	}
-
-	setGain { |val|
-		startParams['gain'] = val;
-		server.sendMsg('n_set', nodeID, 'gain', startParams['gain']);
-	}
-	
-	setModAmt { |val|
-		startParams['modAmt'] = val;
-		server.sendMsg('n_set', nodeID, 'modAmt', startParams['modAmt']);
-	}
-
-	setModLag { |val|
-		startParams['modLag'] = val;
-		server.sendMsg('n_set', nodeID, 'modLag', startParams['modLag']);
-	}
-	
-	setFreq { |val|
-		startParams['freq'] = val;
-		server.sendMsg('n_set', nodeID, 'freq', startParams['freq']);
-	}
-	
-	setResonance { |val|
-		startParams['resonance'] = val;
-		server.sendMsg('n_set', nodeID, 'resonance', startParams['resonance']);
-	}
-	
-	setModBus { |bus|
-		startParams['modBus'] = bus;//parent.audioBusRegister[name];
-		server.sendMsg('n_set', nodeID, 'modBus', startParams['modBus']);
-	}
-	
-	setFilterType { |name|
-		startParams['filterType'] = name;
-		server.sendMsg('n_set', nodeID, 'gate', 0);
-		paramControls['resonance'].spec = parent.filterSpecs[startParams['filterType']];
-		this.class.loadSynthDef(parent.filterUGens[startParams['filterType']]);
-		AppClock.sched( 0.15, {
-			server.sendMsg('n_free', nodeID);
-			this.startSynth;
-			nil;
-		});
+			Out.ar(bus, aOutMix.softclip);
+		}).send(s);
 	}
 	
 	setGUIControls {
@@ -141,7 +83,6 @@ FMDisto : EffectBase {
 					.stringColor_(Color.white)
 					.knob.step_(0.005)
 			);
-
 
 			paramControls = paramControls.add(
 				'freq' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "freq")
