@@ -45,7 +45,12 @@ EZJKnob {
               	knobAction.value(prValue);
               	numberBox.value = prValue;
             });
-        numberBox = GUI.numberBox.new(knobView, Rect.new(0, knobView.bounds.height * 0.8, dimensions.width, knobView.bounds.height / 4.2));
+        numberBox = GUI.numberBox.new(knobView, Rect.new(0, knobView.bounds.height * 0.8, dimensions.width, knobView.bounds.height / 4.2))
+        	.action_({ |obj|
+        		prValue = obj.value;
+        		knobAction.value(prValue);
+        		knob.value = prValue;
+        	});
     }
 	knobValueAction {
 		knobAction.value(prValue);
@@ -53,6 +58,15 @@ EZJKnob {
 	zeroOneValue_ { |val|
 		this.value_(controlSpec.map(val));
 	}
+	
+	action_ { |func|
+		knobAction = func;
+	}
+	
+	action {
+		^knobAction;
+	}
+	
 	value_ { |val|
 		prValue = val;
 		if(controlSpec.isKindOf(ControlSpec)){

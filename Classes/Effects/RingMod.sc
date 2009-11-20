@@ -40,7 +40,7 @@ RingMod : EffectBase {
 			aOsc = Select.ar(shape, [LFCub.ar(aFreq), LFPar.ar(aFreq), LFTri.ar(aFreq), Pulse.ar(aFreq, 0.5),  aRingIn]) * ringAmt;
 			aSig = aIn * aOsc;
 			aOutMix = (aIn * (mix - 1).abs) + (aSig * mix);
-			Out.ar(bus, aOutMix.softclip);
+			ReplaceOut.ar(bus, aOutMix.softclip);
 		}).load(s);
 	}
 		
