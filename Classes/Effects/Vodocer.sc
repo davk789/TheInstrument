@@ -24,7 +24,8 @@ Vodocer : EffectBase {
 			'carLev'  -> 0, 
 			'hpfscal'  -> 0.1,
 			'hpfCutoff' -> 3000,
-			'outscal'   -> 0
+			'outscal'   -> 0,
+			'carrierSource' -> 0
 		];
 		this.setGUIControls;
 		this.startSynth;
@@ -33,12 +34,23 @@ Vodocer : EffectBase {
 	*loadSynthDef { |s|
 		s = s ? Server.default;
 		
-		SynthDef.new("vodocer", { |bus=22, mix=1, numBands=32, low=100, high=5000, q=0.02, inLev=1, carLev=1, hpfscal=0.05, hpfCutoff=3000, outscal=25|
-			var aSig, aIn, aVoc, aCar, aMod, kFreq, hasFreq;
+		SynthDef.new("vodocer", { 
+			|bus=22, mix=1, numBands=32, low=100, high=5000, q=0.02, 
+			 inLev=1, carLev=1, hpfscal=0.05, hpfCutoff=3000, outscal=25, 
+			 carrierSource=0, carrierBus=22|
+			var aSig, aIn, aCarIn, aVoc, asCar, aMod, kFreq, hasFreq;
 			aIn = In.ar(bus) * inLev;
+			aCarIn = In.ar(carrierBus);
 			# kFreq, hasFreq = Tartini.kr(aMod);
-			aCar = LFTri.ar(kFreq) * carLev;
-			aVoc = Vocoder.ar(aCar, aMod, numBands, low, high, q, hpfCutoff, hpfscal, outscal); //bark(aCar, aMod);
+			asCar = Select.ar(carrierSource, 
+				[LFTri.ar(kFreq), 
+				 LFCub.ar(kFreq), 
+				 LFSaw.ar(kFreq), 
+				 WhiteNoise.ar,
+				 aCarIn]
+			) * carLev;
+			// replace this with my own code, to modulate the bands?
+			aVoc = Vocoder.ar(aCar, aMod, numBands, low, high, q, hpfCutoff, hpfscal, outscal);
 			aSig = (aIn * (mix - 1).abs) + (aIn * mix);
 			ReplaceOut.ar(bus, Pan2.ar(aSig, 0));
 		}).load(s);
