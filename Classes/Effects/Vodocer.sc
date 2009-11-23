@@ -14,18 +14,19 @@ Vodocer : EffectBase {
 		winBounds = Rect.new(winBounds.left, winBounds.top, 450, 275);
 		bus = parent.mixer.channels[inputName].inBus;
 		startParams = Dictionary[
-			'bus'     -> bus,
-			'mix'     -> 1,
-			'numBands'    -> 1,
-			'low'    -> 220, 
-			'high' -> 1, 
-			'q' -> bus,
-			'inLev'  -> bus,
-			'carLev'  -> 0, 
-			'hpfscal'  -> 0.1,
-			'hpfCutoff' -> 3000,
-			'outscal'   -> 0,
-			'carrierSource' -> 0
+			'bus'         -> bus,
+			'mix'         -> 1,
+			'numBands'    -> 16,
+			'low'         -> 220, 
+			'high'        -> 2200, 
+			'q'           -> 0.2,
+			'inLev'       -> 1,
+			'carLev'      -> 1, 
+			'hpfscal'     -> 0.1,
+			'hpfCutoff'   -> 3000,
+			'outscal'     -> 10,
+			'carrierSource' -> 0,
+			'carrierBus'  -> bus + 2; // meh whatev
 		];
 		this.setGUIControls;
 		this.startSynth;
@@ -50,7 +51,7 @@ Vodocer : EffectBase {
 				 aCarIn]
 			) * carLev;
 			// replace this with my own code, to modulate the bands?
-			aVoc = Vocoder.ar(aCar, aMod, numBands, low, high, q, hpfCutoff, hpfscal, outscal);
+			aVoc = Vocoder.ar(asCar, aMod, numBands, low, high, q, hpfCutoff, hpfscal, outscal);
 			aSig = (aIn * (mix - 1).abs) + (aIn * mix);
 			ReplaceOut.ar(bus, Pan2.ar(aSig, 0));
 		}).load(s);
@@ -58,6 +59,20 @@ Vodocer : EffectBase {
 		
 	setGUIControls {
 		addGUIControls = {
+
+/*
+			'low'         -> 220, 
+			'high'        -> 2200, 
+			'q'           -> 0.2,
+			'inLev'       -> 1,
+			'carLev'      -> 1, 
+			'hpfscal'     -> 0.1,
+			'hpfCutoff'   -> 3000,
+			'outscal'     -> 10,
+			'carrierSource' -> 0,
+			'carrierBus'  -> bus + 2; */
+				
+		
 			paramControls = paramControls.add(
 				'mix' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
 					.knobAction_({ |val| this.setParam('mix', val.dbamp); })
@@ -66,19 +81,19 @@ Vodocer : EffectBase {
 				    .font_(parent.controlFont)
 					.value_(startParams['mix'])
 			);
-			
+					
 			GUI.staticText.new(win, Rect.new(0, 0, 50, 25))
 				.stringColor_(Color.white)
 				.font_(parent.controlFont)
-				.string_("mod bus:");
+				.string_("num bands:");
 
 			paramControls = paramControls.add(
-				'modBus' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 150, 25))
+				'numBands' -> GUI.popUpMenu.new(win, Rect.new(0, 0, 150, 25))
 					.stringColor_(Color.white)
 					.font_(parent.controlFont)
-					.items_(parent.audioBusRegister.keys.asArray)
+					.items_(Array.fill(16, { |i| (i + 1) * 4 }))
 					.background_(Color.clear)
-					.action_({ |obj| this.setParam('modBus', parent.audioBusRegister[obj.item]) });
+					.action_({ |obj| this.setParam('numBands', obj.item.interpret) });
 			);
 			
 

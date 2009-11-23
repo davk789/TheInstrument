@@ -36,20 +36,16 @@ EZJKnob {
 			.align_('center');
         knob = GUI.knob.new(knobView, Rect.new(0, knobView.bounds.height * 0.28, dimensions.width, knobView.bounds.height / 2.1))
             .action_({|obj|
-				if(controlSpec.isKindOf(ControlSpec)){
-					prValue = controlSpec.map(obj.value);
-				}{
-					prValue = obj.value;
-				};
-				//postln("prValue: " ++ prValue);
+				prValue = controlSpec.map(obj.value);
               	knobAction.value(prValue);
               	numberBox.value = prValue;
             });
         numberBox = GUI.numberBox.new(knobView, Rect.new(0, knobView.bounds.height * 0.8, dimensions.width, knobView.bounds.height / 4.2))
         	.action_({ |obj|
+        		obj.value = obj.value.clip(controlSpec.minval, controlSpec.maxval);
         		prValue = obj.value;
         		knobAction.value(prValue);
-        		knob.value = prValue;
+        		knob.value = controlSpec.unmap(prValue);
         	});
     }
 	knobValueAction {
@@ -68,12 +64,8 @@ EZJKnob {
 	}
 	
 	value_ { |val|
-		prValue = val;
-		if(controlSpec.isKindOf(ControlSpec)){
-			knob.value = controlSpec.unmap(prValue);
-		}{
-			knob.value = prValue;
-		};
+		prValue = val.clip(controlSpec.minval, controlSpec.maxval);
+		knob.value = controlSpec.unmap(prValue);
 		numberBox.value = prValue;
 	}
 	
