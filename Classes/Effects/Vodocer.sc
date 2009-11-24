@@ -52,7 +52,7 @@ Vodocer : EffectBase {
 			) * carLev;
 			// replace this with my own code, to modulate the bands?
 			aVoc = Vocoder.ar(asCar, aIn, numBands, low, high, q, hpfCutoff, hpfscal, outscal);
-			aSig = (aIn * (mix - 1).abs) + (aIn * mix);
+			aSig = (aIn * (mix - 1).abs) + (aVoc * mix);
 			ReplaceOut.ar(bus, Pan2.ar(aSig, 0));
 		}).load(s);
 	}
@@ -108,7 +108,7 @@ Vodocer : EffectBase {
 					.items_(parent.audioBusRegister.keys.asArray)
 					.background_(Color.clear)
 					.value_(3)
-					.action_({ |obj| this.setParam('carrierBus', obj.value) });
+					.action_({ |obj| this.setParam('carrierBus', parent.audioBusRegister[obj.item]) });
 			);
 			
 			GUI.staticText.new(win, Rect.new(0, 0, 175, 25)).string_("");
