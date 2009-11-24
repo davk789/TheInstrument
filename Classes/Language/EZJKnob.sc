@@ -101,6 +101,10 @@ EZJKnob {
 	knobCentered_ { |flag|
 		knob.centered = flag;
 	}
+	
+	centered_ { |toggle|
+		knob.centered = toggle ? false;
+	}
 
 }
 

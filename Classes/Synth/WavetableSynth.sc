@@ -584,7 +584,7 @@ WavetableSynth {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBLag(obj.value); });
 		fbMulKnob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "fbMul")
-			.spec_()
+			//.spec_() // wha?
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setFBMul(obj.value); });
 		freq2Knob = EZJKnob.new(partialRow2, Rect.new(0, 0, 37.5, 73), "freq2")
@@ -656,7 +656,7 @@ WavetableSynth {
 
 WavetableSynthFilter : WavetableSynth {
 	var cutoff=0, cutoffMod=0, cutoffFlag=0, cutoffModFlag=0, resonance=1, modSource=0, cutoffKnob, cutoffModKnob, filterMidiRow, filterControlRow, filterEnvRow, cutoffMenu, cutoffModMenu, cutoffEnvButton, cutoffModEnvButton, filterTypeMenu, rezKnob, cutoffModSourceButton, currentFilter,
-	    cutoffSpec, cutoffModSpec, rezSpec;
+	    cutoffSpec, cutoffModSpec;
 	*new { |par,midi|
 		^super.new(par, midi).init_wavetablesynthfilter;
 	}
@@ -799,7 +799,6 @@ WavetableSynthFilter : WavetableSynth {
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setCutoffMod(obj.value); });
 		rezKnob = EZJKnob.new(filterControlRow, Rect.new(0, 0, 37.5, 73), "rez")
-			.spec_(rezSpec)
 			.value_(1)
 			.knobColor_([Color.black, Color.green, Color.black, Color.green])
 			.knobAction_({ |obj| this.setResonance(obj.value); });

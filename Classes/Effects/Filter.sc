@@ -29,6 +29,7 @@ SimpleFilter : EffectBase {
 		];
 		this.setGUIControls;
 		this.startSynth;
+		this.setFilterType("MoogVCF");
 	}
 	
 	*loadSynthDef { |filter, s|
@@ -88,7 +89,9 @@ SimpleFilter : EffectBase {
 	setFilterType { |name|
 		startParams['filterType'] = name;
 		server.sendMsg('n_set', nodeID, 'gate', 0);
-		paramControls['resonance'].spec = parent.filterSpecs[startParams['filterType']];
+		if(paramControls['resonance'].notNil){
+			paramControls['resonance'].spec = parent.filterSpecs[startParams['filterType']];
+		};
 		this.class.loadSynthDef(parent.filterUGens[startParams['filterType']]);
 		AppClock.sched( 0.15, {
 			server.sendMsg('n_free', nodeID);
@@ -148,7 +151,6 @@ SimpleFilter : EffectBase {
 					.stringColor_(Color.white)
 					.knob.step_(0.005)
 			);
-			
 			paramControls = paramControls.add(
 				'resonance' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "rez")
 					.knobAction_({ |val| this.setResonance(val); })
@@ -193,7 +195,6 @@ SimpleFilter : EffectBase {
 					)
 				);
 			paramControls['resonance']
-				.spec_(parent.filterSpecs[paramControls['modBus'].item])
 				.value_(startParams['resonance'])
 				.knob.step_(0.005);
 
