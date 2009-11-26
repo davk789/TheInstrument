@@ -1,6 +1,6 @@
 Vodocer : EffectBase {
 	var modSpec, dbSpec, lagSpec;
-	/* classic moog-type filterbank vocoder, but hopefully much sillier */
+	/* classic moog-type filterbank vocoder, but much worse */
 	*new { |par, group, name, ind|
 		^super.new(par, group, name, ind).init_ringmod;
 	}
@@ -53,7 +53,7 @@ Vodocer : EffectBase {
 			// replace this with my own code, to modulate the bands?
 			aVoc = Vocoder.ar(asCar, aIn, numBands, low, high, q, hpfCutoff, hpfscal, outscal);
 			aSig = (aIn * (mix - 1).abs) + (aVoc * mix);
-			ReplaceOut.ar(bus, Pan2.ar(aSig, 0));
+			ReplaceOut.ar(bus, aSig);
 		}).load(s);
 	}
 	
