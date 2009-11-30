@@ -28,11 +28,21 @@ Vodocer : EffectBase {
 			'carrierSource' -> 0,
 			'carrierBus'  -> (bus + 2) // meh whatev
 		];
+
 		this.setGUIControls;
 		this.startSynth;
 	}
 	
 	*loadSynthDef { |s|
+		var pitchFollower;
+		Platform.case(
+			'osx', {
+				pitchFollower = { |in| Tartini.kr(in); };
+			},
+			'linux', {
+				pitchFollower = { |in| Pitch.kr(in); };
+			}
+		);
 		s = s ? Server.default;
 		
 		SynthDef.new("vodocer", { 
@@ -42,7 +52,7 @@ Vodocer : EffectBase {
 			var aSig, aIn, aCarIn, aVoc, asCar, kFreq, hasFreq;
 			aIn = In.ar(bus) * inLev;
 			aCarIn = In.ar(carrierBus);
-			# kFreq, hasFreq = Tartini.kr(aIn);
+			# kFreq, hasFreq = SynthDef.wrap(pitchFollower, nil, [aIn]);
 			asCar = Select.ar(carrierSource, 
 				[LFTri.ar(kFreq), 
 				 LFCub.ar(kFreq), 
