@@ -328,10 +328,10 @@ SampleLooper {
 		if(numChannels.isNil){
 			this.loadSynthDef(1);
 		};
-		numChannels = buffers[activeBufferIndex].numChannels; // numChannels is set for the first time here
+		numChannels = buffers[activeBufferIndex].numChannels;
 
 		activeBufferIndex = sel;
-		playerParams['bufnum'] = buffers[activeBufferIndex].bufnum;
+		playerParams['bufnum'] = recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
 		recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
 		if(buffers[activeBufferIndex].numChannels != numChannels){
 			if(isPlaying || isRecording){
@@ -351,7 +351,7 @@ SampleLooper {
 		waveformMarkerBar.value = bufferMarkers[activeMarkerIndex];
 	}
 	
-	drawWaveformView { |clearMarkerBar=true|
+	/*	drawWaveformView { |clearMarkerBar=true|
 		var ret, scale, lastIndex;
 		bufferSelectMenu.enabled_(false);
 		lastIndex = waveformDisplayResolution - 1;
@@ -387,6 +387,14 @@ SampleLooper {
 				bufferSelectMenu.enabled_(true);
 			};
 		}).play;
+		}*/
+	
+	drawWaveformView {
+		buffers[activeBufferIndex].plot(
+			labels:false, 
+			parent:waveformView//,
+			//bounds:Rect.new(,0,waveformView.bounds.width,waveformView.bounds.height)
+		);
 	}
 	
 	setWaveformVZoom { |amt|
@@ -495,7 +503,6 @@ SampleLooper {
 	}
 
 	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
-		postln("inside this.loadSynthDef(" ++ numChan ++ ");");
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=0, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
@@ -592,7 +599,9 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
-		waveformView = GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+		waveformView = GUI.compositeView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+			.background_(Color.grey(0.9));		
+		/*GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.background_(Color.grey(0.9))
 			.strokeColor_(Color.blue(0.3))
 			.drawLines_(true)
@@ -609,7 +618,7 @@ SampleLooper {
 				end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
 				this.setLoopRange(start, end, obj.currentvalue);
 			})
-			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
+		.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });*/
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
