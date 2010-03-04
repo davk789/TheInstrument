@@ -1,7 +1,7 @@
 
 Sampler { // container for one or more SampleLoopers
 	var parent, <>win, activeMidiChannels, <>channels, <outBus,
-		controlView, midiButtons, crossfadeSlider;
+		controlView, midiButtons, crossfadeSlider, sampleScrollView, samplerChannelsView;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
 	}
@@ -13,8 +13,8 @@ Sampler { // container for one or more SampleLoopers
 		activeMidiChannels = Array.new;
 		this.initGUI;
 		loopers.do{ |ind|
+			//postln("not adding channels atm");
 			this.addChannel(ind);
-			
 		};
 		this.addMixerChannel;
 		this.useKeyboard;
@@ -36,7 +36,13 @@ Sampler { // container for one or more SampleLoopers
 	addChannel { |num|
 		channels = channels.add(SampleLooper.new(parent, this));
 		//win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
-		channels.last.makeGUI(win);
+		samplerChannelsView.bounds = Rect.new(
+			samplerChannelsView.bounds.left, 
+			samplerChannelsView.bounds.top,
+			samplerChannelsView.bounds.width,
+			samplerChannelsView.bounds.height + channels.last.viewBounds.height
+		);
+		channels.last.makeGUI(samplerChannelsView);
 		midiButtons = midiButtons.add(
 			GUI.button.new(controlView, Rect.new(0, 0, controlView.bounds.height, 0))
 				.states_([
@@ -64,10 +70,11 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	initGUI {
-		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 1700, 530)).front;
+		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 820, 530)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 		controlView = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
-			.background_(Color.black);
+			.background_(Color.black)
+			.resize_(2);
 		GUI.staticText.new(controlView, Rect.new(0, 0, 35, 0))
 			.stringColor_(Color.white)
 			.string_("xfade:")
@@ -80,7 +87,10 @@ Sampler { // container for one or more SampleLoopers
 		GUI.staticText.new(controlView, Rect.new(0, 0, 55, 0))
 			.stringColor_(Color.white)
 			.string_("midi active:")
-			.font_(parent.controlFont);		
+			.font_(parent.controlFont);
+		sampleScrollView = GUI.scrollView.new(win, Rect.new(0, 0, win.bounds.width - 5, win.bounds.height - 25))
+			.resize_(5);
+		samplerChannelsView = GUI.vLayoutView.new(sampleScrollView, Rect.new(0, 0, sampleScrollView.bounds.width, 5));
 	}
 	
 	cc { |src,chan,num,val|
@@ -102,7 +112,7 @@ Sampler { // container for one or more SampleLoopers
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
-	looper, <>ccFunction, <>sampler, numChannels;
+	looper, <>ccFunction, <>sampler, numChannels, <viewBounds;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -120,6 +130,7 @@ SampleLooper {
 		buffers = Array.new;
 		bufferMarkers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
+		viewBounds = Rect.new(0, 0, 812, 245);
 		playerParams  = Dictionary[
 			'bufnum'       -> -1, 
 			'speed'        -> 1, 
@@ -392,8 +403,8 @@ SampleLooper {
 	drawWaveformView {
 		buffers[activeBufferIndex].plot(
 			labels:false, 
-			parent:waveformView//,
-			//bounds:Rect.new(,0,waveformView.bounds.width,waveformView.bounds.height)
+			parent:waveformView,
+			bounds:Rect.new(-5,-5,waveformView.bounds.width,waveformView.bounds.height)
 		);
 	}
 	
@@ -550,7 +561,7 @@ SampleLooper {
 		
 		controlBackgroundColor = Color.blue.alpha_(0.2);
 		
-		topView = GUI.compositeView.new(container, Rect.new(0, 0, 812, 245));
+		topView = GUI.compositeView.new(container, viewBounds);
 		topView.decorator = FlowLayout(topView.bounds);
 		
 		waveformColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 600, 238));
