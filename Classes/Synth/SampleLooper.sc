@@ -111,10 +111,10 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=4096, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
 	looper, <>ccFunction, <>sampler, numChannels, <viewBounds;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp|
@@ -151,6 +151,7 @@ SampleLooper {
 			'inLev'        -> 1,
 			'preLev'       -> 0			
 		];
+		// waveformDisplayResolution = 8 - waveformView.bouds.width
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		loopMarkers = Array.new;
 		ccFunction = { |src,chan,num,val|
@@ -401,10 +402,77 @@ SampleLooper {
 		}*/
 	
 	drawWaveformView {
+		buffers[activeBufferIndex].loadToFloatArray(action:{ |array, buf|
+			defer{
+				var displayVal, unlaced, numChannels, zoom, minVal, maxVal;
+				numChannels = buf.numChannels;
+				unlaced = array.unlace(numChannels);
+				
+				minVal = array.minItem;
+				maxVal = array.maxItem;
+				
+				zoom = unlaced.first.size / waveformDisplayResolution;
+				
+				displayVal = [Array.newClear(waveformDisplayResolution), Array.newClear(waveformDisplayResolution)];
+				
+				this.refreshWaveformDisplay(numChannels);
+
+				unlaced.do{ |channelVal,channel|
+					waveformDisplayResolution.do{ |ind|
+						displayVal[channel][ind] = channelVal[ind].blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
+					}
+				};
+				
+				displayVal.do{ |obj,ind|
+					waveformDisplay[ind].value = obj;
+				};
+				
+				postln("at the end of drawWaveformView");
+			}
+		});
+	}
+
+	refreshWaveformDisplay { |numChannels=1|
+		var width, height;
+
+		height = 125 / numChannels;
+		if(waveformDisplay.notNil){
+			waveformDisplay.do{ |obj,ind|
+				obj.remove;
+			}
+		};
+		
+		waveformDisplay.do{
+			waveformDisplay = Array.fill(numChannels, {
+				GUI.multiSliderView.new(waveformView, Rect.new(0, 0, 0, height))
+			        .background_(Color.grey(0.9))
+			        .strokeColor_(Color.blue(0.3))
+			        .drawLines_(true)
+			        .drawRects_(false)
+			        .elasticMode_(1)
+			        .value_([0.5])
+			        .editable_(false)
+			        .showIndex_(true)
+			        .selectionSize_(2)
+			        .startIndex_(0)
+			        .action_({ |obj|
+						var start,end;
+						start = this.zoomToAbs(obj.index / obj.value.size);
+						end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
+						this.setLoopRange(start, end, obj.currentvalue);
+				    })
+			        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });		
+			});
+		}
+		
+
+	}
+
+	drawWaveformViewOld {
 		buffers[activeBufferIndex].plot(
 			labels:false, 
 			parent:waveformView,
-			bounds:Rect.new(-5,-5,waveformView.bounds.width,waveformView.bounds.height)
+			bounds:Rect.new(-5,-5,waveformView.bounds.width - 50.rand,waveformView.bounds.height - 50.rand)
 		);
 	}
 	
@@ -610,26 +678,9 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
-		waveformView = GUI.compositeView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-			.background_(Color.grey(0.9));		
-		/*GUI.multiSliderView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-			.background_(Color.grey(0.9))
-			.strokeColor_(Color.blue(0.3))
-			.drawLines_(true)
-			.drawRects_(false)
-			.elasticMode_(1)
-			.value_(Array.fill(waveformDisplayResolution, { 0.5 }))
-			.editable_(false)
-			.showIndex_(true)
-			.selectionSize_(2)
-			.startIndex_(0)
-			.action_({ |obj|
-				var start,end;
-				start = this.zoomToAbs(obj.index / obj.value.size);
-				end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-				this.setLoopRange(start, end, obj.currentvalue);
-			})
-		.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });*/
+		waveformView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+			.background_(Color.grey(0.9));
+		this.refreshWaveformDisplay;
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
