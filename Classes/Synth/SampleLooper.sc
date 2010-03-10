@@ -419,14 +419,20 @@ SampleLooper {
 
 				unlaced.do{ |channelVal,channel|
 					waveformDisplayResolution.do{ |ind|
-						displayVal[channel][ind] = channelVal[ind].blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
+						var scaledInd;
+						if(ind < 10){
+							scaledInd = ind * zoom;
+						};
+						displayVal[channel][ind] = channelVal.blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
 					}
 				};
+				
 				
 				displayVal.do{ |obj,ind|
 					waveformDisplay[ind].value = obj;
 				};
 				
+				[numChannels, minVal, maxVal, zoom, displayVal].postln;
 				postln("at the end of drawWaveformView");
 			}
 		});
@@ -434,7 +440,7 @@ SampleLooper {
 
 	refreshWaveformDisplay { |numChannels=1|
 		var width, height;
-
+		"refreshing wasveform display".postln;
 		height = 125 / numChannels;
 		if(waveformDisplay.notNil){
 			waveformDisplay.do{ |obj,ind|
@@ -442,28 +448,27 @@ SampleLooper {
 			}
 		};
 		
-		waveformDisplay.do{
-			waveformDisplay = Array.fill(numChannels, {
-				GUI.multiSliderView.new(waveformView, Rect.new(0, 0, 0, height))
-			        .background_(Color.grey(0.9))
-			        .strokeColor_(Color.blue(0.3))
-			        .drawLines_(true)
-			        .drawRects_(false)
-			        .elasticMode_(1)
-			        .value_([0.5])
-			        .editable_(false)
-			        .showIndex_(true)
-			        .selectionSize_(2)
-			        .startIndex_(0)
-			        .action_({ |obj|
-						var start,end;
-						start = this.zoomToAbs(obj.index / obj.value.size);
-						end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-						this.setLoopRange(start, end, obj.currentvalue);
-				    })
-			        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });		
-			});
-		}
+		"removed the waveform display".postln;
+		
+		waveformDisplay = Array.fill(numChannels, {
+			GUI.multiSliderView.new(waveformView, Rect.new(0, 0, 0, height))
+		        .background_(Color.grey(0.9))
+		        .strokeColor_(Color.blue(0.3))
+		        .drawLines_(true)
+		        .drawRects_(false)
+		        .elasticMode_(1)
+		        .value_([0.5, 0.5, 0.5])
+		        .editable_(false)
+		        .showIndex_(true)
+		        .selectionSize_(2)
+		        .startIndex_(0)
+		        .action_({ |obj|
+					var start,end;
+					start = this.zoomToAbs(obj.index / obj.value.size);
+					end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
+					this.setLoopRange(start, end, obj.currentvalue);
+			    })
+		        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });		});
 		
 
 	}
