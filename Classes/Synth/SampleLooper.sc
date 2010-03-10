@@ -153,6 +153,8 @@ SampleLooper {
 		];
 		// waveformDisplayResolution = 8 - waveformView.bouds.width
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
+		currBufDisplayStart = 0;
+		currBufDisplayEnd = currentBufferArray.last;
 		loopMarkers = Array.new;
 		ccFunction = { |src,chan,num,val|
 			defer{
@@ -419,10 +421,6 @@ SampleLooper {
 
 				unlaced.do{ |channelVal,channel|
 					waveformDisplayResolution.do{ |ind|
-						var scaledInd;
-						if(ind < 10){
-							scaledInd = ind * zoom;
-						};
 						displayVal[channel][ind] = channelVal.blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
 					}
 				};
@@ -466,9 +464,10 @@ SampleLooper {
 					var start,end;
 					start = this.zoomToAbs(obj.index / obj.value.size);
 					end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-					this.setLoopRange(start, end, obj.currentvalue);
+					[start, end].postln;
+					//this.setLoopRange(start, end, obj.currentvalue);
 			    })
-		        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });		});
+		        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) }); });
 		
 
 	}
@@ -487,7 +486,7 @@ SampleLooper {
 		waveformView.value = scaleData[currBufDisplayStart..currBufDisplayEnd];
 	}
 		
-	setWaveformZoom { |start,range|
+	setWaveformZoom { |start,range| // 0..1 range
 		currBufDisplayStart = (start * currentBufferArray.size).asInt;
 		currBufDisplayEnd = (range * currentBufferArray.size).asInt;
 		waveformView.value = currentBufferArray[currBufDisplayStart..currBufDisplayEnd];
