@@ -1,13 +1,24 @@
 TestClass {
-	var buffer, server;
-	*new {
-		^super.new.init_testclass;
+	var buffer, server, privateDataA, privateDataB, parent, bounds, <>action;
+	*new { |par,bnd|
+		^super.new.init_testclass(par, bnd);
 	}
 	
-	init_testclass {
+	init_testclass { |par,bnd|
+		parent = par;
+		bounds = bnd;
+		privateDataA = "hello";
+		privateDataB = "number 2";
 		server = Server.default;
-		
+		action = { |obj| "default action".postln; };
+		GUI.button.new(parent, bounds)
+		    .states_([["x", Color.red, Color.black]])
+		    .action_({ |obj|
+				action.value(this);
+			});
 	}
+
+	
 	
 	getBufferValues {
 		1024.do{ |ind|

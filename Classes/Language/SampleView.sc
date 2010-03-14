@@ -1,6 +1,6 @@
-
 SampleView {
-	var buffer, parent, <>bounds, resolution, display, containerView;
+	var buffer, parent, <>bounds, displayResolution, display, containerView, >action, >mouseUpAction,
+	    bufferValue, visibleValue, zoomMin=0, zoomMax=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
 	}
@@ -9,9 +9,9 @@ SampleView {
 		parent = par;
 		bounds = bounds ?? { Rect.new(0, 0, 600, 200) };
 		buffer = buf;
-		resolution = bounds.width;
+		displayResolution = bounds.width;
 		action = { |obj| postln("default action " ++ obj.curentvalue) };
-		mouseUpAction = { |obj| postln("default mouse up action " ++ obj.currentvalue); }
+		mouseUpAction = { |obj| postln("default mouse up action " ++ obj.currentvalue); };
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
 	}
@@ -19,30 +19,35 @@ SampleView {
 	buffer_ { |buf|
 		buffer = buf;
 	}
+
+	zoom_ { |bottom, top|
+		zoomMin = bottom.max(0);
+		zoomMax = top.min(1);
+	}
 	
-	action_ {
-	
+	zoom {
+		^[zoomMin, zoomMax];
 	}
 
 	drawView {
 		buffer.loadToFloatArray(action:{ |array, buf|
 			defer{
-				var displayVal, unlaced, numChannels, zoom, minVal, maxVal;
+				var displayVal, numChannels, resolution, minVal, maxVal;
 				numChannels = buf.numChannels;
-				unlaced = array.unlace(numChannels);
+				bufferValue = array.unlace(numChannels);
 				
 				minVal = array.minItem;
 				maxVal = array.maxItem;
 				
-				zoom = unlaced.first.size / resolution;
+				resolution = bufferValue.first.size / displayResolution;
 				
-				displayVal = [Array.newClear(resolution), Array.newClear(resolution)];
+				displayVal = [Array.newClear(displayResolution), Array.newClear(displayResolution)];
 				
 				this.refreshDisplay(numChannels);
 
-				unlaced.do{ |channelVal,channel|
-					resolution.do{ |ind|
-						displayVal[channel][ind] = channelVal.blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
+				bufferValue.do{ |channelVal,channel|
+					displayResolution.do{ |ind|
+						displayVal[channel][ind] = channelVal.blendAt(ind * resolution).linlin(minVal, maxVal, 0, 1);
 					}
 				};
 				
@@ -71,7 +76,7 @@ SampleView {
 		        .drawLines_(true)
 		        .drawRects_(false)
 		        .elasticMode_(1)
-		        .value_(Array.fill(resolution, { 0.5 }))
+		        .value_(Array.fill(displayResolution, { 0.5 }))
 		        .editable_(false)
 		        .showIndex_(true)
 		        .selectionSize_(2)
@@ -81,10 +86,11 @@ SampleView {
 					start = this.zoomToAbs(obj.index / obj.value.size);
 					end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
 					[start, end].postln;
-					action.value(obj);
+					action.value(this);
 					//this.setLoopRange(start, end, obj.currentvalue);
 			    })
-		        .mouseUpAction_({ |obj| mouseUpAction.value(obj) });
+		        .mouseUpAction_({ |obj| mouseUpAction.value(this) });
+		})
 
 	}
 

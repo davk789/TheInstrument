@@ -682,9 +682,11 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
-		waveformView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-			.background_(Color.grey(0.9));
-		this.refreshWaveformDisplay;
+		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125));
+		
+		//		waveformView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+		//	.background_(Color.grey(0.9));
+		//this.refreshWaveformDisplay;
 
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
