@@ -1,5 +1,5 @@
 SampleView {
-	var buffer, parent, <>bounds, displayResolution, display, containerView, >action, >mouseUpAction,
+	var currentBuffer, parent, <>bounds, displayResolution, display, containerView, <>action, <>mouseUpAction,
 	    bufferValue, visibleValue, zoomMin=0, zoomMax=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
@@ -7,17 +7,28 @@ SampleView {
 	
 	init_sampleview { |par,bnd,buf|
 		parent = par;
-		bounds = bounds ?? { Rect.new(0, 0, 600, 200) };
-		buffer = buf;
+		bounds = bnd ?? { Rect.new(0, 0, 600, 200) };
+		currentBuffer = buf;
 		displayResolution = bounds.width;
 		action = { |obj| postln("default action " ++ obj.curentvalue) };
 		mouseUpAction = { |obj| postln("default mouse up action " ++ obj.currentvalue); };
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
+		this.refreshDisplay;
 	}
 	
-	buffer_ { |buf|
-		buffer = buf;
+	buffer {
+		^currentBuffer;
+	}
+	
+	buffer_ {
+		"setter disabled, use SampleView:setActiveBuffer(buffer) instead".warn;
+	}
+	
+	setBuffer { |buf|
+		currentBuffer = buf;
+		// this is more clear than having the function access the member var yes?
+		this.drawView(currentBuffer);
 	}
 
 	zoom_ { |bottom, top|
@@ -29,7 +40,7 @@ SampleView {
 		^[zoomMin, zoomMax];
 	}
 
-	drawView {
+	drawView {  |buffer|
 		buffer.loadToFloatArray(action:{ |array, buf|
 			defer{
 				var displayVal, numChannels, resolution, minVal, maxVal;

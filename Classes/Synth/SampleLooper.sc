@@ -356,7 +356,8 @@ SampleLooper {
 		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
 		s.sendMsg('n_set', recorderNodeNum, 'bufnum', recorderParams['bufnum']);
 		this.setActiveMarkers(sel);
-		this.drawWaveformView;
+		waveformView.setBuffer(buffers[activeBufferIndex]);
+		//this.drawWaveformView;
 	}
 	
 	setActiveMarkers { |sel|
