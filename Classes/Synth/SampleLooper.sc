@@ -486,14 +486,19 @@ SampleLooper {
 		scaleData = ((currentBufferArray - 0.5) * amt) + 0.5;
 		waveformView.value = scaleData[currBufDisplayStart..currBufDisplayEnd];
 	}
-		
-	setWaveformZoom { |start,range| // 0..1 range
+	
+	setWaveformZoom { |start,range|
+		waveformMarkerBar.zoom(start, range);
+		waveformView.zoom(start, range);
+	}
+
+	/*	setWaveformZoom { |start,range| // 0..1 range
 		currBufDisplayStart = (start * currentBufferArray.size).asInt;
 		currBufDisplayEnd = (range * currentBufferArray.size).asInt;
 		waveformView.value = currentBufferArray[currBufDisplayStart..currBufDisplayEnd];
 		waveformMarkerBar.zoom(start, range);
 		this.setWaveformVZoom(waveformVZoomSpec.map(waveformViewVZoom.value));
-	}
+	}*/
 	
 	clearActiveBuffer {
 		buffers[activeBufferIndex].zero;
@@ -683,7 +688,8 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
-		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125));
+		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
+		    .action_({ |obj| obj.currentvalue.postln; });
 		
 		//		waveformView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 		//	.background_(Color.grey(0.9));

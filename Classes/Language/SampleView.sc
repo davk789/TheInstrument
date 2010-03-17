@@ -16,7 +16,7 @@ SampleView {
 		// in addition there is bufferValue, which will not be set until a buffer is given to SampleView
 		// this of course will be the numeric represenatation of the sample set for looping
 		action = { |obj| postln("default action " ++ obj.curentvalue) };
-		mouseUpAction = { |obj| postln("default mouse up action " ++ obj.currentvalue); };
+		mouseUpAction = { |obj| postln("default mouse up action " ++ this.currentvalue); }; //the obj arg should be accessible... strange
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
 		this.drawDisplay;
@@ -32,7 +32,6 @@ SampleView {
 	
 	setBuffer { |buf|
 		currentBuffer = buf;
-		// this is more clear than having the function access the member var yes?
 		this.setNewBuffer(currentBuffer);
 	}
 
@@ -51,17 +50,19 @@ SampleView {
 	}
 	
 	zoom { |x, y|
-		var range;
+		var range, start;
 		range = (y - x).abs.min(1);
 		displayResolution = range * bounds.width;
 		displayStartSample = min(x, y) * bufferValue[0].size;
-		
 		this.updateDisplayValue;
+		displayValue.do{ |channelVal, index|
+			display[index].value = displayValue[index];
+		};
 	}
 	
 	updateDisplayValue {
 		displayValue = Array.fill(numChannels, { Array.newClear(displayResolution) });
-				
+		
 		bufferValue.do{ |channelVal,channel|
 			displayResolution.do{ |ind|
 				var index;
@@ -69,6 +70,7 @@ SampleView {
 				displayValue[channel][ind] = channelVal.blendAt(index).linlin(minSampleVal, maxSampleVal, 0, 1);
 			}
 		};
+		"inside updateDisplayValue".postln;
 	}
 
 	setNewBuffer {  |buffer|
@@ -114,16 +116,19 @@ SampleView {
 		        .selectionSize_(2)
 		        .startIndex_(0)
 		        .action_({ |obj|
-					var start,end;
-					start = this.zoomToAbs(obj.index / obj.value.size);
-					end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-					[start, end].postln;
+					this.updateSelection(obj.index, obj.selectionSize);
 					action.value(this);
-					//this.setLoopRange(start, end, obj.currentvalue);
 			    })
 		        .mouseUpAction_({ |obj| mouseUpAction.value(this) });
 		})
 
+	}
+	
+	updateSelection { |index, selectionSize|
+		display.do{ |obj,ind|
+			obj.index = index;
+			obj.selectionSize = selectionSize;
+		};
 	}
 	
 	// wrapper methods for SCMultiSliderView
