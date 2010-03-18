@@ -482,14 +482,12 @@ SampleLooper {
 	}
 	
 	setWaveformVZoom { |amt|
-		var scaleData;
-		scaleData = ((currentBufferArray - 0.5) * amt) + 0.5;
-		waveformView.value = scaleData[currBufDisplayStart..currBufDisplayEnd];
+		waveformView.vZoom = waveformVZoomSpec.map(amt);
 	}
 	
 	setWaveformZoom { |start,range|
-		waveformMarkerBar.zoom(start, range);
-		waveformView.zoom(start, range);
+		waveformMarkerBar.zoom = [start, range];
+		waveformView.zoom = [start, range];
 	}
 
 	/*	setWaveformZoom { |start,range| // 0..1 range
@@ -698,7 +696,7 @@ SampleLooper {
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
 			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \h, 64, 0.5))
-			.action_({ |obj| this.setWaveformVZoom(waveformVZoomSpec.map(obj.value)); });
+			.action_({ |obj| this.setWaveformVZoom(obj.value); });
 		
 		waveformViewZoom = GUI.rangeSlider.new(waveformControlView, Rect.new(0, 0, 565, 20))
 			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5))

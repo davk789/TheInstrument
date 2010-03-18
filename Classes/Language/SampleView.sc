@@ -1,6 +1,6 @@
 SampleView {
 	var currentBuffer, parent, <>bounds, displayStartSample=0, displayResolution, <numChannels=1, display, containerView, <>action, <>mouseUpAction,
-	    bufferValue, displayValue, zoomRange, minSampleVal, maxSampleVal;
+	    bufferValue, displayValue, minSampleVal, maxSampleVal, activeGuiChannel=0, <vZoom=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
 	}
@@ -14,9 +14,9 @@ SampleView {
 		// the value of the multisliderviews. each bottom-level array will be the same size, change according toi the resolution
 		displayValue = Array.fill(numChannels, { Array.fill(displayResolution, {0.5}) });
 		// in addition there is bufferValue, which will not be set until a buffer is given to SampleView
-		// this of course will be the numeric represenatation of the sample set for looping
-		action = { |obj| postln("default action " ++ obj.curentvalue) };
-		mouseUpAction = { |obj| postln("default mouse up action " ++ this.currentvalue); }; //the obj arg should be accessible... strange
+		// this is be the numeric represenatation of the current sample
+		action = { postln("default action " ++ this.curentvalue) };
+		mouseUpAction = { postln("default mouse up action " ++ this.currentvalue); }; //the obj arg should be accessible... strange
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
 		this.drawDisplay;
@@ -49,15 +49,36 @@ SampleView {
 //		^((val  * range) / displayResolution) + (currBufDisplayStart / displayResolution);
 	}
 	
-	zoom { |x, y|
+	setZoom { |x, y|
 		var range, start;
 		range = (y - x).abs.min(1);
-		displayResolution = range * bounds.width;
+		displayResolution = (range * bounds.width).floor;
 		displayStartSample = min(x, y) * bufferValue[0].size;
 		this.updateDisplayValue;
 		displayValue.do{ |channelVal, index|
-			display[index].value = displayValue[index];
+			display[index].value = this.getVZoomForDisplay(displayValue[index]);
 		};
+	}
+	
+	zoom_ { |val|
+		this.setZoom(val[0], val[1]);
+	}
+	
+	zoom {
+		var start, end;
+		start = displayStartSample / bufferValue[0].size;
+		end = (displayResolution / bounds.width) + start;
+		^[start, end];
+	}
+	
+	vZoom_ { |val| 
+		// NOT SCALED... for generic use, the input value needs to scaled by the caller
+		vZoom = max(val, 1);
+		numChannels.do{ |ind| display[ind].value = this.getVZoomForDisplay(displayValue[ind]); };
+	}
+	
+	getVZoomForDisplay { |val|
+		^((val - 0.5) * vZoom) + 0.5;
 	}
 	
 	updateDisplayValue {
@@ -70,7 +91,6 @@ SampleView {
 				displayValue[channel][ind] = channelVal.blendAt(index).linlin(minSampleVal, maxSampleVal, 0, 1);
 			}
 		};
-		"inside updateDisplayValue".postln;
 	}
 
 	setNewBuffer {  |buffer|
@@ -116,6 +136,7 @@ SampleView {
 		        .selectionSize_(2)
 		        .startIndex_(0)
 		        .action_({ |obj|
+		        	activeGuiChannel = ind;
 					this.updateSelection(obj.index, obj.selectionSize);
 					action.value(this);
 			    })
@@ -134,7 +155,7 @@ SampleView {
 	// wrapper methods for SCMultiSliderView
 	
 	currentvalue {
-		^display[0].currentvalue;
+		^display[activeGuiChannel].currentvalue;
 	}
 
 }

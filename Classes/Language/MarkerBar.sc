@@ -110,10 +110,18 @@ MarkerBar {
 		highlightRange = Dictionary.new;
 		uView.refresh;
 	}
-
-	zoom { |startIn, endIn|
-		start = startIn;
-		end = endIn;
+	
+	zoom_ { |zoomParams|
+		this.setZoom(zoomParams[0], zoomParams[1]);
+	}
+	
+	zoom {
+		^[start, end];
+	}
+	
+	setZoom { |x, y|
+		start = min(x, y);
+		end = max(x, y);
 		this.updateVisibleMarkers;
 		uView.refresh;
 	}
