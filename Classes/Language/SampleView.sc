@@ -142,5 +142,45 @@ SampleView {
 	currentvalue {
 		^display[activeGuiChannel].currentvalue;
 	}
+	
+	strokeColor_ { |color|
+		display.do{ |msView,ind|
+			msView.strokeColor = color;
+		}
+	}
+	
+	strokeColor {
+		^display[activeGuiChannel].strokeColor;
+	}
 
+	background_ { |color|
+		display.do{ |msView,ind|
+			msView.background = color;
+		}
+	}
+	
+	background {
+		^display[activeGuiChannel].background;
+	}
+	
+	index_ { |color|
+		display.do{ |msView,ind|
+			msView.index = color;
+		}
+	}
+	
+	index {
+		^display[activeGuiChannel].index;
+	}
+
+	selectionSize_ { |color|
+		display.do{ |msView,ind|
+			msView.selectionSize = color;
+		}
+	}
+	
+	selectionSize {
+		^display[activeGuiChannel].selectionSize;
+	}
+	
 }

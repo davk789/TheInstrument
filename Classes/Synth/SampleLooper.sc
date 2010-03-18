@@ -379,7 +379,7 @@ SampleLooper {
 		buffers[activeBufferIndex].zero;
 		this.drawWaveformView;
 	}
-	
+	// uhh... i forgot what the trigStart arg is supposed to be... duping the start point for now
 	setLoopRange { |start, end, trigStart|
 		var startMarker, endMarker;
 		if(waveformMarkerBar.value.size > 0){
@@ -412,12 +412,6 @@ SampleLooper {
 		loopMarkers = markers;
 	}
 	
-	zoomToAbs { |val|
-		var range;
-		range = currBufDisplayEnd - currBufDisplayStart;
-		^((val  * range) / currentBufferArray.size) + (currBufDisplayStart / currentBufferArray.size);
-	}
-
 	savePreset {
 		"need to have a save preset action here".postln;
 	}
@@ -564,7 +558,9 @@ SampleLooper {
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-		    .action_({ |obj| obj.currentvalue.postln; });
+		    .action_({ |obj| 
+		    	var start,end;
+		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
