@@ -26,27 +26,13 @@ SampleView {
 		^currentBuffer;
 	}
 	
-	buffer_ {
-		"setter disabled, use SampleView:setActiveBuffer(buffer) instead".warn;
+	buffer_ { |buf|
+		this.setBuffer(buf);
 	}
 	
 	setBuffer { |buf|
 		currentBuffer = buf;
 		this.setNewBuffer(currentBuffer);
-	}
-
-
-		
-	zoomToUnit { |val| // 0..1 version of zoomtoabs
-		var range;
-		range = displayValue[0].lastIndex;
-//		^((val  * range) / displayResolution) + (currBufDisplayStart / displayResolution);
-	}
-	
-	zoomToAbs { |val| // 0..bufferSize version
-		var range;
-//		range = currBufDisplayEnd - currBufDisplayStart;
-//		^((val  * range) / displayResolution) + (currBufDisplayStart / displayResolution);
 	}
 	
 	setZoom { |x, y|
@@ -72,7 +58,6 @@ SampleView {
 	}
 	
 	vZoom_ { |val| 
-		// NOT SCALED... for generic use, the input value needs to scaled by the caller
 		vZoom = max(val, 1);
 		numChannels.do{ |ind| display[ind].value = this.getVZoomForDisplay(displayValue[ind]); };
 	}

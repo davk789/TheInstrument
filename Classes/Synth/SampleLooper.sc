@@ -366,121 +366,6 @@ SampleLooper {
 		waveformMarkerBar.value = bufferMarkers[activeMarkerIndex];
 	}
 	
-	/*	drawWaveformView { |clearMarkerBar=true|
-		var ret, scale, lastIndex;
-		bufferSelectMenu.enabled_(false);
-		lastIndex = waveformDisplayResolution - 1;
-		scale = (buffers[activeBufferIndex].numFrames / waveformDisplayResolution).asInt;
-		Task.new({
-			waveformDisplayResolution.do{ |ind|
-				var bufferIndex;
-				bufferIndex = ind * scale * buffers[activeBufferIndex].numChannels;
-				Platform.case(
-					'linux', {
-						buffers[activeBufferIndex].get(bufferIndex, { |msg|
-							currentBufferArray[ind] = (msg * 0.5) + 0.5;
-						});
-					},
-					'osx', {
-						currentBufferArray[ind] = 1.0.rand;
-					}
-				);
-				0.0005.wait;
-			};
-
-			currBufDisplayStart = 0;
-			currBufDisplayEnd = currentBufferArray.size;
-
-			defer{
-				waveformView.value_(currentBufferArray);
-				waveformViewZoom.lo_(0).hi_(1);
-				waveformViewVZoom.value_(0);
-				/*if(clearMarkerBar){
-					waveformMarkerBar.clear;
-				};*/
-				waveformMarkerBar.zoom(0, 1);
-				bufferSelectMenu.enabled_(true);
-			};
-		}).play;
-		}*/
-	
-	drawWaveformView {
-		buffers[activeBufferIndex].loadToFloatArray(action:{ |array, buf|
-			defer{
-				var displayVal, unlaced, numChannels, zoom, minVal, maxVal;
-				numChannels = buf.numChannels;
-				unlaced = array.unlace(numChannels);
-				
-				minVal = array.minItem;
-				maxVal = array.maxItem;
-				
-				zoom = unlaced.first.size / waveformDisplayResolution;
-				
-				displayVal = [Array.newClear(waveformDisplayResolution), Array.newClear(waveformDisplayResolution)];
-				
-				this.refreshWaveformDisplay(numChannels);
-
-				unlaced.do{ |channelVal,channel|
-					waveformDisplayResolution.do{ |ind|
-						displayVal[channel][ind] = channelVal.blendAt(ind * zoom).linlin(minVal, maxVal, 0, 1);
-					}
-				};
-				
-				
-				displayVal.do{ |obj,ind|
-					waveformDisplay[ind].value = obj;
-				};
-				
-				[numChannels, minVal, maxVal, zoom, displayVal].postln;
-				postln("at the end of drawWaveformView");
-			}
-		});
-	}
-
-	refreshWaveformDisplay { |numChannels=1|
-		var width, height;
-		"refreshing wasveform display".postln;
-		height = 125 / numChannels;
-		if(waveformDisplay.notNil){
-			waveformDisplay.do{ |obj,ind|
-				obj.remove;
-			}
-		};
-		
-		"removed the waveform display".postln;
-		
-		waveformDisplay = Array.fill(numChannels, {
-			GUI.multiSliderView.new(waveformView, Rect.new(0, 0, 0, height))
-		        .background_(Color.grey(0.9))
-		        .strokeColor_(Color.blue(0.3))
-		        .drawLines_(true)
-		        .drawRects_(false)
-		        .elasticMode_(1)
-		        .value_([0.5, 0.5, 0.5])
-		        .editable_(false)
-		        .showIndex_(true)
-		        .selectionSize_(2)
-		        .startIndex_(0)
-		        .action_({ |obj|
-					var start,end;
-					start = this.zoomToAbs(obj.index / obj.value.size);
-					end = this.zoomToAbs((obj.selectionSize + obj.index) / obj.value.size);
-					[start, end].postln;
-					//this.setLoopRange(start, end, obj.currentvalue);
-			    })
-		        .mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) }); });
-		
-
-	}
-
-	drawWaveformViewOld {
-		buffers[activeBufferIndex].plot(
-			labels:false, 
-			parent:waveformView,
-			bounds:Rect.new(-5,-5,waveformView.bounds.width - 50.rand,waveformView.bounds.height - 50.rand)
-		);
-	}
-	
 	setWaveformVZoom { |amt|
 		waveformView.vZoom = waveformVZoomSpec.map(amt);
 	}
@@ -489,14 +374,6 @@ SampleLooper {
 		waveformMarkerBar.zoom = [start, range];
 		waveformView.zoom = [start, range];
 	}
-
-	/*	setWaveformZoom { |start,range| // 0..1 range
-		currBufDisplayStart = (start * currentBufferArray.size).asInt;
-		currBufDisplayEnd = (range * currentBufferArray.size).asInt;
-		waveformView.value = currentBufferArray[currBufDisplayStart..currBufDisplayEnd];
-		waveformMarkerBar.zoom(start, range);
-		this.setWaveformVZoom(waveformVZoomSpec.map(waveformViewVZoom.value));
-	}*/
 	
 	clearActiveBuffer {
 		buffers[activeBufferIndex].zero;
@@ -688,11 +565,7 @@ SampleLooper {
 		
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 		    .action_({ |obj| obj.currentvalue.postln; });
-		
-		//		waveformView = GUI.vLayoutView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-		//	.background_(Color.grey(0.9));
-		//this.refreshWaveformDisplay;
-
+		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
 			.background_(controlBackgroundColor)
 			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \h, 64, 0.5))
