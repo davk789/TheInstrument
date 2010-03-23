@@ -559,7 +559,12 @@ SampleLooper {
 		
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 		    .action_({ |obj| 
-		    	var start,end;
+		    	var start, end, bufferSize;
+		    	bufferSize = obj.currentBuffer.numFrames;
+		    	start = obj.sampleIndex / bufferSize;
+		    	end = (obj.sampleSelectionSize / bufferSize) + start;
+		    	[start,end].postln;
+		    	this.setLoopRange(start,end,start); // still need to figure out what I was thinking re: the third arg
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))

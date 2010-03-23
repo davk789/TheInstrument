@@ -1,5 +1,6 @@
 SampleView {
-	var currentBuffer, parent, <>bounds, displayStartSample=0, displayResolution, <numChannels=1, display, containerView, <>action, <>mouseUpAction,
+	var <currentBuffer, parent, <>bounds, zoomStart=0, zoomRange=1,
+		<displayResolution, <numChannels=1, display, containerView, <>action, <>mouseUpAction,
 	    bufferValue, displayValue, minSampleVal, maxSampleVal, activeGuiChannel=0, <vZoom=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
@@ -21,7 +22,7 @@ SampleView {
 		    .background_(Color.clear);
 		this.drawDisplay;
 	}
-	
+		
 	buffer {
 		^currentBuffer;
 	}
@@ -38,11 +39,13 @@ SampleView {
 	setZoom { |x, y|
 		var range, start;
 		range = (y - x).abs.min(1);
-		displayResolution = (range * bounds.width).floor;
-		displayStartSample = min(x, y) * bufferValue[0].size;
+		start = min(x, y);
+		zoomStart = start;
+		zoomRange = range;
 		this.updateDisplayValue;
 		displayValue.do{ |channelVal, index|
-			display[index].value = this.getVZoomForDisplay(displayValue[index]);
+			display[index].value = this.getVZoomValue(channelVal);
+			//display[index].value = (channelVal * vZoom).linlin(minSampleVal, maxSampleVal, 0, 1);
 		};
 	}
 	
@@ -51,29 +54,29 @@ SampleView {
 	}
 	
 	zoom {
-		var start, end;
-		start = displayStartSample / bufferValue[0].size;
-		end = (displayResolution / bounds.width) + start;
-		^[start, end];
+		// returns start and end points of the visible display area
+		^[zoomStart, zoomRange + zoomStart];
 	}
 	
-	vZoom_ { |val| 
+	vZoom_ { |val|
 		vZoom = max(val, 1);
-		numChannels.do{ |ind| display[ind].value = this.getVZoomForDisplay(displayValue[ind]); };
+		this.updateDisplayValue;
+		numChannels.do{ |ind|
+			display[ind].value = this.getVZoomValue(displayValue[ind]);
+		};
 	}
 	
-	getVZoomForDisplay { |val|
+	getVZoomValue { |val|
 		^((val - 0.5) * vZoom) + 0.5;
 	}
 	
 	updateDisplayValue {
 		displayValue = Array.fill(numChannels, { Array.newClear(displayResolution) });
-		
 		bufferValue.do{ |channelVal,channel|
 			displayResolution.do{ |ind|
 				var index;
-				index = (ind * displayResolution) + displayStartSample;
-				displayValue[channel][ind] = channelVal.blendAt(index).linlin(minSampleVal, maxSampleVal, 0, 1);
+				index = (ind * (channelVal.size / displayResolution) * zoomRange) + (zoomStart * channelVal.size);
+				displayValue[channel][ind] = channelVal.blendAt(index).linlin(minSampleVal,maxSampleVal, 0, 1);
 			}
 		};
 	}
@@ -88,8 +91,6 @@ SampleView {
 				
 				minSampleVal = array.minItem;
 				maxSampleVal = array.maxItem;
-				
-				resolution = bufferValue.first.size / displayResolution;
 				
 				this.updateDisplayValue;
 				this.drawDisplay(numChannels);
@@ -115,7 +116,7 @@ SampleView {
 		        .drawLines_(true)
 		        .drawRects_(false)
 		        .elasticMode_(1)
-		        .value_(displayValue[ind])
+		        .value_(this.getVZoomValue(displayValue[ind]))
 		        .editable_(false)
 		        .showIndex_(true)
 		        .selectionSize_(2)
@@ -135,6 +136,17 @@ SampleView {
 			obj.index = index;
 			obj.selectionSize = selectionSize;
 		};
+	}
+	
+	sampleIndex {
+		var displayRatio;
+		displayRatio = currentBuffer.numFrames / displayResolution;
+		^(display[activeGuiChannel].index * zoomRange * displayRatio) + (zoomStart * currentBuffer.numFrames);
+	}
+	
+	sampleSelectionSize {
+		var displayRatio = currentBuffer.numFrames / displayResolution;
+		^display[activeGuiChannel].selectionSize * displayRatio * zoomRange;
 	}
 	
 	// wrapper methods for SCMultiSliderView
@@ -163,6 +175,8 @@ SampleView {
 		^display[activeGuiChannel].background;
 	}
 	
+	// these methods refer to the gui element and will get and set erroneous data when the view is zoomed in
+	
 	index_ { |color|
 		display.do{ |msView,ind|
 			msView.index = color;
@@ -182,5 +196,6 @@ SampleView {
 	selectionSize {
 		^display[activeGuiChannel].selectionSize;
 	}
+	
 	
 }
