@@ -345,8 +345,9 @@ SampleLooper {
 		numChannels = buffers[activeBufferIndex].numChannels;
 
 		activeBufferIndex = sel;
-		playerParams['bufnum'] = recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
 		recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
+		playerParams['bufnum'] = buffers[activeBufferIndex].bufnum;
+//		postln("the bufnum is " ++ [playerParams['bufnum'], recorderParams['bufnum']]);
 		if(buffers[activeBufferIndex].numChannels != numChannels){
 			if(isPlaying || isRecording){
 				this.stop;
@@ -563,7 +564,6 @@ SampleLooper {
 		    	bufferSize = obj.currentBuffer.numFrames;
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
-		    	[start,end].postln;
 		    	this.setLoopRange(start,end,start); // still need to figure out what I was thinking re: the third arg
 		    });
 		    
