@@ -559,11 +559,16 @@ SampleLooper {
 		    .action_({ |obj| waveformMarkerBar.clear; });
 		
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
-		    .action_({ |obj| 
+			.mouseUpAction_({ |obj| 
+				postln("calling s.sendMsg(n_set, playerNodeNum, trig, 0); as a mouseUpAction");
+				s.sendMsg('n_set', playerNodeNum, 'trig', 0);
+			})
+		    .mouseDownAction_({ |obj| 
 		    	var start, end, bufferSize;
 		    	bufferSize = obj.currentBuffer.numFrames;
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
+		    	postln("calling this.setLoopRange(start,end,start); from the action");
 		    	this.setLoopRange(start,end,start); // still need to figure out what I was thinking re: the third arg
 		    });
 		    

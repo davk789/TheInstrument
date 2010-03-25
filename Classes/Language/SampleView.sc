@@ -1,6 +1,7 @@
 SampleView {
 	var <currentBuffer, parent, <>bounds, zoomStart=0, zoomRange=1,
-		<displayResolution, <numChannels=1, display, containerView, <>action, <>mouseUpAction,
+		<displayResolution, <numChannels=1, display, containerView, 
+		<>action, <>mouseUpAction, <>mouseDownAction, <>mouseMoveAction, <>mouseOverAction,
 	    bufferValue, displayValue, minSampleVal, maxSampleVal, activeGuiChannel=0, <vZoom=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
@@ -16,8 +17,12 @@ SampleView {
 		displayValue = Array.fill(numChannels, { Array.fill(displayResolution, {0.5}) });
 		// in addition there is bufferValue, which will not be set until a buffer is given to SampleView
 		// this is be the numeric represenatation of the current sample
-		action = { postln("default action " ++ this.curentvalue) };
-		mouseUpAction = { postln("default mouse up action " ++ this.currentvalue); }; //the obj arg should be accessible... strange
+		action = { postln("default action "/* ++ this.curentvalue*/) };
+		mouseUpAction = { postln("default mouse up action "/* ++ this.currentvalue*/); }; 
+		mouseDownAction = { postln("default mouse up action "/* ++ this.currentvalue*/); }; 
+		mouseOverAction = { postln("default mouse over action "/* ++ this.currentvalue*/); }; 
+		mouseMoveAction = { postln("default mouse move action "/* ++ this.currentvalue*/); }; 
+		
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
 		this.drawDisplay;
@@ -126,7 +131,11 @@ SampleView {
 					this.updateSelection(obj.index, obj.selectionSize);
 					action.value(this);
 			    })
-		        .mouseUpAction_({ |obj| mouseUpAction.value(this) });
+		        .mouseUpAction_({ |obj| mouseUpAction.value(this) })
+		        .mouseDownAction_({ |obj| mouseDownAction.value(this) })
+		        .mouseOverAction_({ |obj| mouseOverAction.value(this) })
+		        .mouseMoveAction_({ |obj| mouseMoveAction.value(this) });
+		        
 		})
 
 	}
