@@ -1,7 +1,7 @@
 SampleView {
 	var <currentBuffer, parent, <>bounds, zoomStart=0, zoomRange=1,
 		<displayResolution, <numChannels=1, display, containerView, 
-		<>action, <>mouseUpAction, <>mouseDownAction, <>mouseMoveAction, <>mouseOverAction,
+		<>action, <>mouseUpAction, <>mouseDownAction, <>mouseMoveAction, <>mouseOverAction, actionFilter=true,
 	    bufferValue, displayValue, minSampleVal, maxSampleVal, activeGuiChannel=0, <vZoom=1;
 	*new { |par,bnd|
 		^super.new.init_sampleview(par,bnd);
@@ -17,11 +17,11 @@ SampleView {
 		displayValue = Array.fill(numChannels, { Array.fill(displayResolution, {0.5}) });
 		// in addition there is bufferValue, which will not be set until a buffer is given to SampleView
 		// this is be the numeric represenatation of the current sample
-		action = { postln("default action "/* ++ this.curentvalue*/) };
+		action = { postln("default filtered action "/* ++ this.curentvalue*/) };
 		mouseUpAction = { postln("default mouse up action "/* ++ this.currentvalue*/); }; 
-		mouseDownAction = { postln("default mouse up action "/* ++ this.currentvalue*/); }; 
+		mouseDownAction = { postln("default mouse down action "/* ++ this.currentvalue*/); }; 
 		mouseOverAction = { postln("default mouse over action "/* ++ this.currentvalue*/); }; 
-		mouseMoveAction = { postln("default mouse move action "/* ++ this.currentvalue*/); }; 
+		mouseMoveAction = { postln("default mouse move action "/* ++ this.currentvalue*/); };
 		
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
@@ -129,15 +129,24 @@ SampleView {
 		        .action_({ |obj|
 		        	activeGuiChannel = ind;
 					this.updateSelection(obj.index, obj.selectionSize);
-					action.value(this);
+					// when (J)SCMultiSlderView is set to editable_(false), the action is called on mouseDown and mouseUp
+					// so it should be filtered when used as a soundfileview
+					if(actionFilter){
+						action.value(this);
+					};
 			    })
-		        .mouseUpAction_({ |obj| mouseUpAction.value(this) })
-		        .mouseDownAction_({ |obj| mouseDownAction.value(this) })
+			    // ... fortunately action is called after the respective mouseDownAction and mouseUpAction
+		        .mouseUpAction_({ |obj| 
+		        	mouseUpAction.value(this);
+		        	actionFilter = false;
+		        })
+		        .mouseDownAction_({ |obj| 
+		        	mouseDownAction.value(this);
+		        	actionFilter = true;
+		        })
 		        .mouseOverAction_({ |obj| mouseOverAction.value(this) })
 		        .mouseMoveAction_({ |obj| mouseMoveAction.value(this) });
-		        
 		})
-
 	}
 	
 	updateSelection { |index, selectionSize|

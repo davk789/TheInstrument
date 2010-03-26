@@ -112,9 +112,9 @@ Sampler { // container for one or more SampleLoopers
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
-	looper, <>ccFunction, <>sampler, numChannels, <viewBounds;
+	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp|
@@ -381,8 +381,8 @@ SampleLooper {
 		this.drawWaveformView;
 	}
 	// uhh... i forgot what the trigStart arg is supposed to be... duping the start point for now
-	setLoopRange { |start, end, trigStart|
-		var startMarker, endMarker;
+	setLoopRange { |start, end|
+		var startMarker, endMarker, loopStart;
 		if(waveformMarkerBar.value.size > 0){
 			startMarker = waveformMarkerBar.getIndexForLocation(start);
 			endMarker = waveformMarkerBar.getIndexForLocation(end) + 1;
@@ -390,7 +390,7 @@ SampleLooper {
 			waveformMarkerBar.setHighlightRange(startMarker, endMarker);
 		};
 		
-		this.setLoopPointParams(trigStart);
+		this.setLoopPointParams(start);
 		
 	}
 	
@@ -402,11 +402,19 @@ SampleLooper {
 		playerParams['start'] = highlightCoords['low'] ? 0;
 		playerParams['end'] = highlightCoords['high'] ? 1;
 
-		startPoint = start ? playerParams['start'];
+		if(jumpToMarker){
+			startPoint = playerParams['start'];
+		}{
+			startPoint = start;
+		};
 
 		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'start', playerParams['start'], 'end', playerParams['end']);
 		s.sendMsg('n_set', playerNodeNum, 'trig', 1);
 	
+	}
+	
+	setJumpToMarker { |choice|
+		jumpToMarker = choice;
 	}
 	
 	setMarkers { |markers|
@@ -462,20 +470,22 @@ SampleLooper {
 	}
 
 	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
+		postln("loading SynthDef");
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=0, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
 				inBus=1, recordOffset=0.1, gain=1;
 			
-			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, aTrig, kTrig, aSpeed;
+			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, kResetPos, aTrig, kTrig, aSpeed;
 	
 			kNumFrames = BufFrames.kr(bufnum);
 			kStart = kNumFrames * start;
 			kEnd = kNumFrames * end;
+			kResetPos = kNumFrames * resetPos;
 			
 			modSig = Lag.ar(InFeedback.ar(modBus) * modLev, modLag);
 			aSpeed = Lag.ar(K2A.ar(speed), 1);
-			outPhase = Phasor.ar(trig, aSpeed + modSig, kStart, kEnd, resetPos);
+			outPhase = Phasor.ar(trig, aSpeed + modSig, kStart, kEnd, kResetPos);
 			
 			outSig = BufRd.ar(numChan, bufnum, outPhase);
 			SynthDef.wrap(synthOutputs[numChan], nil, [outBus, outSig * gain]);
@@ -537,11 +547,19 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
 		
-		bufferSelectMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 280, 0))
+		bufferSelectMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 220, 0))
 			.background_(controlBackgroundColor)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.setActiveBuffer(obj.value); });
+		    
+		jumpToMarkerButton = GUI.button.new(bufferRow, Rect.new(0, 0, 85, 0))
+			.states_([
+					["jump to marker", Color.white, controlBackgroundColor],
+					["jump to marker", Color.blue(0.3), Color.white]
+			])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.setJumpToMarker(obj.value.toBool) });
 			
 		waveformControlView = GUI.compositeView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 180))
 			.background_(Color.black);
@@ -560,16 +578,14 @@ SampleLooper {
 		
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.mouseUpAction_({ |obj| 
-				postln("calling s.sendMsg(n_set, playerNodeNum, trig, 0); as a mouseUpAction");
 				s.sendMsg('n_set', playerNodeNum, 'trig', 0);
 			})
-		    .mouseDownAction_({ |obj| 
+		    .action_({  |obj|
 		    	var start, end, bufferSize;
 		    	bufferSize = obj.currentBuffer.numFrames;
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
-		    	postln("calling this.setLoopRange(start,end,start); from the action");
-		    	this.setLoopRange(start,end,start); // still need to figure out what I was thinking re: the third arg
+		    	this.setLoopRange(start,end);
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
