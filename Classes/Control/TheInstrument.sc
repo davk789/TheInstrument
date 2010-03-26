@@ -186,10 +186,10 @@ ThyInstrument {
 		
 		//monoInputChannel = MonoInputChannel.new(this);
 
-		//polySynth = WavetableSynthFilter.new(this);//, true); // enable midi thru
+		polySynth = WavetableSynthFilter.new(this);//, true); // enable midi thru
 //		polySynth = WavetableSynth.new(this);
 
-		//drumSynth = DrumSynth.new(this);
+		drumSynth = DrumSynth.new(this);
 				
 		Platform.case('osx', {
 			gravityGridPlayer = GravityGridPlayer.new(this);

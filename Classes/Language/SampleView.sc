@@ -17,11 +17,11 @@ SampleView {
 		displayValue = Array.fill(numChannels, { Array.fill(displayResolution, {0.5}) });
 		// in addition there is bufferValue, which will not be set until a buffer is given to SampleView
 		// this is be the numeric represenatation of the current sample
-		action = { postln("default filtered action "/* ++ this.curentvalue*/) };
-		mouseUpAction = { postln("default mouse up action "/* ++ this.currentvalue*/); }; 
-		mouseDownAction = { postln("default mouse down action "/* ++ this.currentvalue*/); }; 
-		mouseOverAction = { postln("default mouse over action "/* ++ this.currentvalue*/); }; 
-		mouseMoveAction = { postln("default mouse move action "/* ++ this.currentvalue*/); };
+		action = { nil; };
+		mouseUpAction = { nil; }; 
+		mouseDownAction = { nil; }; 
+		mouseOverAction = { nil; }; 
+		mouseMoveAction = { nil; };
 		
 		containerView = GUI.vLayoutView.new(parent,bounds)
 		    .background_(Color.clear);
@@ -214,6 +214,5 @@ SampleView {
 	selectionSize {
 		^display[activeGuiChannel].selectionSize;
 	}
-	
 	
 }

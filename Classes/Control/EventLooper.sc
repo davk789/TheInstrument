@@ -332,10 +332,10 @@ EventLooper {
 		};
 
 		switch( type,
-			0, {
+			0, { // monophonic
 				channels = channels.add(name -> EventLooperChannel.new(name, win));
 			},
-			1, {
+			1, { // polyphonic
 				channels = channels.add(name -> EventLooperChannel.new(name, win, group));
 			}
 		);

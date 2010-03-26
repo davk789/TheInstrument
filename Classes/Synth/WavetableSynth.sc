@@ -219,10 +219,10 @@ WavetableSynth {
 		this.setParams(preset);
 	}
 	initLooper {
-		postln("calling parent.eventLooper.addChannel(1, " ++ recorderID ++ "); from " ++ this.class.asString);
+		//postln("calling parent.eventLooper.addChannel(1, " ++ recorderID ++ "); from " ++ this.class.asString);
 		parent.eventLooper.addChannel(1, recorderID, instGroup);
 		parent.eventLooper.channels[recorderID].action = { |values,index|
-			postln("back to a function defined in WavetableSynth the values are " ++ values);
+			//postln("back to a function defined in WavetableSynth the values are " ++ values);
 			switch(values[0],
 				0, {
 					this.noteOn(values[1], values[2], values[3], values[4]);

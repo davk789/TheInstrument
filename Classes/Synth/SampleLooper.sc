@@ -1,6 +1,6 @@
 
 Sampler { // container for one or more SampleLoopers
-	var parent, <>win, activeMidiChannels, <>channels, <outBus,
+	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID,
 		controlView, midiButtons, crossfadeSlider, sampleScrollView, samplerChannelsView;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
@@ -11,6 +11,7 @@ Sampler { // container for one or more SampleLoopers
 		channels = Array.new;
 		midiButtons = Array.new;
 		activeMidiChannels = Array.new;
+		recorderID = "Sampler";
 		this.initGUI;
 		loopers.do{ |ind|
 			//postln("not adding channels atm");
@@ -67,6 +68,17 @@ Sampler { // container for one or more SampleLoopers
 		channels.do{ |obj,ind|
 			obj.outBus = outBus;
 		}
+	}
+	
+	initLooper {
+		parent.eventLooper.addChannel(0, recorderID);
+		parent.eventLooper.channels[recorderID].action = { |values,index|
+			[values,index].postln;
+		};
+	}
+	
+	looper { // is this a required member function?
+		^parent.eventLooper.channels[recorderID];
 	}
 	
 	initGUI {
