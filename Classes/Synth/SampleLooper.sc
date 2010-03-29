@@ -73,11 +73,42 @@ Sampler { // container for one or more SampleLoopers
 	initLooper {
 		parent.eventLooper.addChannel(0, recorderID);
 		parent.eventLooper.channels[recorderID].action = { |values,index|
-			[values,index].postln;
+			switch(values[0],
+				0, {
+					// jump to location
+				},
+				1, {
+					// play
+				},
+				2, {
+					// pause
+				},
+				3, {
+					// stop
+				},
+				4, {
+					// back
+				},
+				5, {
+					// forward
+				},
+				6, {
+					// mod lag
+				},
+				7, {
+					// mod level
+				},
+				8, {
+					// speed
+				},
+				9, {
+					// gain
+				}
+			);
 		};
 	}
 	
-	looper { // is this a required member function?
+	looper { // in case it's called from the top-level ThyInstrument class
 		^parent.eventLooper.channels[recorderID];
 	}
 	
