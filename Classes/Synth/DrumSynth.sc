@@ -516,6 +516,10 @@ DrumSynth {
 		if(voice.notNil){
 			drums[voice].hit(vel / 127);
 		};
+		if(this.looper.notNil){
+			this.looper.addEvent([num, vel]);
+		};
+
 	}
 
 	cc { |src,chan,num,val|

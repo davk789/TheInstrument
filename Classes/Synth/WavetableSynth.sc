@@ -392,6 +392,9 @@ WavetableSynth {
 		if(midiThru){
 			midiOut.noteOn(1, num, vel);
 		};
+		if(this.looper.notNil){
+			this.looper.addEvent([0,src,chan,num,vel]);
+		};
 	}
 	
 	noteOff { |src,chan,num,vel|
@@ -410,6 +413,10 @@ WavetableSynth {
 		}{
 			postln("The EventLooper is dropping the first note of the sequence now, but at least it basically works.");
 		};
+		if(this.looper.notNil){
+			this.looper.addEvent([1,src,chan,num,0]);
+		};
+
 	}
 	
 	handleMIDI { |controls,value|
@@ -442,15 +449,25 @@ WavetableSynth {
 	
 	bend { |src,chan,val|
 		this.handleMIDI(modulatorSources['bend'], val / 16384);
+		if(this.looper.notNil){
+			this.looper.addEvent([4,src,chan,val]);
+		};
+
 	}
 	
 	afterTouch { |src,chan,val|
 		this.handleMIDI(modulatorSources['aftertouch'], val / 127);
+		if(this.looper.notNil){
+			this.looper.addEvent([3,src,chan,val]);
+		};
 	}
 	
 	cc { |src,chan,num,val|
 		if(midiCCSources[num].notNil){
 			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
+		};
+		if(this.looper.notNil){
+			this.looperHandleCC(src,chan,num,val);
 		};
 	}
 	initGUI {

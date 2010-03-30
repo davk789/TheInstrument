@@ -75,7 +75,7 @@ Sampler { // container for one or more SampleLoopers
 		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				0, {
-					// jump to location
+					// jump to location aka SampleView.action
 				},
 				1, {
 					// play
@@ -108,7 +108,7 @@ Sampler { // container for one or more SampleLoopers
 		};
 	}
 	
-	looper { // in case it's called from the top-level ThyInstrument class
+	looper { // shortcut for local usage
 		^parent.eventLooper.channels[recorderID];
 	}
 	
@@ -629,6 +629,9 @@ SampleLooper {
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
 		    	this.setLoopRange(start,end);
+		    	if(this.looper.notNil){
+		    		this.looper.addEvent([0,start,end]); // something liek dis
+		    	};
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))

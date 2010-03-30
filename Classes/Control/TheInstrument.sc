@@ -46,9 +46,8 @@ ThyInstrument {
 	}
 	
 	*createFilters {
-	/*  filterSpecs and filterUGens are both called by this.setFilterType(sel)
-		and so all keys must match between these two Dictionaries. Also, it's fairly gnarly having ugen code in
-		my object launcher */
+	/*  filterSpecs and filterUGens are shared by WavetableSynthFilter and by Filter... this is why the functions
+		are in the "global" namespace */
 		filterUGens = Dictionary[
 			"RLPF" -> { |in, freq, rez| RLPF.ar(in, freq, rez.reciprocal); },
 			"RHPF" -> { |in, freq, rez| RHPF.ar(in, freq, rez.reciprocal); },
@@ -98,57 +97,35 @@ ThyInstrument {
 			switch(chan,
 				0, { // WavetableSynth
 					polySynth.noteOn(src, chan, num, vel);
-					if(polySynth.looper.notNil){
-						polySynth.looper.addEvent([0,src,chan,num,vel]);
-					};
 				},
 				9, { // DrumSynth
 					drumSynth.noteOn(src, chan, num, vel);
-					if(drumSynth.looper.notNil){
-						drumSynth.looper.addEvent([num, vel]);
-					};
 				}
 			);
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			if(chan == 0){
 				polySynth.noteOff(src,chan,num,vel);
-				if(polySynth.looper.notNil){
-					polySynth.looper.addEvent([1,src,chan,num,0]);
-				};
 			};
 		};
 		bendFunction = { |src,chan,val|
 			polySynth.bend(src,chan,val);
-			if(polySynth.looper.notNil){
-				polySynth.looper.addEvent([4,src,chan,val]);
-			};
 		};
 		ccFunction = { |src,chan,num,val|
 			switch(chan,
 				0, { // WavetableSynth
 					polySynth.cc(src,chan,num,val);
-					if(polySynth.looper.notNil){
-						polySynth.looperHandleCC(src,chan,num,val);
-					};
 				},
 				1, {  // Sampler
-					postln(["inside 1 in switch",src,chan,num,val]);
 					sampler.cc(src,chan,num,val);
-					/*if(sampler.looper.notNil){ // not supporting command sequencing here yet
-						sampler.looper.addEvent([src,chan,num,vel]);
-					};*/
 				},
 				9, { // DrumSynth
-					drumSynth.cc(src, chan, num, val);	
+					drumSynth.cc(src, chan, num, val);
 				}
 			);
 		};
 		touchFunction = { |src,chan,val|
 			polySynth.afterTouch(src,chan,val);
-			if(polySynth.looper.notNil){
-				polySynth.looper.addEvent([3,src,chan,val]);
-			};
 		};
 	}
 	
@@ -215,7 +192,7 @@ ThyInstrument {
 	
 	*useComputerKeyboard { |create=true|
 		if(create){
-			keyControl = QuickKeyboard.new(this);
+			keyControl = QuickKeyboard.new(this); // this is a really ugly class
 		}{
 			keyControl = nil;
 		};
