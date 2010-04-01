@@ -19,6 +19,7 @@ Sampler { // container for one or more SampleLoopers
 		};
 		this.addMixerChannel;
 		this.useKeyboard;
+		this.initLooper;
 	}
 	
 	useKeyboard { // this should automatically generate keys based on the number samplers
@@ -35,7 +36,7 @@ Sampler { // container for one or more SampleLoopers
 	}
 	
 	addChannel { |num|
-		channels = channels.add(SampleLooper.new(parent, this));
+		channels = channels.add(SampleLooper.new(parent, this, channels.size));
 		//win.bounds = Rect.new(win.bounds.left, win.bounds.top, 830, channels.size * 270);
 		samplerChannelsView.bounds = Rect.new(
 			samplerChannelsView.bounds.left, 
@@ -75,6 +76,7 @@ Sampler { // container for one or more SampleLoopers
 		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				0, {
+					channels[values[1]].setLoopRange(values[2], values[3]);
 					// jump to location aka SampleView.action
 				},
 				1, {
@@ -155,18 +157,19 @@ Sampler { // container for one or more SampleLoopers
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
-	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false;
+	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
 	// GUI objects
 	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
-	*new { |par,samp|
-		^super.new.init_samplelooper(par,samp);
+	*new { |par,samp,chan|
+		^super.new.init_samplelooper(par,samp,chan);
 	}
 	
-	init_samplelooper { |par,samp|
+	init_samplelooper { |par,samp,chan=0|
 		parent  = par;
 		sampler = samp;
+		channelID = chan;
 		s       = Server.default;
 		playerNodeNum = s.nextNodeID;
 		recorderNodeNum = s.nextNodeID;
@@ -630,7 +633,7 @@ SampleLooper {
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
 		    	this.setLoopRange(start,end);
 		    	if(this.looper.notNil){
-		    		this.looper.addEvent([0,start,end]); // something liek dis
+		    		this.looper.addEvent([0,channelID,start,end]); // something liek dis
 		    	};
 		    });
 		    
