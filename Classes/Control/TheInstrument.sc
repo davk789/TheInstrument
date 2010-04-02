@@ -159,7 +159,7 @@ ThyInstrument {
 		// Instrument classes
 		mixer = Mixer.new(this);
 				
-		eventLooper = EventLooper.new(this);
+		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the "global" namespace??
 		
 		//monoInputChannel = MonoInputChannel.new(this);
 

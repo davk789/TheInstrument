@@ -1,6 +1,6 @@
 
 Sampler { // container for one or more SampleLoopers
-	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID,
+	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID, <looperCommands,
 		controlView, midiButtons, crossfadeSlider, sampleScrollView, samplerChannelsView;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
@@ -12,6 +12,19 @@ Sampler { // container for one or more SampleLoopers
 		midiButtons = Array.new;
 		activeMidiChannels = Array.new;
 		recorderID = "Sampler";
+		looperCommands = [ // this is an array that wishes it was an enum
+			'loopRange',
+			'play',
+			'pause',
+			'stop',
+			'back',
+			'forward',
+			'modLag',
+			'modLevel',
+			'speed',
+			'gain'
+		];
+		
 		this.initGUI;
 		loopers.do{ |ind|
 			//postln("not adding channels atm");
@@ -75,36 +88,37 @@ Sampler { // container for one or more SampleLoopers
 		parent.eventLooper.addChannel(0, recorderID);
 		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
-				0, {
-					channels[values[1]].setLoopRange(values[2], values[3]);
-					// jump to location aka SampleView.action
+				looperCommands.indexOf('loopRange'), {
+					defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
+					// SampleView.action
 				},
-				1, {
-					// play
+				looperCommands.indexOf('play'), {
+					channels[values[1]].play; 
+					channels[values[1]].playButton.value = 1; 
 				},
-				2, {
-					// pause
+				looperCommands.indexOf('pause'), {
+					channels[values[1]].pause(values[2].toBool);
 				},
-				3, {
-					// stop
+				looperCommands.indexOf('stop'), {
+					channels[values[1]].stop;
 				},
-				4, {
-					// back
+				looperCommands.indexOf('back'), {
+					channels[values[1]].back;
 				},
-				5, {
-					// forward
+				looperCommands.indexOf('forward'), {
+					channels[values[1]].forward;
 				},
-				6, {
-					// mod lag
+				looperCommands.indexOf('modLag'), {
+					channels[values[1]].setModLag(values[2]);
 				},
-				7, {
-					// mod level
+				looperCommands.indexOf('modLevel'), {
+					channels[values[1]].setModLevel(values[2]);
 				},
-				8, {
-					// speed
+				looperCommands.indexOf('speed'), {
+					channels[values[1]].setSpeed(values[2]);
 				},
-				9, {
-					// gain
+				looperCommands.indexOf('gain'), {
+					channels[values[1]].setGain(values[2]);
 				}
 			);
 		};
@@ -156,10 +170,10 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <buffers, <bufferMarkers, <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false,
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false, looperCommands,
 	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp,chan|
@@ -201,6 +215,8 @@ SampleLooper {
 		currentBufferArray = Array.fill(waveformDisplayResolution, { 0.5 });
 		currBufDisplayStart = 0;
 		currBufDisplayEnd = currentBufferArray.last;
+		looperCommands = sampler.looperCommands;
+		
 		loopMarkers = Array.new;
 		ccFunction = { |src,chan,num,val|
 			defer{
@@ -210,19 +226,24 @@ SampleLooper {
 					},
 					21, {
 						this.back;
+						this.addLooperEvent('back');
 					},
 					22, {
 						this.forward;
+						this.addLooperEvent('forward');
 					},
 					23, {
 						this.stop;
+						this.addLooperEvent('stop');
 					},
 					24, {
 						this.play;
 						playButton.value_(1);
+						this.addLooperEvent('play');
 					},
 					25, {
 						this.record(isRecording.not); // toggles isRecording in this function
+						// record function should not automate for now
 						recordButton.value_(isRecording.toInt); 
 					}
 				);
@@ -245,6 +266,12 @@ SampleLooper {
 		];
 		s.sendMsg('g_new', groupNum, 0, 1);
 
+	}
+	
+	addLooperEvent { |command,args| // this needs the .. args thing.. i need to figure it out
+	   	if(sampler.looper.notNil){
+	   		sampler.looper.addEvent([looperCommands.indexOf('command'),channelID] ++ args);
+	   	};
 	}
 	
 	outBus {
@@ -632,9 +659,7 @@ SampleLooper {
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
 		    	this.setLoopRange(start,end);
-		    	if(this.looper.notNil){
-		    		this.looper.addEvent([0,channelID,start,end]); // something liek dis
-		    	};
+		    	this.addLoopEvent('loopRange', start, end);
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
@@ -673,12 +698,18 @@ SampleLooper {
 				[">", Color.black, Color.green]
 			])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.play(obj.value.toBool); });
+		    .action_({ |obj| 
+		    	this.play(obj.value.toBool); 
+		    	this.addLooperEvent('play');
+		    });
 
 		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
 			.states_([[">>", Color.white, controlBackgroundColor]])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.forward; })
+		    .action_({ |obj| 
+		    	this.forward; 
+		    	this.addLooperEvent('forward');
+		    })
 			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 		    
@@ -688,14 +719,18 @@ SampleLooper {
 				["||", Color.black, Color.yellow]
 			])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.pause(obj.value.toBool); });
+		    .action_({ |obj| 
+		    	this.pause(obj.value.toBool);
+		    	this.addLooperEvent('pause', obj.value.toBool);
+		    });
 		    
 		stopButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([["[]", Color.white(0.8), controlBackgroundColor]])
 		    .font_(parent.strongFont)
-		    .action_({ |obj| this.stop; });
-		
-
+		    .action_({ |obj| 
+		    	this.stop; 
+				this.addLooperEvent('stop');
+		    });
 		
 		controlColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 200, 238));
 		
@@ -734,7 +769,10 @@ SampleLooper {
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.stringColor_(Color.white)
 			.background_(controlBackgroundColor)
-			.knobAction_({ |obj| this.setModLevel(obj.value); });
+			.knobAction_({ |obj| 
+				this.setModLevel(obj.value);
+				this.addLooperEvent('modLevel', obj.value);
+			});
 		modLagKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lag")
 			.background_(controlBackgroundColor)
 			.spec_([0, 1].asSpec)
@@ -742,7 +780,10 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setModLag(obj.value); });
+			.knobAction_({ |obj| 
+				this.setModLag(obj.value);
+				this.addLooperEvent('modLag', obj.value);
+		});
 		speedKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "speed")
 			.spec_([-4, 4].asSpec)
 			.value_(1)
@@ -750,7 +791,10 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setSpeed(obj.value); });
+			.knobAction_({ |obj| 
+				this.setSpeed(obj.value);
+				this.addLooperEvent('speed', obj.value);
+			});
 		gainKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "gain")
 			.spec_([0, 4].asSpec)
 			.value_(1)
@@ -758,7 +802,10 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setGain(obj.value); });
+			.knobAction_({ |obj| 
+				this.setGain(obj.value);
+				this.addLooperEvent('gain', obj.value);
+			});
 
 
 		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
