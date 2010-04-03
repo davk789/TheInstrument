@@ -99,6 +99,7 @@ Sampler { // container for one or more SampleLoopers
 				},
 				looperCommands.indexOf('pause'), {
 					channels[values[1]].pause(values[2].toBool);
+					defer{ channels[values[1]].pauseButton.value = channels[values[1]].pauseButton.value + 1 % 2; };
 				},
 				looperCommands.indexOf('stop'), {
 					defer{ channels[values[1]].stop; };
