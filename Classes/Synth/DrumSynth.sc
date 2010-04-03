@@ -132,7 +132,7 @@ DSKlunk : DSBase {
 				.knobColor_(rezKnobColors)
 				.value_(rezParams['pan'])
 				.stringColor_(Color.yellow)
-				.knobAction_({ |obj| this.setRezParam('lev', obj.value); })
+				.knobAction_({ |obj| this.setRezParam('pan', obj.value); })
 		];
 		drumControls = Dictionary[
 			'att' -> EZJKnob.new(view, Rect.new(0, 0, 30, 60), "att")

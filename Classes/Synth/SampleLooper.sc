@@ -1,6 +1,6 @@
 
 Sampler { // container for one or more SampleLoopers
-	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID, <looperCommands,
+	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID, <looperCommands, keyActions,
 		controlView, midiButtons, crossfadeSlider, sampleScrollView, samplerChannelsView;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
@@ -12,7 +12,7 @@ Sampler { // container for one or more SampleLoopers
 		midiButtons = Array.new;
 		activeMidiChannels = Array.new;
 		recorderID = "Sampler";
-		looperCommands = [ // this is an array that wishes it was an enum
+		looperCommands = [ // i wish this was an enum
 			'loopRange',
 			'play',
 			'pause',
@@ -24,28 +24,29 @@ Sampler { // container for one or more SampleLoopers
 			'speed',
 			'gain'
 		];
+		keyActions = Dictionary.new;
 		
 		this.initGUI;
 		loopers.do{ |ind|
-			//postln("not adding channels atm");
+			var keyNum;
 			this.addChannel(ind);
+			if(ind < 10){
+				keyNum = (ind + 1) % 10;
+				keyActions = keyActions.add( 
+					("$" ++ keyNum).interpret -> { 
+						ind.postln;
+						midiButtons[ind].valueAction_(activeMidiChannels.includes(ind).not.toInt);
+					} 
+				);
+			};
 		};
 		this.addMixerChannel;
 		this.useKeyboard;
 		this.initLooper;
 	}
 	
-	useKeyboard { // this should automatically generate keys based on the number samplers
-		GUI.view.globalKeyDownAction = { |obj,char,mod,unic,keyc|
-			char.switch(
-				$1, { midiButtons[0].valueAction_(activeMidiChannels.includes(0).not.toInt); },
-				$2, { midiButtons[1].valueAction_(activeMidiChannels.includes(1).not.toInt); },
-				$3, { midiButtons[2].valueAction_(activeMidiChannels.includes(2).not.toInt); },
-				$4, { midiButtons[3].valueAction_(activeMidiChannels.includes(3).not.toInt); }//,
-				//$5, { midiButtons[4].valueAction_(activeMidiChannels.includes(4).not.toInt); },
-				//$6, { midiButtons[5].valueAction_(activeMidiChannels.includes(5).not.toInt); }
-			);			
-		};
+	useKeyboard {
+		GUI.view.globalKeyDownAction = { |obj,char,mod,unic,keyc| keyActions[char].value; };
 	}
 	
 	addChannel { |num|
@@ -94,19 +95,19 @@ Sampler { // container for one or more SampleLoopers
 				},
 				looperCommands.indexOf('play'), {
 					channels[values[1]].play; 
-					channels[values[1]].playButton.value = 1; 
+					defer{ channels[values[1]].playButton.value = 1; };
 				},
 				looperCommands.indexOf('pause'), {
 					channels[values[1]].pause(values[2].toBool);
 				},
 				looperCommands.indexOf('stop'), {
-					channels[values[1]].stop;
+					defer{ channels[values[1]].stop; };
 				},
 				looperCommands.indexOf('back'), {
-					channels[values[1]].back;
+					defer{ channels[values[1]].back; };
 				},
 				looperCommands.indexOf('forward'), {
-					channels[values[1]].forward;
+					defer{ channels[values[1]].forward; };
 				},
 				looperCommands.indexOf('modLag'), {
 					channels[values[1]].setModLag(values[2]);
@@ -268,9 +269,9 @@ SampleLooper {
 
 	}
 	
-	addLooperEvent { |command,args| // this needs the .. args thing.. i need to figure it out
+	addLooperEvent { |command...args|
 	   	if(sampler.looper.notNil){
-	   		sampler.looper.addEvent([looperCommands.indexOf('command'),channelID] ++ args);
+	   		sampler.looper.addEvent([looperCommands.indexOf(command),channelID] ++ args);
 	   	};
 	}
 	
@@ -659,7 +660,7 @@ SampleLooper {
 		    	start = obj.sampleIndex / bufferSize;
 		    	end = (obj.sampleSelectionSize / bufferSize) + start;
 		    	this.setLoopRange(start,end);
-		    	this.addLoopEvent('loopRange', start, end);
+		    	this.addLooperEvent('loopRange', start, end);
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))

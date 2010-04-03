@@ -7,22 +7,13 @@
 	    some of the filters need extra parameters/different settings
 	EventLooper
 	    the first noteOn of the sequence gets dropped on playback
-	DrumSynth
-		Klunk resonators -- pan doesn't work
-	SampleLooper
-		key switched should automatically be generated based on number of channels  (not hard coded)
-		
-
-		
 
 	TODO:
 	window management for synths
 	WavetableSynth - modulation amounts should add to the visible params
 	Sampler  
 	 - figure out some way to use CCs that can work with the wavetable synth
-	 - make the waveform controls jump to the clicked/region-delimited point
 	 - preset support -- save temp buffers, 
-	 - EventLooper support
 	 - "Quick Loop" handle levels/fade-in for laying down a single loop
 	 - loops shorter than the full sample length should not click on loop
 	EventLooper
@@ -172,7 +163,7 @@ ThyInstrument {
 			gravityGridPlayer = GravityGridPlayer.new(this);
 		});
 
-		sampler = Sampler.new(this, 4);
+		sampler = Sampler.new(this, 8);
 		
 	}
 	

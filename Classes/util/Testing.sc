@@ -10,15 +10,17 @@ TestClass {
 		privateDataA = "hello";
 		privateDataB = "number 2";
 		server = Server.default;
-		action = { |obj| "default action".postln; };
+/*		action = { |obj| "default action".postln; };
 		GUI.button.new(parent, bounds)
 		    .states_([["x", Color.red, Color.black]])
 		    .action_({ |obj|
 				action.value(this);
-			});
+			});*/
 	}
 
-	
+	getMultiArgs { |firstArg ... args|
+		postln("here is the firstArg: " ++ firstArg ++ " and now the rest: " ++ args);
+	}
 	
 	getBufferValues {
 		1024.do{ |ind|
