@@ -141,11 +141,14 @@ WavetableSynth {
 
 	}
 	getParams  {
+		// outBus should not be changed when the preset is loaded
 		^[instGroup, outBus, peakA, peakB, peakC, bufferA, bufferB, att, dec, sus, rel, trigMode, xfade, fbLag, fbMul, freq2, fmAmt, fbMulEnvFlag, freq2EnvFlag, envScale, pitchBend, partialAFreqs.value, partialAAmps.value, partialBFreqs.value, partialBAmps.value, waveformDraw.value, targetAButton.value, targetBButton.value, xFadeMenu.value, fbMulMenu.value, freq2Menu.value, fm2Menu.value, syncModeMenu.value, xfadeKnob.value, fbLagKnob.value, fbMulKnob.value, freq2Knob.value, fm2Knob.value, envelopeView.value, bendButton.value, fbMulEnvButton.value, freq2EnvButton.value, fm2EnvButton.value, envScaleSlider.value];
 	}
 	setParams { |values|
 		instGroup = values[0];
-		outBus = values[1];
+		// ... so, I'll add this crummy workaround since the preset stuff was coded so badly here
+		// TODO !!! must make the WavetableSynth load and save presets sensibly !!!
+		//outBus = values[1];
 		peakA = values[2];
 		peakB = values[3];
 		peakC = values[4];
@@ -489,6 +492,7 @@ WavetableSynth {
 			.states_([["save", Color.black, Color.green]])
 			.action_({ |obj| this.setSave(presetNameField.string); });
 		presetNameField = GUI.textField.new(presetRow, Rect.new(0, 0, 75, 0))
+		    .string_("<>")
 			.action_({ |obj| this.savePreset(obj.string); });
 		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 230, 0))
 			.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last; })
