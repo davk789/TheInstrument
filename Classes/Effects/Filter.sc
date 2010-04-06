@@ -42,7 +42,7 @@ SimpleFilter : EffectBase {
 			var aIn, aScaleIn, aModIn, aFreq, aSig, aOutMix, aEnv;
 			aIn = In.ar(bus);
 			aScaleIn = (aIn * gain).softclip;
-			aModIn = Lag.ar(In.ar(modBus), modLag) * modAmt;
+			aModIn = Lag.ar(In.ar(modBus), modLag) * modAmt * freq;
 			aFreq = Lag.ar(freq + aModIn, 1);
 			aSig = SynthDef.wrap(filter, Array.fill(filter.numArgs, {0}), [aIn, aFreq, resonance]);
 			aOutMix = (aIn * (mix - 1).abs) + (aSig * mix);
@@ -124,7 +124,7 @@ SimpleFilter : EffectBase {
 			paramControls = paramControls.add(
 				'modAmt' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mod")
 					.value_(startParams['modAmt'])
-					.spec_([0, 300, 6].asSpec)
+					.spec_([0, 100, 6].asSpec)
 					.knobAction_({ |val| this.setModAmt(val); })
 					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
 					.stringColor_(Color.white)

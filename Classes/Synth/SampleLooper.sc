@@ -34,7 +34,7 @@ Sampler { // container for one or more SampleLoopers
 			if(ind < 10){
 				keyNum = (ind + 1) % 10;
 				keyActions = keyActions.add( 
-					("$" ++ keyNum).interpret -> { 
+					("\$" ++ keyNum).interpret -> { 
 						ind.postln;
 						midiButtons[ind].valueAction_(activeMidiChannels.includes(ind).not.toInt);
 					} 
