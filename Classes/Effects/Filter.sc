@@ -28,7 +28,7 @@ SimpleFilter : EffectBase {
 			'filterType' -> "RLPF"
 		];
 		this.setGUIControls;
-		this.startSynth;
+//		this.startSynth;
 		this.setFilterType("MoogVCF");
 	}
 	

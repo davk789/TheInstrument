@@ -14,6 +14,7 @@ Sampler { // container for one or more SampleLoopers
 		recorderID = "Sampler";
 		looperCommands = [ // i wish this was an enum
 			'loopRange',
+			'loopRangeRelease',
 			'play',
 			'pause',
 			'stop',
@@ -92,6 +93,9 @@ Sampler { // container for one or more SampleLoopers
 				looperCommands.indexOf('loopRange'), {
 					defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
 					// SampleView.action
+				},
+				looperCommands.indexOf('loopRangeRelease'), {
+					channels[values[1]].server.sendMsg('n_set', channels[values[1]].playerNodeNum, 'trig', 0);
 				},
 				looperCommands.indexOf('play'), {
 					channels[values[1]].play; 
@@ -175,7 +179,7 @@ SampleLooper {
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false, looperCommands,
 	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp,chan|
@@ -193,7 +197,7 @@ SampleLooper {
 		bufferMarkers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
 		viewBounds = Rect.new(0, 0, 812, 245);
-		playerParams  = Dictionary[
+		playerParams = Dictionary[
 			'bufnum'       -> -1, 
 			'speed'        -> 1, 
 			'start'        -> 0, 
@@ -203,7 +207,9 @@ SampleLooper {
 			'modBus'       -> 20, 
 			'modLag'       -> 0.2, 
 			'modLev'       -> 0,
-			'inBus'        -> 1
+			'inBus'        -> 1,
+			'gain'		   -> 1,
+			'pan'		   -> 0
 		];
 		recorderParams = Dictionary[
 			'bufnum'       -> -1, 
@@ -252,8 +258,8 @@ SampleLooper {
 			};
 		};
 		synthOutputs = Dictionary[
-			1 -> { |bus,sig| Out.ar(bus, Pan2.ar(sig, 0)); },
-			2 -> { |bus,sig| Out.ar(bus, sig); }
+			1 -> { |bus,sig,pan=0| Out.ar(bus, Pan2.ar(sig, pan)); },
+			2 -> { |bus,sig,pan=0| Out.ar(bus, Balance2.ar(sig, pan)); }
 		];
 		synthInputs = Dictionary[
 			1 -> { |bus, phase, bufnum, inLev, preLev, stereo, env| 
@@ -270,9 +276,13 @@ SampleLooper {
 
 	}
 	
+	server {
+		^s;
+	}
+	
 	addLooperEvent { |command...args|
 	   	if(sampler.looper.notNil){
-	   		sampler.looper.addEvent([looperCommands.indexOf(command),channelID] ++ args);
+	   		sampler.looper.addEvent([looperCommands.indexOf(command), channelID] ++ args);
 	   	};
 	}
 	
@@ -528,6 +538,11 @@ SampleLooper {
 		playerParams['gain'] = val;
 		s.sendMsg('n_set', playerNodeNum, 'gain', playerParams['gain']);
 	}
+	
+	setPan { |val| 
+		playerParams['pan'] = val;
+		s.sendMsg('n_set', playerNodeNum, 'pan', playerParams['pan']);
+	}
 
 	setInputSource { |sel|
 		recorderParams['inBus'] = sel;
@@ -549,7 +564,7 @@ SampleLooper {
 		SynthDef.new( "SampleLooperPlayer", {
 			arg bufnum, speed=1, start=0, end=1, outBus=0, trig=0, resetPos=0, 
 				modBus=20, modLag=0.2, modLev=0,
-				inBus=1, recordOffset=0.1, gain=1;
+				inBus=1, recordOffset=0.1, gain=1, pan=0;
 			
 			var outPhase, outSig, kNumFrames, modSig, kStart, kEnd, kResetPos, aTrig, kTrig, aSpeed;
 	
@@ -563,7 +578,7 @@ SampleLooper {
 			outPhase = Phasor.ar(trig, aSpeed + modSig, kStart, kEnd, kResetPos);
 			
 			outSig = BufRd.ar(numChan, bufnum, outPhase);
-			SynthDef.wrap(synthOutputs[numChan], nil, [outBus, outSig * gain]);
+			SynthDef.wrap(synthOutputs[numChan], nil, [outBus, outSig * gain, pan]);
 			aTrig = ((outPhase - kStart) * -1) + ((kEnd - kStart) * 0.5);
 			kTrig = A2K.kr(aTrig);
 
@@ -654,6 +669,7 @@ SampleLooper {
 		waveformView = SampleView.new(waveformControlView, Rect.new(0, 0, 565, 125))
 			.mouseUpAction_({ |obj| 
 				s.sendMsg('n_set', playerNodeNum, 'trig', 0);
+				this.addLooperEvent('loopRangeRelease');
 			})
 		    .action_({  |obj|
 		    	var start, end, bufferSize;
@@ -797,6 +813,35 @@ SampleLooper {
 				this.setSpeed(obj.value);
 				this.addLooperEvent('speed', obj.value);
 			});
+
+
+		inputSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
+ 		    .items_(parent.audioBusRegister.keys.asArray)
+			.background_(controlBackgroundColor)
+		    .font_(parent.controlFont)
+			.stringColor_(Color.yellow)
+		    .action_({ |obj| this.setInputSource(parent.audioBusRegister[obj.item]); });
+		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
+            .string_("rec")
+            .stringColor_(Color.yellow);		    
+		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
+			.spec_([0, 1].asSpec)
+			.value_(1)
+			.stringColor_(Color.yellow)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.yellow, Color.yellow.alpha_(0.1), Color.yellow])
+			.knobAction_({ |obj| this.setInputLevel(obj.value); });
+		preLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "pre lev")
+			.spec_([0, 1].asSpec)
+			.value_(0)
+			.stringColor_(Color.yellow)
+		    .font_(parent.controlFont)
+			.background_(controlBackgroundColor)
+			.knobColor_([Color.clear, Color.yellow, Color.yellow.alpha_(0.1), Color.yellow])
+			.knobAction_({ |obj| this.setPreLevel(obj.value); });
+		GUI.staticText.new(controlView, Rect.new(0, 0, 10, 73))
+            .string_("");
 		gainKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "gain")
 			.spec_([0, 4].asSpec)
 			.value_(1)
@@ -808,33 +853,17 @@ SampleLooper {
 				this.setGain(obj.value);
 				this.addLooperEvent('gain', obj.value);
 			});
-
-
-		GUI.staticText.new(controlView, Rect.new(0, 0, 40, 20))
-            .string_("in")
-		    .stringColor_(Color.white);
-		inputSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
- 		    .items_(parent.audioBusRegister.keys.asArray)
-			.background_(controlBackgroundColor)
-		    .font_(parent.controlFont)
-			.stringColor_(Color.white)
-		    .action_({ |obj| this.setInputSource(parent.audioBusRegister[obj.item]); });
-		inputLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "in lev")
-			.spec_([0, 1].asSpec)
-			.value_(1)
-			.stringColor_(Color.white)
-		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
-			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setInputLevel(obj.value); });
-		preLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "pre lev")
-			.spec_([0, 1].asSpec)
+		panKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "pan")
+			.spec_([-1, 1].asSpec)
 			.value_(0)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 			.background_(controlBackgroundColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
-			.knobAction_({ |obj| this.setPreLevel(obj.value); });
+			.knobAction_({ |obj| 
+				this.setPan(obj.value);
+				this.addLooperEvent('pan', obj.value);
+			});
 
 		    
 	}

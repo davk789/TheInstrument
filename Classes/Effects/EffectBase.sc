@@ -1,7 +1,7 @@
 EffectBase {
 	classvar parent;
 	var server, saveRoot, sep, inputName, inputNumber, groupID, <nodeID, 
-		startParams, paramControls, synthdefName, <win, 
+		startParams, paramControls, synthdefName, <win,
 		presetRow, saveButton, presetNameField, presetMenu,
 		<winBounds, addGUIControls; // to be set by subclasses
 	
@@ -30,7 +30,7 @@ EffectBase {
 		}{
 			server.sendMsg('g_new', nodeID, 0, groupID);
 			numChan.do{ |ind|
-				startParams['bus'] = startParams['bus'] + ind;
+				startParams['bus'] = parent.mixer.channels[inputName].inBus + ind;
 				server.listSendMsg(
 					['s_new', synthdefName, server.nextNodeID, 0, nodeID] ++ startParams.getPairs;
 				);
