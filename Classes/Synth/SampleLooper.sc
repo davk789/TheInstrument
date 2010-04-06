@@ -781,7 +781,7 @@ SampleLooper {
 		    .action_({ |obj| this.setModBus(parent.audioBusRegister[obj.item]); });
 
 		modLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lev")
-			.spec_([0, 100].asSpec)
+			.spec_([0, 300].asSpec)
 			.value_(0)
 		    .font_(parent.controlFont)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
@@ -793,7 +793,7 @@ SampleLooper {
 			});
 		modLagKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lag")
 			.background_(controlBackgroundColor)
-			.spec_([0, 1].asSpec)
+			.spec_([0, 10, 2].asSpec)
 			.value_(0.1)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
