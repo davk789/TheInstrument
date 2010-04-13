@@ -1,4 +1,30 @@
-QuickKeyboard { // quick and dirty replacement for my Axiom25 keyboard
+MidiTest { // quickly test MIDI
+	classvar <>noteOnAction, <>noteOffAction, <>ccAction, <>bendAction, <>touchAction;
+	*new {
+		noteOnAction = { |src,chan,num,val| (["noteOn"] ++ [src,chan,num,val]).postln; };
+		noteOffAction = { |src,chan,num,val| (["noteOff"] ++ [src,chan,num,val]).postln; };
+		bendAction = { |src,chan,num,val| (["bend"] ++ [src,chan,num,val]).postln; };
+		ccAction = { |src,chan,num,val| (["cc"] ++ [src,chan,num,val]).postln; };
+		touchAction = { |src,chan,num,val| (["touch"] ++ [src,chan,num,val]).postln; };
+		this.initResponders;
+	}
+	
+	*initResponders {
+		NoteOnResponder.new(noteOnAction);
+		NoteOffResponder.new(noteOffAction);
+		BendResponder.new(bendAction);
+		CCResponder.new(ccAction);
+		TouchResponder.new(touchAction);
+	}
+
+	*free {
+		MIDIResponder.removeAll;
+	}
+
+
+}
+
+QuickKeyboard { // quick and dirty computer qwerty keyboard controller
 	var <>synthKeys, <>drumKeys, <>root, repeat, instrument;
 	*new { |inst|
 		^super.new.init_quickkeyboard(inst);
