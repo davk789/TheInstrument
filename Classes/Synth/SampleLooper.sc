@@ -91,7 +91,8 @@ Sampler { // container for one or more SampleLoopers
 		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				looperCommands.indexOf('loopRange'), {
-					defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
+					//defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
+					channels[values[1]].setLoopRange(values[2], values[3]);
 					// SampleView.action
 				},
 				looperCommands.indexOf('loopRangeRelease'), {
@@ -465,34 +466,44 @@ SampleLooper {
 		buffers[activeBufferIndex].zero;
 		this.drawWaveformView;
 	}
-	// uhh... i forgot what the trigStart arg is supposed to be... duping the start point for now
+
 	setLoopRange { |start, end|
-		var startMarker, endMarker, loopStart;
+
 		if(waveformMarkerBar.value.size > 0){
-			startMarker = waveformMarkerBar.getIndexForLocation(start);
-			endMarker = waveformMarkerBar.getIndexForLocation(end) + 1;
-			
-			waveformMarkerBar.setHighlightRange(startMarker, endMarker);
+			waveformMarkerBar.setHighlightCoords(start, end);
 		};
 		
-		this.setLoopPointParams(start);
+		this.setLoopPointParams(start, end);
 		
 	}
 	
-	setLoopPointParams { |start|
-		var highlightCoords, startPoint;
+	setLoopPointParams { |start,end|
+		var highlightCoords, startPoint, paramStart, paramEnd;
 
 		highlightCoords = waveformMarkerBar.getHighlightCoords;
+		[start, end, highlightCoords].postln;
 		
-		playerParams['start'] = highlightCoords['low'] ? 0;
-		playerParams['end'] = highlightCoords['high'] ? 1;
+		if(start.notNil){
+			paramStart = waveformMarkerBar.getIndexForLocation(start);
+		}{
+			paramStart = highlightCoords['low'];
+		};
+
+		if(end.notNil){
+			paramEnd = waveformMarkerBar.getIndexForLocation(end);
+		}{
+			paramEnd = highlightCoords['high'];
+		};
+		
+		playerParams['start'] = paramStart ? 0;
+		playerParams['end'] = paramEnd ? 1;
 
 		if(jumpToMarker){
 			startPoint = playerParams['start'];
 		}{
 			startPoint = start;
 		};
-
+		postln("sending " ++ ['n_set', playerNodeNum, 'resetPos', startPoint, 'start', playerParams['start'], 'end', playerParams['end']]);
 		s.sendMsg('n_set', playerNodeNum, 'resetPos', startPoint, 'start', playerParams['start'], 'end', playerParams['end']);
 		s.sendMsg('n_set', playerNodeNum, 'trig', 1);
 	
