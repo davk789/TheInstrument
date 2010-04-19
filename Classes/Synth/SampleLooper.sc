@@ -484,13 +484,13 @@ SampleLooper {
 		[start, end, highlightCoords].postln;
 		
 		if(start.notNil){
-			paramStart = waveformMarkerBar.getIndexForLocation(start);
+			paramStart = waveformMarkerBar.getNearestCoordBelow(start);
 		}{
 			paramStart = highlightCoords['low'];
 		};
 
 		if(end.notNil){
-			paramEnd = waveformMarkerBar.getIndexForLocation(end);
+			paramEnd = waveformMarkerBar.getNearestCoordAbove(end);
 		}{
 			paramEnd = highlightCoords['high'];
 		};

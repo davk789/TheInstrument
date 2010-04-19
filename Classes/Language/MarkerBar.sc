@@ -63,7 +63,7 @@ MarkerBar {
 		};
 	}
 	
-	getIndexForLocation { |val| // return the last marker index below the location (range == 0..1)
+	getNearestIndex { |val| // return the last marker index below the location (range == 0..1)
 		var ret,ind=0;
 		if(val > values.last){
 			ret = values.lastIndex;
@@ -78,6 +78,20 @@ MarkerBar {
 			ret = -1;
 		};
 		^ret;
+	}
+	
+	getNearestCoordBelow { |coord|
+		^values[this.getNearestIndex(coord)].max(0);
+	}
+	
+	getNearestCoordAbove { |coord|
+		var ret;
+		ret = values[this.getNearestIndex(coord) + 1].max(0);
+		if(ret.notNil){
+			^ret;
+		}{
+			^1;
+		};
 	}
 	
 	getHighlightCoord { |ind|
@@ -105,8 +119,8 @@ MarkerBar {
 	setHighlightCoords { |lo,hi|
 		var start, end;
 
-		start = this.getIndexForLocation(lo);
-		end = this.getIndexForLocation(hi) + 1;
+		start = this.getNearestIndex(lo);
+		end = this.getNearestIndex(hi) + 1;
 
 		this.setHighlightRange(start, end);
 		
