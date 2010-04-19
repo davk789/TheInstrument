@@ -1,10 +1,14 @@
 TestClass {
+	classvar instanceNum=1;
 	var buffer, server, privateDataA, privateDataB, parent, bounds, <>action;
+	var classMethodVar;
 	*new { |par,bnd|
+		instanceNum = instanceNum + 1;
 		^super.new.init_testclass(par, bnd);
 	}
 	
 	init_testclass { |par,bnd|
+		classMethodVar = "inside an instance " ++ instanceNum;
 		parent = par;
 		bounds = bnd;
 		privateDataA = "hello";

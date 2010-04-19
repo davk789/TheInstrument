@@ -93,6 +93,24 @@ MarkerBar {
 		];
 		uView.refresh;
 	}
+
+	getHighlightRange {
+		if(values.size > 0){
+			^ highlightRange;
+		}{
+			^Dictionary.new;
+		};
+	}
+
+	setHighlightCoords { |lo,hi|
+		var start, end;
+
+		start = this.getIndexForLocation(lo);
+		end = this.getIndexForLocation(hi) + 1;
+
+		this.setHighlightRange(start, end);
+		
+	}
 		
 	getHighlightCoords { // location points not index
 		if(values.size > 0){
