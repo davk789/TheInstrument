@@ -228,19 +228,19 @@ WavetableSynth {
 			//postln("back to a function defined in WavetableSynth the values are " ++ values);
 			switch(values[0],
 				0, {
-					this.noteOn(values[1], values[2], values[3], values[4]);
+					this.doNoteOn(values[1], values[2], values[3], values[4]);
 				},
 				1, {
-					this.noteOff(values[1], values[2], values[3], values[4]);
+					this.doNoteOff(values[1], values[2], values[3], values[4]);
 				},
 				2, {
-					this.cc(values[1], values[2], values[3], values[4]);
+					this.doCC(values[1], values[2], values[3], values[4]);
 				},
 				3, {
-					this.afterTouch(values[1], values[2], values[3]);
+					this.doAfterTouch(values[1], values[2], values[3]);
 				},
 				4, {
-					this.bend(values[1], values[2], values[3]);
+					this.doBend(values[1], values[2], values[3]);
 				}
 			);
 		};
@@ -387,7 +387,15 @@ WavetableSynth {
 			activeNotes = activeNotes.add(noteNum -> id.asArray);
 		};
 	}
+	
 	noteOn { |src,chan,num,vel|
+		this.doNoteOn(src,chan,num,vel);
+		if(this.looper.notNil){
+			this.looper.addEvent([0,src,chan,num,vel]);
+		};
+	}
+	
+	doNoteOn { |src,chan,num,vel|
 		var pitch;
 		pitch = num.degreeToKey(tunings[tuning]).midicps;
 		this.addActiveNote(num, s.nextNodeID);
@@ -395,12 +403,17 @@ WavetableSynth {
 		if(midiThru){
 			midiOut.noteOn(1, num, vel);
 		};
-		if(this.looper.notNil){
-			this.looper.addEvent([0,src,chan,num,vel]);
-		};
 	}
 	
 	noteOff { |src,chan,num,vel|
+		this.doNoteOff(src,chan,num,vel);
+		if(this.looper.notNil){
+			this.looper.addEvent([1,src,chan,num,0]);
+		};
+
+	}
+	
+	doNoteOff { |src,chan,num,vel|
 		var lastNote;
 		if(activeNotes[num].notNil){
 			lastNote = activeNotes[num];
@@ -416,10 +429,42 @@ WavetableSynth {
 		}{
 			postln("The EventLooper is dropping the first note of the sequence now, but at least it basically works.");
 		};
+	}
+	
+	bend { |src,chan,val|
+		this.doBend(src,chan,val);
 		if(this.looper.notNil){
-			this.looper.addEvent([1,src,chan,num,0]);
+			this.looper.addEvent([4,src,chan,val]);
 		};
 
+	}
+	
+	doBend { |src,chan,val|
+		this.handleMIDI(modulatorSources['bend'], val / 16384);
+	}
+		
+	afterTouch { |src,chan,val|
+		this.doAfterTouch(src,chan,val);
+		if(this.looper.notNil){
+			this.looper.addEvent([3,src,chan,val]);
+		};
+	}
+	
+	doAfterTouch { |src,chan,val|
+		this.handleMIDI(modulatorSources['aftertouch'], val / 127);
+	}
+	
+	cc { |src,chan,num,val|
+		this.doCC(src,chan,num,val);
+		if(this.looper.notNil){
+			this.looperHandleCC(src,chan,num,val);
+		};
+	}
+	
+	doCC { |src,chan,num,val|
+		if(midiCCSources[num].notNil){
+			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
+		};
 	}
 	
 	handleMIDI { |controls,value|
@@ -449,30 +494,7 @@ WavetableSynth {
 			}
 		};
 	}
-	
-	bend { |src,chan,val|
-		this.handleMIDI(modulatorSources['bend'], val / 16384);
-		if(this.looper.notNil){
-			this.looper.addEvent([4,src,chan,val]);
-		};
 
-	}
-	
-	afterTouch { |src,chan,val|
-		this.handleMIDI(modulatorSources['aftertouch'], val / 127);
-		if(this.looper.notNil){
-			this.looper.addEvent([3,src,chan,val]);
-		};
-	}
-	
-	cc { |src,chan,num,val|
-		if(midiCCSources[num].notNil){
-			this.handleMIDI(modulatorSources[midiCCSources[num]], val / 127);
-		};
-		if(this.looper.notNil){
-			this.looperHandleCC(src,chan,num,val);
-		};
-	}
 	initGUI {
 		win = GUI.window.new("Dual Wavetable Synth", Rect.new(50,300, 400, 340)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
