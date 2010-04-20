@@ -91,8 +91,15 @@ Sampler { // container for one or more SampleLoopers
 		parent.eventLooper.channels[recorderID].action = { |values,index|
 			switch(values[0],
 				looperCommands.indexOf('loopRange'), {
-					//defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
-					channels[values[1]].setLoopRange(values[2], values[3]);
+					Platform.case(
+						'linux', {
+							channels[values[1]].setLoopPointParams(values[2], values[3]);
+						},
+						'osx', {
+							defer{ channels[values[1]].setLoopRange(values[2], values[3]); };
+						}
+					);
+
 					// SampleView.action
 				},
 				looperCommands.indexOf('loopRangeRelease'), {
