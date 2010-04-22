@@ -511,15 +511,18 @@ DrumSynth {
 	}
 
 	noteOn { |src,chan,num,vel|
+		this.doNoteOn(src,chan,num,vel);
+		if(this.looper.notNil){
+			this.looper.addEvent([num, vel]);
+		};
+	}
+
+	doNoteOn { |src,chan,num,vel|
 		var voice;
 		voice = noteOns.indexOf(num);
 		if(voice.notNil){
 			drums[voice].hit(vel / 127);
 		};
-		if(this.looper.notNil){
-			this.looper.addEvent([num, vel]);
-		};
-
 	}
 
 	cc { |src,chan,num,val|
@@ -595,7 +598,7 @@ DrumSynth {
 	initLooper {
 		parent.eventLooper.addChannel(0, recorderID);
 		parent.eventLooper.channels[recorderID].action = { |values, index|
-			this.noteOn(nil, nil, values[0], values[1]);
+			this.doNoteOn(nil, nil, values[0], values[1]);
 		};
 	}
 
