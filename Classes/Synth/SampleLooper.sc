@@ -1,16 +1,21 @@
 
 Sampler { // container for one or more SampleLoopers
 	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID, <looperCommands, keyActions,
-		controlView, midiButtons, crossfadeSlider, sampleScrollView, samplerChannelsView;
+		controlView, midiButtons, sampleScrollView, samplerChannelsView, <controlBackgroundColor,
+		addEmptyBufferBox, addEmptyBufferButton, addFileButton, <>buffers, <>bufferMarkers, s;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
 	}
 	
 	init_sampler { |env, loopers=1|
+		s = Server.default;
 		parent = env;
 		channels = Array.new;
 		midiButtons = Array.new;
+		controlBackgroundColor = Color.blue.alpha_(0.2);
 		activeMidiChannels = Array.new;
+		buffers = Array.new;
+		bufferMarkers = Array.new;
 		recorderID = "Sampler";
 		looperCommands = [ // i wish this was an enum
 			'loopRange',
@@ -145,25 +150,65 @@ Sampler { // container for one or more SampleLoopers
 	initGUI {
 		win = GUI.window.new("Sample Loopers", Rect.new(500.rand, 500.rand, 820, 530)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
+		
+		/// row 1
+		
 		controlView = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width, 25))
 			.background_(Color.black)
 			.resize_(2);
-		GUI.staticText.new(controlView, Rect.new(0, 0, 35, 0))
+			
+		addFileButton = GUI.button.new(controlView, Rect.new(0, 0, 75, 0))
+			.states_([["add file(s)", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.addBufferFromFile; });
+		
+		addEmptyBufferBox = GUI.numberBox.new(controlView, Rect.new(0, 0, 30, 0))
+		    .font_(parent.controlFont)
+		    .value_(20)
+		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
+		
+		addEmptyBufferButton = GUI.button.new(controlView, Rect.new(0, 0, 90, 0))
+			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
+		    .font_(parent.controlFont)
+		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
+
+			
+		// the buttons get added last
+		GUI.staticText.new(controlView, Rect.new(0, 0, 100, 0))
 			.stringColor_(Color.white)
-			.string_("xfade:")
-			.font_(parent.controlFont);
-		crossfadeSlider = GUI.slider.new(controlView, Rect.new(0, 0, 200, 0))
-			.value_(0.5)
-			.background_(Color.blue.alpha_(0.2))
-			.knobColor_(HiliteGradient.new(Color.blue.alpha_(0.2), Color.white, \v, 64, 0.5))
-			.action_({ |obj| this.setCrossfade(obj.value); });
-		GUI.staticText.new(controlView, Rect.new(0, 0, 55, 0))
-			.stringColor_(Color.white)
+			.align_('right')
 			.string_("midi active:")
 			.font_(parent.controlFont);
+		
+ 		/// area 2
+ 		
 		sampleScrollView = GUI.scrollView.new(win, Rect.new(0, 0, win.bounds.width - 5, win.bounds.height - 25))
 			.resize_(5);
 		samplerChannelsView = GUI.vLayoutView.new(sampleScrollView, Rect.new(0, 0, sampleScrollView.bounds.width, 5));
+	}
+	
+	addBufferFromFile {
+		Dialog.getPaths({ |paths|
+			paths.do{ |obj,ind|
+				buffers = buffers.add(Buffer.read(s, obj));
+				bufferMarkers = bufferMarkers.add(Array.new);
+				if(ind == paths.lastIndex){
+					// just updating the GUI "later"
+					// may fail with large buffers
+					AppClock.sched(1, {this.updateBufferMenus; nil; });
+				};
+			};
+		});
+	}
+	
+	addEmptyBuffer { |len|
+		var length;
+		// can only add empty mono buffers for now.
+		// multi-channel support should come later.
+		length = len ? addEmptyBufferBox.value;
+		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate, 1));
+		bufferMarkers = bufferMarkers.add(Array.new);
+		AppClock.sched(1, {this.updateBufferMenus; nil;});
 	}
 	
 	cc { |src,chan,num,val|
@@ -183,11 +228,11 @@ Sampler { // container for one or more SampleLoopers
 }
 
 SampleLooper {
-	classvar <buffers, <bufferMarkers, <groupNum=55;
+	classvar <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false, looperCommands,
 	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
 	// GUI objects
-	var controlBackgroundColor, topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, addFileButton, clearBufferButton, addEmptyBufferBox, addEmptyBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, clearBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp,chan|
@@ -201,8 +246,6 @@ SampleLooper {
 		s       = Server.default;
 		playerNodeNum = s.nextNodeID;
 		recorderNodeNum = s.nextNodeID;
-		buffers = Array.new;
-		bufferMarkers = Array.new;
 		waveformVZoomSpec = [1,10].asSpec;
 		viewBounds = Rect.new(0, 0, 812, 245);
 		playerParams = Dictionary[
@@ -280,7 +323,10 @@ SampleLooper {
 				]
 			}
 		];
+		
+		
 		s.sendMsg('g_new', groupNum, 0, 1);
+
 
 	}
 	
@@ -302,21 +348,6 @@ SampleLooper {
 		playerParams['outBus'] = val;
 	}
 		
-/*	addBuffer { |length=16|
-		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate));
-		bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
-	}
-
-	addSoundFile { |filename| // public only method??
-		if(filename.notNil){
-			buffers = buffers.add(Buffer.read(s, filename));
-			bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
-		}{
-			buffers = buffers.add(Buffer.loadDialog(s));
-			bufferMarkers = bufferMarkers.add(waveformMarkerBar.value);
-		};
-	}
-*/	
 	record { |val|
 		isRecording = val ? true;
 		if(isRecording){
@@ -396,32 +427,9 @@ SampleLooper {
 		};
 	}
 	
-	addBufferFromFile {
-		Dialog.getPaths({ |paths|
-			paths.do{ |obj,ind|
-				buffers = buffers.add(Buffer.read(s, obj));
-				bufferMarkers = bufferMarkers.add(Array.new);
-				if(ind == paths.lastIndex){
-					// just updating the GUI "later"
-					// may fail with large buffers
-					AppClock.sched(1, {sampler.updateBufferMenus; nil; });
-				};
-			};
-		});
-	}
-	
-	addEmptyBuffer { |length|
-		// can only add empty mono buffers for now.
-		// multi-channel support should come later.
-		buffers = buffers.add(Buffer.alloc(s, length * s.sampleRate, 1));
-		bufferMarkers = bufferMarkers.add(Array.new);
-		AppClock.sched(1, {sampler.updateBufferMenus; nil;});
-	}
-	
 	updateBufferMenu {
 		var ret;
-		ret = Array.new;
-		buffers.do{ |obj,ind|
+		sampler.buffers.do{ |obj,ind|
 			if(obj.path.notNil){
 				ret = ret.add(obj.path.basename);
 			}{
@@ -435,13 +443,13 @@ SampleLooper {
 		if(numChannels.isNil){
 			this.loadSynthDef(1);
 		};
-		numChannels = buffers[activeBufferIndex].numChannels;
+		numChannels = sampler.buffers[activeBufferIndex].numChannels;
 
 		activeBufferIndex = sel;
-		recorderParams['bufnum'] = buffers[activeBufferIndex].bufnum;
-		playerParams['bufnum'] = buffers[activeBufferIndex].bufnum;
+		recorderParams['bufnum'] = sampler.buffers[activeBufferIndex].bufnum;
+		playerParams['bufnum'] = sampler.buffers[activeBufferIndex].bufnum;
 //		postln("the bufnum is " ++ [playerParams['bufnum'], recorderParams['bufnum']]);
-		if(buffers[activeBufferIndex].numChannels != numChannels){
+		if(sampler.buffers[activeBufferIndex].numChannels != numChannels){
 			if(isPlaying || isRecording){
 				this.stop;
 			};
@@ -450,14 +458,14 @@ SampleLooper {
 		s.sendMsg('n_set', playerNodeNum, 'bufnum', playerParams['bufnum']);
 		s.sendMsg('n_set', recorderNodeNum, 'bufnum', recorderParams['bufnum']);
 		this.setActiveMarkers(sel);
-		waveformView.setBuffer(buffers[activeBufferIndex]);
+		waveformView.setBuffer(sampler.buffers[activeBufferIndex]);
 		//this.drawWaveformView;
 	}
 	
 	setActiveMarkers { |sel|
-		bufferMarkers[activeMarkerIndex] = waveformMarkerBar.value;
+		sampler.bufferMarkers[activeMarkerIndex] = waveformMarkerBar.value;
 		activeMarkerIndex = sel;
-		waveformMarkerBar.value = bufferMarkers[activeMarkerIndex];
+		waveformMarkerBar.value = sampler.bufferMarkers[activeMarkerIndex];
 	}
 	
 	setWaveformVZoom { |amt|
@@ -470,7 +478,7 @@ SampleLooper {
 	}
 	
 	clearActiveBuffer {
-		buffers[activeBufferIndex].zero;
+		sampler.buffers[activeBufferIndex].zero;
 		this.drawWaveformView;
 	}
 
@@ -624,8 +632,9 @@ SampleLooper {
 	}
 	
 	makeGUI { |container|
+		var bgColor;
 		
-		controlBackgroundColor = Color.blue.alpha_(0.2);
+		bgColor = sampler.controlBackgroundColor;
 		
 		topView = GUI.compositeView.new(container, viewBounds);
 		topView.decorator = FlowLayout(topView.bounds);
@@ -635,35 +644,19 @@ SampleLooper {
 		bufferRow = GUI.hLayoutView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 25))
 			.background_(Color.black);
 		clearBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 75, 0))
-			.states_([["clear buffer", Color.white, controlBackgroundColor]])
+			.states_([["clear buffer", Color.white, bgColor]])
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.clearActiveBuffer; });
-		
-		
-		addFileButton = GUI.button.new(bufferRow, Rect.new(0, 0, 75, 0))
-			.states_([["add file(s)", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.addBufferFromFile; });
-		
-		addEmptyBufferBox = GUI.numberBox.new(bufferRow, Rect.new(0, 0, 30, 0))
-		    .font_(parent.controlFont)
-		    .value_(20)
-		    .action_({ |obj| this.addEmptyBuffer(obj.string.interpret) });
-		
-		addEmptyBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 90, 0))
-			.states_([["add empty buffer", Color.white, controlBackgroundColor]])
-		    .font_(parent.controlFont)
-		    .action_({ |obj| this.addEmptyBuffer(addEmptyBufferBox.string.interpret) });
-		
+				
 		bufferSelectMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 220, 0))
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.setActiveBuffer(obj.value); });
 		    
 		jumpToMarkerButton = GUI.button.new(bufferRow, Rect.new(0, 0, 85, 0))
 			.states_([
-					["jump to marker", Color.white, controlBackgroundColor],
+					["jump to marker", Color.white, bgColor],
 					["jump to marker", Color.blue(0.3), Color.white]
 			])
 		    .font_(parent.controlFont)
@@ -699,13 +692,13 @@ SampleLooper {
 		    });
 		    
 		waveformViewVZoom = GUI.slider.new(waveformControlView, Rect.new(0, 0, 20, 125))
-			.background_(controlBackgroundColor)
-			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \h, 64, 0.5))
+			.background_(bgColor)
+			.knobColor_(HiliteGradient.new(bgColor, Color.white, \h, 64, 0.5))
 			.action_({ |obj| this.setWaveformVZoom(obj.value); });
 		
 		waveformViewZoom = GUI.rangeSlider.new(waveformControlView, Rect.new(0, 0, 565, 20))
-			.knobColor_(HiliteGradient.new(controlBackgroundColor, Color.white, \v, 64, 0.5))
-			.background_(controlBackgroundColor)
+			.knobColor_(HiliteGradient.new(bgColor, Color.white, \v, 64, 0.5))
+			.background_(bgColor)
 			.lo_(0)
 			.hi_(1)
 			.action_({ |obj| this.setWaveformZoom(obj.lo, obj.hi); });
@@ -722,7 +715,7 @@ SampleLooper {
 		    .action_({ |obj| this.record(obj.value.toBool); });
 
 		backButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
-			.states_([["<<", Color.white, controlBackgroundColor]])
+			.states_([["<<", Color.white, bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.back; })
 			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
@@ -730,7 +723,7 @@ SampleLooper {
 
 		playButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([
-				[">", Color.green, controlBackgroundColor],
+				[">", Color.green, bgColor],
 				[">", Color.black, Color.green]
 			])
 		    .font_(parent.strongFont)
@@ -740,7 +733,7 @@ SampleLooper {
 		    });
 
 		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
-			.states_([[">>", Color.white, controlBackgroundColor]])
+			.states_([[">>", Color.white, bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| 
 		    	this.forward; 
@@ -751,7 +744,7 @@ SampleLooper {
 		    
 		pauseButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
 			.states_([
-				["||", Color.yellow, controlBackgroundColor],
+				["||", Color.yellow, bgColor],
 				["||", Color.black, Color.yellow]
 			])
 		    .font_(parent.strongFont)
@@ -761,7 +754,7 @@ SampleLooper {
 		    });
 		    
 		stopButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
-			.states_([["[]", Color.white(0.8), controlBackgroundColor]])
+			.states_([["[]", Color.white(0.8), bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| 
 		    	this.stop; 
@@ -779,7 +772,7 @@ SampleLooper {
 		    .action_({ |obj| this.savePreset; });
 		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 145, 0))
 			.items_(["this will have the presets listed", "some day"])
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 		    .action_({ |obj| this.loadPreset(obj.item); });
@@ -793,7 +786,7 @@ SampleLooper {
 		    .stringColor_(Color.white);
 		modBusMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
 			.items_(parent.audioBusRegister.keys.asArray)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.white)
 		    .action_({ |obj| this.setModBus(parent.audioBusRegister[obj.item]); });
@@ -804,13 +797,13 @@ SampleLooper {
 		    .font_(parent.controlFont)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.stringColor_(Color.white)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobAction_({ |obj| 
 				this.setModLevel(obj.value);
 				this.addLooperEvent('modLevel', obj.value);
 			});
 		modLagKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "mod lag")
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.spec_([0, 10, 2].asSpec)
 			.value_(0.1)
 		    .font_(parent.controlFont)
@@ -825,7 +818,7 @@ SampleLooper {
 			.value_(1)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| 
 				this.setSpeed(obj.value);
@@ -835,7 +828,7 @@ SampleLooper {
 
 		inputSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
  		    .items_(parent.audioBusRegister.keys.asArray)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 		    .font_(parent.controlFont)
 			.stringColor_(Color.yellow)
 		    .action_({ |obj| this.setInputSource(parent.audioBusRegister[obj.item]); });
@@ -847,7 +840,7 @@ SampleLooper {
 			.value_(1)
 			.stringColor_(Color.yellow)
 		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobColor_([Color.clear, Color.yellow, Color.yellow.alpha_(0.1), Color.yellow])
 			.knobAction_({ |obj| this.setInputLevel(obj.value); });
 		preLevelKnob = EZJKnob.new(controlView, Rect.new(0, 0, 37.5, 73), "pre lev")
@@ -855,7 +848,7 @@ SampleLooper {
 			.value_(0)
 			.stringColor_(Color.yellow)
 		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobColor_([Color.clear, Color.yellow, Color.yellow.alpha_(0.1), Color.yellow])
 			.knobAction_({ |obj| this.setPreLevel(obj.value); });
 		GUI.staticText.new(controlView, Rect.new(0, 0, 10, 73))
@@ -865,7 +858,7 @@ SampleLooper {
 			.value_(1)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| 
 				this.setGain(obj.value);
@@ -876,14 +869,13 @@ SampleLooper {
 			.value_(0)
 			.stringColor_(Color.white)
 		    .font_(parent.controlFont)
-			.background_(controlBackgroundColor)
+			.background_(bgColor)
 			.knobColor_([Color.clear, Color.white, Color.white.alpha_(0.1), Color.white])
 			.knobAction_({ |obj| 
 				this.setPan(obj.value);
 				this.addLooperEvent('pan', obj.value);
 			});
-
-		    
+		
 	}
 	
 }
