@@ -7,6 +7,9 @@
 	    some of the filters need extra parameters/different settings
 	EventLooper
 	    the first noteOn of the sequence gets dropped on playback
+	MonoDelay
+	    more than one instance on a channel causes a loud buzz
+	    
 
 	TODO:
 	window management for synths
@@ -150,9 +153,9 @@ ThyInstrument {
 		// Instrument classes
 		mixer = Mixer.new(this);
 				
-		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the "global" namespace??
+		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
 		
-		//monoInputChannel = MonoInputChannel.new(this);
+		monoInputChannel = MonoInputChannel.new(this);
 
 		polySynth = WavetableSynthFilter.new(this);//, true); // enable midi thru
 //		polySynth = WavetableSynth.new(this);
@@ -175,7 +178,7 @@ ThyInstrument {
 		BendResponder(bendFunction);
 	}
 	
-	*loadSynthDefs { // oops I deprecated this on accident.
+	*loadSynthDefs { // deprecated
 		var path;
 		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";
 		path.pathMatch.do{ |obj,ind| obj.load; };
