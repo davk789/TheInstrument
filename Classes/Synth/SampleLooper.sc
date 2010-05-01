@@ -231,6 +231,7 @@ SampleLooper {
 	classvar <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false, looperCommands,
 	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
+	var playerMap, recorderMap;
 	// GUI objects
 	var topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, clearBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
@@ -254,7 +255,7 @@ SampleLooper {
 			'start'        -> 0, 
 			'end'          -> 1, 
 			'outBus'       -> 0, 
-			'trig'         -> 0, 
+			'trig'         -> 0, // where is this used?
 			'modBus'       -> 20, 
 			'modLag'       -> 0.2, 
 			'modLev'       -> 0,
@@ -266,7 +267,7 @@ SampleLooper {
 			'bufnum'       -> -1, 
 			'trig'         -> 0, 
 			'inBus'        -> 20,
-			'stereo'       -> 0,
+			'stereo'       -> 0, // where is this used?
 			'inLev'        -> 1,
 			'preLev'       -> 0			
 		];
@@ -584,6 +585,7 @@ SampleLooper {
 		recorderParams['preLev'] = val;
 		s.sendMsg('n_set', recorderNodeNum, 'preLev', recorderParams['preLev']);
 	}
+	
 
 	loadSynthDef { |numChan=1, trigBus=1000, startPointBus=1001, endPointBus=1002|
 		postln("loading SynthDef");
@@ -825,7 +827,10 @@ SampleLooper {
 				this.addLooperEvent('speed', obj.value);
 			});
 
-
+		GUI.staticText.new(controlView, Rect.new(0, 0, 37.5, 73))
+			.font_(Font.new("Helvetica", 34))
+			.stringColor_(Color.white)
+			.string_((channelID + 1).asString);
 		inputSourceMenu = GUI.popUpMenu.new(controlView, Rect.new(0, 0, 145, 20))
  		    .items_(parent.audioBusRegister.keys.asArray)
 			.background_(bgColor)
@@ -876,7 +881,41 @@ SampleLooper {
 				this.addLooperEvent('pan', obj.value);
 			});
 		
+		this.collectControls;
+		
 	}
+	
+	collectControls {
+		//	I can't tell if this is elegant or horrible
+		// collecting all the gui objects in a  pair of Dictionaries
+		// fo use with presets.
+		playerMap = Dictionary[
+			'bufnum'       -> bufferSelectMenu,
+			'speed'        -> speedKnob, 
+			'start'        -> playerParams['start'], 
+			'end'          -> playerParams['end'], 
+//			'outBus'       -> 0, // don't mess with the routing!!
+//			'trig'         -> 0, // is this even used?
+			'modBus'       -> modBusMenu, 
+			'modLag'       -> modLagKnob, 
+			'modLev'       -> modLevKnob,
+			'inBus'        -> inputSourceMenu,
+			'gain'		   -> gainKnob,
+			'pan'		   -> panKnob
+		];
+		recorderMap = Dictionary[
+			'bufnum'       -> bufferSelectMenu, 
+			'inBus'        -> inputSourceMenu,
+			'inLev'        -> inputLevelKnob,
+			'stereo'	   -> recorderParams['stereo'],
+			'preLev'       -> preLevelKnob
+		];
+	}
+	
+	savePreset {
+		// wooo
+	}
+
 	
 }
 
