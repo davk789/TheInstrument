@@ -668,15 +668,23 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.setJumpToMarker(obj.value.toBool) });
 			
-		// PRESET ROW
+		// PRESETS
 
+		GUI.staticText.new(bufferRow, Rect.new(0, 0, 25, 0))
+			.string_("");
 		presetSaveButton = GUI.button.new(bufferRow, Rect.new(0, 0, 45, 0))
 		    .font_(parent.controlFont)
 			.states_([["save", Color.white, Color.blue.alpha_(0.2)]])
-		    .action_({ |obj| this.savePreset(presetSaveField.string); });
+		    .action_({ |obj| 
+		    	this.savePreset(presetSaveField.string);
+		    	presetSaveField.string = "";
+		    });
 
-		presetSaveField = GUI.textField.new(bufferRow, Rect.new(0, 0, 35, 0))
-			.action_({ |obj| this.savePreset(obj.string); });
+		presetSaveField = GUI.textField.new(bufferRow, Rect.new(0, 0, 90, 0))
+			.action_({ |obj| 
+				this.savePreset(obj.string);
+				obj.string = "";
+			});
 
 		presetLoadMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 145, 0))
 			.items_(["this will have the presets listed", "some day"])
@@ -920,7 +928,7 @@ SampleLooper {
 		var presetName, filePath, fileHandle, params, pipe;
 		presetName = name ? "";
 		
-		if(name.length == 0){
+		if(name.size == 0){
 			presetName = Date.localtime.stamp;
 		};
 		
@@ -945,6 +953,7 @@ SampleLooper {
 				postln("preset save operation failed");
 			};
 		};
+		
 		
 	}
 	
