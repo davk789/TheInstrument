@@ -1,13 +1,16 @@
 
 Sampler { // container for one or more SampleLoopers
-	var parent, <>win, activeMidiChannels, <>channels, <outBus, recorderID, <looperCommands, keyActions,
+	var parent, <>win, activeMidiChannels, <>channels, 
+		<outBus, recorderID, <looperCommands, keyActions,
 		controlView, midiButtons, sampleScrollView, samplerChannelsView, <controlBackgroundColor,
-		addEmptyBufferBox, addEmptyBufferButton, addFileButton, <>buffers, <>bufferMarkers, s;
+		addEmptyBufferBox, addEmptyBufferButton, addFileButton, <>buffers, <>bufferMarkers, 
+		s, saveRoot;
 	*new { |env, loopers|
 		^super.new.init_sampler(env, loopers);
 	}
 	
 	init_sampler { |env, loopers=1|
+		var sep;
 		s = Server.default;
 		parent = env;
 		channels = Array.new;
@@ -17,6 +20,8 @@ Sampler { // container for one or more SampleLoopers
 		buffers = Array.new;
 		bufferMarkers = Array.new;
 		recorderID = "Sampler";
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "Sampler";
 		looperCommands = [ // i wish this was an enum
 			'loopRange',
 			'loopRangeRelease',
@@ -229,11 +234,17 @@ Sampler { // container for one or more SampleLoopers
 
 SampleLooper {
 	classvar <groupNum=55;
-	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, currentBufferArray, currBufDisplayStart, currBufDisplayEnd, waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, loopMarkers, isPlaying=false, isRecording=false, looperCommands,
-	looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID;
-	var playerMap, recorderMap;
+	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, 
+		paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, 
+		currentBufferArray, currBufDisplayStart, currBufDisplayEnd, 
+		waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, 
+		loopMarkers, isPlaying=false, isRecording=false, 
+		looperCommands,
+		looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID,
+		playerMap, recorderMap,
+		saveRoot;
 	// GUI objects
-	var topView, waveformColumn, transportRow, controlColumn, presetRow, bufferRow, presetMenu, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, clearBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
+	var topView, bufferRow, presetLoadMenu, presetSaveField, presetSaveButton, waveformControlView, <>waveformMarkerBar, waveformMarkerClearButton, waveformView, waveformDisplay, waveformViewVZoomView, waveformViewVZoom, waveformViewZoom, controlView, recordButton, backButton, <playButton, forwardButton, pauseButton, stopButton, playbackSpeedKnob, clearBufferButton, bufferSelectMenu, jumpToMarkerButton, modBusMenu, modLevelKnob, modLagKnob, speedKnob, gainKnob, panKnob, inputSourceMenu, inputLevelKnob, preLevelKnob, syncOffsetKnob, recordModeButton, recordOffsetKnob;
 
 	
 	*new { |par,samp,chan|
@@ -241,11 +252,14 @@ SampleLooper {
 	}
 	
 	init_samplelooper { |par,samp,chan=0|
+		var sep;
 		parent  = par;
 		sampler = samp;
 		channelID = chan;
 		s       = Server.default;
 		playerNodeNum = s.nextNodeID;
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "SampleLooper";
 		recorderNodeNum = s.nextNodeID;
 		waveformVZoomSpec = [1,10].asSpec;
 		viewBounds = Rect.new(0, 0, 812, 245);
@@ -532,15 +546,7 @@ SampleLooper {
 	setMarkers { |markers|
 		loopMarkers = markers;
 	}
-	
-	savePreset {
-		"need to have a save preset action here".postln;
-	}
-
-	loadPreset { |sel|
-		"loading preset name " ++ sel;
-	}
-	
+		
 	setModBus { |sel|
 		playerParams['modBus'] = sel;
 		s.sendMsg('n_set', playerNodeNum, 'modBus', playerParams['modBus']);
@@ -640,10 +646,8 @@ SampleLooper {
 		
 		topView = GUI.compositeView.new(container, viewBounds);
 		topView.decorator = FlowLayout(topView.bounds);
-		
-		waveformColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 600, 238));
-		
-		bufferRow = GUI.hLayoutView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 25))
+		// BUFFER ROW
+		bufferRow = GUI.hLayoutView.new(topView, Rect.new(0, 0, topView.bounds.width, 25))
 			.background_(Color.black);
 		clearBufferButton = GUI.button.new(bufferRow, Rect.new(0, 0, 75, 0))
 			.states_([["clear buffer", Color.white, bgColor]])
@@ -664,7 +668,25 @@ SampleLooper {
 		    .font_(parent.controlFont)
 		    .action_({ |obj| this.setJumpToMarker(obj.value.toBool) });
 			
-		waveformControlView = GUI.compositeView.new(waveformColumn, Rect.new(0, 0, waveformColumn.bounds.width, 180))
+		// PRESET ROW
+
+		presetSaveButton = GUI.button.new(bufferRow, Rect.new(0, 0, 45, 0))
+		    .font_(parent.controlFont)
+			.states_([["save", Color.white, Color.blue.alpha_(0.2)]])
+		    .action_({ |obj| this.savePreset(presetSaveField.string); });
+
+		presetSaveField = GUI.textField.new(bufferRow, Rect.new(0, 0, 35, 0))
+			.action_({ |obj| this.savePreset(obj.string); });
+
+		presetLoadMenu = GUI.popUpMenu.new(bufferRow, Rect.new(0, 0, 145, 0))
+			.items_(["this will have the presets listed", "some day"])
+			.background_(bgColor)
+		    .font_(parent.controlFont)
+			.stringColor_(Color.white)
+		    .action_({ |obj| this.loadPreset(obj.item); });
+
+		// WAVEFORM CONTROL VIEW
+		waveformControlView = GUI.compositeView.new(topView, Rect.new(0, 0, 600, 210))
 			.background_(Color.black);
 
 		waveformControlView.decorator_(FlowLayout(waveformControlView.bounds));
@@ -704,11 +726,8 @@ SampleLooper {
 			.lo_(0)
 			.hi_(1)
 			.action_({ |obj| this.setWaveformZoom(obj.lo, obj.hi); });
-			
-		transportRow = GUI.hLayoutView.new(waveformColumn, Rect.new(0, 0, 0, 25))
-			.background_(Color.black);
-			
-		recordButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+
+		recordButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 75, 25))
 			.states_([
 				["o", Color.red, Color.new255(25,25,25)],
 				["o", Color.black, Color.red]
@@ -716,14 +735,14 @@ SampleLooper {
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.record(obj.value.toBool); });
 
-		backButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
+		backButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 50, 25))
 			.states_([["<<", Color.white, bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| this.back; })
 			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 
-		playButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+		playButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 75, 25))
 			.states_([
 				[">", Color.green, bgColor],
 				[">", Color.black, Color.green]
@@ -734,7 +753,7 @@ SampleLooper {
 		    	this.addLooperEvent('play');
 		    });
 
-		forwardButton = GUI.button.new(transportRow, Rect.new(0, 0, 50, 25))
+		forwardButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 50, 25))
 			.states_([[">>", Color.white, bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| 
@@ -744,7 +763,7 @@ SampleLooper {
 			.mouseUpAction_({ |obj| s.sendMsg('n_set', playerNodeNum, 'trig', 0) });
 
 		    
-		pauseButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+		pauseButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 75, 25))
 			.states_([
 				["||", Color.yellow, bgColor],
 				["||", Color.black, Color.yellow]
@@ -755,31 +774,16 @@ SampleLooper {
 		    	this.addLooperEvent('pause', obj.value.toBool);
 		    });
 		    
-		stopButton = GUI.button.new(transportRow, Rect.new(0, 0, 75, 25))
+		stopButton = GUI.button.new(waveformControlView, Rect.new(0, 0, 75, 25))
 			.states_([["[]", Color.white(0.8), bgColor]])
 		    .font_(parent.strongFont)
 		    .action_({ |obj| 
 		    	this.stop; 
 				this.addLooperEvent('stop');
 		    });
-		
-		controlColumn = GUI.vLayoutView.new(topView, Rect.new(0, 0, 200, 238));
-		
-		presetRow = GUI.hLayoutView.new(controlColumn, Rect.new(0, 0, 0, 25))
-			.background_(Color.black);
 
-		presetSaveButton = GUI.button.new(presetRow, Rect.new(0, 0, 45, 0))
-		    .font_(parent.controlFont)
-			.states_([["save", Color.white, Color.blue.alpha_(0.2)]])
-		    .action_({ |obj| this.savePreset; });
-		presetMenu = GUI.popUpMenu.new(presetRow, Rect.new(0, 0, 145, 0))
-			.items_(["this will have the presets listed", "some day"])
-			.background_(bgColor)
-		    .font_(parent.controlFont)
-			.stringColor_(Color.white)
-		    .action_({ |obj| this.loadPreset(obj.item); });
-
-		controlView = GUI.compositeView.new(controlColumn, Rect.new(0, 0, 200, 210))
+		// CONTROL VIEW
+		controlView = GUI.compositeView.new(topView, Rect.new(0, 0, 200, 210))
 			.background_(Color.black);
 		controlView.decorator_(FlowLayout(controlView.bounds));
 
@@ -880,7 +884,7 @@ SampleLooper {
 				this.setPan(obj.value);
 				this.addLooperEvent('pan', obj.value);
 			});
-		
+				
 		this.collectControls;
 		
 	}
@@ -898,7 +902,7 @@ SampleLooper {
 //			'trig'         -> 0, // is this even used?
 			'modBus'       -> modBusMenu, 
 			'modLag'       -> modLagKnob, 
-			'modLev'       -> modLevKnob,
+			'modLev'       -> modLevelKnob,
 			'inBus'        -> inputSourceMenu,
 			'gain'		   -> gainKnob,
 			'pan'		   -> panKnob
@@ -912,10 +916,45 @@ SampleLooper {
 		];
 	}
 	
-	savePreset {
-		// wooo
+	savePreset { |name|
+		var presetName, filePath, fileHandle, params, pipe;
+		presetName = name ? "";
+		
+		if(name.length == 0){
+			presetName = Date.localtime.stamp;
+		};
+		
+		filePath = saveRoot ++ Platform.pathSeparator ++ presetName;
+		
+		fileHandle = File.new(filePath, "w");
+		
+		params = this.getParams;
+		
+		if(fileHandle.isOpen){
+			fileHandle.write(params.asInfString);
+			fileHandle.close;
+		}{  // the save folder does not exist
+			postln("creating save directory " ++ saveRoot);
+			pipe = Pipe.new("mkdir -p \"" ++ saveRoot ++ "\"", "w");
+			pipe.close;
+			fileHandle = File.new(filePath, "w");
+			if(fileHandle.isOpen){
+				fileHandle.write(params.asInfString);
+				fileHandle.close;
+			}{
+				postln("preset save operation failed");
+			};
+		};
+		
 	}
-
+	
+	loadPreset { |presetName|
+		
+	}
+	
+	getParams {
+		^Dictionary['\'testParam1\'' -> 1, '\'testParam2\'' -> 55];
+	}
 	
 }
 
