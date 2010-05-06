@@ -928,7 +928,7 @@ SampleLooper {
 		var presetName, filePath, fileHandle, params, pipe;
 		presetName = name ? "";
 		
-		if(name.size == 0){
+		if(presetName.size == 0){
 			presetName = Date.localtime.stamp;
 		};
 		
