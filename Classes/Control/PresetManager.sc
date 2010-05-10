@@ -1,5 +1,5 @@
 PresetManager { // this should eliminate redundant code relating to saving/recalling presets
-	var saveRoot, parent, saveRoot;
+	var saveRoot, parent, saveRoot, rawParams, fParams;
 	var <>background, <>stringColor;
 	// GUI
 	var saveButton, saveField, loadMenu, parent;
@@ -28,7 +28,7 @@ PresetManager { // this should eliminate redundant code relating to saving/recal
 		
 		fileHandle = File.new(filePath, "w");
 		
-		params = this.getParams;
+		params = fParams;
 		
 		if(fileHandle.isOpen){
 			fileHandle.write(params.asInfString);
@@ -47,6 +47,25 @@ PresetManager { // this should eliminate redundant code relating to saving/recal
 		};
 		
 		
+	}
+	
+	formatParams { |params|
+		var ret;
+		ret = Dictionary.new;
+		params.keysValuesDo{ |key,val,ind|
+			ret = ret.add('\'' ++ key ++ '\'' -> val);
+		}
+		^ret;
+	}
+	
+	params_ { |params|
+		// the preset manasger needs to ba able to ask the pardent for its params
+		rawParams = params;
+		fParams = this.formatParams(rawParams);
+	}
+	
+	params {
+		^rawParams;
 	}
 	
 	makeGUI { |parent|
