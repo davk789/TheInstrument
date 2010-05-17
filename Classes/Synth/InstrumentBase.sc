@@ -1,18 +1,85 @@
 InstrumentBase {
+	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
+	var sep, saveRoot, rawParams, formattedParams;
 	*new {
 		^super.new.init_instrumentbase;
 	}
 	
 	init_instrumentbase {
-		// initialize instrument base
-		/*
-			this class should handle all common functionality between
-			WavetableSynth/WavetableSynthFilter
-			SampleLooper
-			DrumSynth
-			GravityGridPlayer
-			... and any other top-level instruments
-		*/
+		postln("initializing InstrumentBase");
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
+	}
+	
+	savePreset { |name|
+		var presetName, filePath, fileHandle, params, pipe;
+		presetName = name ? "";
+		
+		if(presetName.size == 0){
+			presetName = Date.localtime.stamp;
+		};
+		
+		filePath = saveRoot ++ Platform.pathSeparator ++ presetName;
+		
+		fileHandle = File.new(filePath, "w");
+		
+		params = formattedParams;
+		
+		if(fileHandle.isOpen){
+			fileHandle.write(params.asInfString);
+			fileHandle.close;
+		}{  // the save folder does not exist
+			postln("creating save directory " ++ saveRoot);
+			pipe = Pipe.new("mkdir -p \"" ++ saveRoot ++ "\"", "w");
+			pipe.close;
+			fileHandle = File.new(filePath, "w");
+			if(fileHandle.isOpen){
+				fileHandle.write(params.asInfString);
+				fileHandle.close;
+			}{
+				postln("preset save operation failed");
+			};
+		};	
+	}
+	
+	formatParams { |params|
+		var ret;
+		ret = Dictionary.new;
+		rawParams.keysValuesDo{ |key,val,ind|
+			ret = ret.add('\'' ++ key ++ '\'' -> val);
+		}
+		^ret;
+	}
+	
+	loadPreset { |presetName|
+		var preset;
+		preset = (saveRoot ++ sep ++ presetName).load;
+		params = preset;
+		this.refreshValues;
+	}
+	
+	getParams {
+		// how should i be handled?	
+	}
+	
+	noteOn {
+		noteOnFunction.value;
+	}
+	
+	noteOff {
+		noteOffFunction.value;
+	}
+	
+	bend {
+		bendFunction.value;
+	}
+	
+	cc {
+		ccFunction.value;
+	}
+	
+	afterTouch {
+		afterTouchFunction.value;
 	}
 	
 }

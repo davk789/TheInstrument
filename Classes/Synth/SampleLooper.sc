@@ -219,7 +219,7 @@ Sampler { // container for one or more SampleLoopers
 	cc { |src,chan,num,val|
 		channels.do{ |obj,ind|
 			if(activeMidiChannels.includes(ind)){
-				obj.ccFunction.value(src,chan,num,val);
+				obj.cc(src,chan,num,val);
 			};
 		};
 	}
@@ -232,7 +232,7 @@ Sampler { // container for one or more SampleLoopers
 	
 }
 
-SampleLooper {
+SampleLooper : InstrumentBase {
 	classvar <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, 
 		paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, 
@@ -240,7 +240,7 @@ SampleLooper {
 		waveformVZoomSpec, waveformDisplayResolution=557, isRecording=false, 
 		loopMarkers, isPlaying=false, isRecording=false, 
 		looperCommands,
-		looper, <>ccFunction, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID,
+		looper, <>sampler, numChannels, <viewBounds, jumpToMarker=false, channelID,
 		playerMap, recorderMap,
 		saveRoot;
 	// GUI objects
@@ -293,6 +293,7 @@ SampleLooper {
 		
 		loopMarkers = Array.new;
 		ccFunction = { |src,chan,num,val|
+			[src,chan,num,val].postln;
 			defer{
 				num.switch(
 					20, {
@@ -924,6 +925,8 @@ SampleLooper {
 		];
 	}
 	
+	// preset stuff
+	
 	savePreset { |name|
 		var presetName, filePath, fileHandle, params, pipe;
 		presetName = name ? "";
@@ -958,7 +961,7 @@ SampleLooper {
 	}
 	
 	loadPreset { |presetName|
-		
+			
 	}
 	
 	getParams {

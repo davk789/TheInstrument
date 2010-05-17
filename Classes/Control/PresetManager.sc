@@ -1,4 +1,6 @@
 PresetManager { // this should eliminate redundant code relating to saving/recalling presets
+	// actually, i think getting all the instrument classes to inherit from a common base
+	// would be a better way to approach this problem
 	var saveRoot, parent, saveRoot, rawParams, fParams;
 	var <>background, <>stringColor;
 	// GUI
