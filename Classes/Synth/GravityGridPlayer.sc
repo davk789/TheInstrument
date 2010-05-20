@@ -1,4 +1,4 @@
-GravityGridPlayer {
+GravityGridPlayer : InstrumentVoice {
 	var <bufnum=75, parent, nodeNum, groupNum, maxSize=16, server, massCoords,
 		outBus=0, resetInBus=22, rate=1, newX=0.5, newY=0.5, bufnum=75, resetRate=1,
 		massCoordView, massWeightView, startButton, resetInBusMenu, rateKnob, resetRateKnob, newXKnob, newYKnob;

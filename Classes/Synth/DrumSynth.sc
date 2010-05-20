@@ -1,5 +1,5 @@
 
-DSBase {
+DSBase : InstrumentVoice {
 	var <drumID, <rezID, drumName, rezName, groupID=999, server,
 		<>drumParams, <>rezParams, drumKnobColors, rezKnobColors, view, <>drumControls, <>rezControls;
 	*new {

@@ -1,4 +1,4 @@
-WavetableSynth {
+WavetableSynth : InstrumentVoice {
 	classvar  classGroup=102;
 	var parent, activeNotes, win, instGroup=103, s, bufferA=70, bufferB=71, tunings, tuning,
 		<>att=0.001, <>dec=0.008, <>sus=0.1, <>rel=0.5, 

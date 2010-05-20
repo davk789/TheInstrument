@@ -1,4 +1,12 @@
-InstrumentBase {
+InstrumentVoice {
+	/*
+		i will contain all functionality common to the following "voice" classes:
+			DSBase            .... the common base for all drum synth voices     
+			SampleLooper      .... the channels and not the Sampler container classs
+			WavetableSynth    .... is inherited by WvetableSynthFilter
+			GravityGridPlayer .... for semantic consistency
+
+	*/
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
 	var sep, saveRoot, rawParams, formattedParams;
 	*new {
@@ -54,7 +62,7 @@ InstrumentBase {
 	loadPreset { |presetName|
 		var preset;
 		preset = (saveRoot ++ sep ++ presetName).load;
-		params = preset;
+		rawParams = preset;
 		this.refreshValues;
 	}
 	

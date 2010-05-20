@@ -232,7 +232,7 @@ Sampler { // container for one or more SampleLoopers
 	
 }
 
-SampleLooper : InstrumentBase {
+SampleLooper : InstrumentVoice {
 	classvar <groupNum=55;
 	var parent, s, <playerNodeNum, <recorderNodeNum, playerParams, recorderParams, 
 		paused=false, synthOutputs, synthInputs, activeBufferIndex=0, activeMarkerIndex=0, 
