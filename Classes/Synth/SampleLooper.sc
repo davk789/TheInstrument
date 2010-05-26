@@ -371,7 +371,7 @@ SampleLooper : InstrumentVoice {
 			s.sendMsg('n_set', recorderNodeNum, 'trig', 1);
 		}{
 			s.sendMsg('n_set', recorderNodeNum, 'trig', 0);
-			this.drawWaveformView(false);
+			waveformView.setBuffer(sampler.buffers[activeBufferIndex]);
 		};
 	}
 
@@ -495,7 +495,7 @@ SampleLooper : InstrumentVoice {
 	
 	clearActiveBuffer {
 		sampler.buffers[activeBufferIndex].zero;
-		this.drawWaveformView;
+		waveformView.setBuffer(sampler.buffers[activeBufferIndex]);
 	}
 
 	setLoopRange { |start, end|
