@@ -925,7 +925,7 @@ SampleLooper : InstrumentVoice {
 		];
 	}
 	
-	// preset stuff
+	// preset stuff should be handled by the superclass
 	
 	savePreset { |name|
 		var presetName, filePath, fileHandle, params, pipe;

@@ -115,3 +115,11 @@ GenericActionButton {
 			.mouseUpAction_({ |obj| mouseUpAction.value(obj.value); });
 	}
 }
+
++ StartUp {
+	// holy semantic inconsistency
+	* rtf {
+		Document.open(Platform.userAppSupportDir ++ Platform.pathSeparator ++ "startup.rtf");
+	}
+	
+}
