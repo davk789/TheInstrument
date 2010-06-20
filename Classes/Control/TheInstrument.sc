@@ -155,7 +155,7 @@ ThyInstrument {
 				
 		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
 		
-		monoInputChannel = MonoInputChannel.new(this);
+		//monoInputChannel = MonoInputChannel.new(this);
 
 		polySynth = WavetableSynthFilter.new(this);//, true); // enable midi thru
 //		polySynth = WavetableSynth.new(this);
