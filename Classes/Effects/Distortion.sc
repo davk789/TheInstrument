@@ -149,7 +149,7 @@ Distortion : EffectBase {
 				.string_(inputName ++ " channel, slot " ++ inputNumber)
 				.stringColor_(Color.yellow);
 			shapeView = GUI.userView.new(win, Rect.new(0, 0, 250, 250))
-				.relativeOrigin_(true)
+				//.relativeOrigin_(true)
 				.background_(Color.black.alpha_(0.8))
 				//.mouseUpAction_({ |obj,x,y,mod| this.refreshUserView(x,y,mod); })
 				.drawFunc_(drawFunction);

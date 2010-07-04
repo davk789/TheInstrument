@@ -19,7 +19,7 @@ MarkerBar {
 		highlightRange = Dictionary.new;
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
-			.relativeOrigin_(true)
+			//.relativeOrigin_(true)
 			.mouseMoveAction_({ |obj,x,y,mod| 
 				mouseMoveAction.value(obj,x,y,mod); 
 			})
@@ -229,7 +229,7 @@ MarkerArea {
 		mouseMoveAction = { |obj,x,y,mod| };
 		uView = GUI.userView.new(view, dimensions)
 			.background_(Color.black.alpha_(0.8))
-			.relativeOrigin_(false)
+			//.relativeOrigin_(false)
 			.mouseDownAction_({ |obj,x,y,mod| 
 				this.handleAddEvent(x @ y, mod);
 				mouseDownAction.(obj,x,y,mod);

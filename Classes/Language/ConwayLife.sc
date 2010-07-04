@@ -177,7 +177,7 @@ ConwayLife {
 	makeGUI { |parent, bounds|
 		fieldView = GUI.userView.new(parent, bounds)
             .background_(Color.white)
-			.relativeOrigin_(false)
+			//.relativeOrigin_(false)
 			.drawFunc_(drawFunction)
 		    .mouseDownAction_({ |obj,x,y,mod|
 				this.setDrawAction(x,y);
