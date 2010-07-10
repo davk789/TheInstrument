@@ -8,7 +8,7 @@ InstrumentVoice {
 
 	*/
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
-	var sep, saveRoot, rawParams, formattedParams;
+	var sep, saveRoot, rawParams, formattedParams, nodeNum;
 	*new {
 		^super.new.init_instrumentbase;
 	}
@@ -17,6 +17,11 @@ InstrumentVoice {
 		postln("initializing InstrumentBase");
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
+	}
+	
+	setParam { |param,val|
+		startParams[param] = val;
+		s.sendMsg('n_set', nodeNum, param, val);
 	}
 	
 	savePreset { |name|

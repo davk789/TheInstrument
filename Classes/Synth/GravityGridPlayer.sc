@@ -1,6 +1,8 @@
 GravityGridPlayer : InstrumentVoice {
-	var <bufnum=75, parent, nodeNum, groupNum, maxSize=16, server, massCoords,
-		outBus=0, resetInBus=22, rate=1, newX=0.5, newY=0.5, bufnum=75, resetRate=1,
+	var <bufnum=75, parent, groupNum, maxSize=16, server, massCoords,
+		// certain SyntDef args should be kep out of the startParams disctionary
+		// startParams should only contain settable parameters
+		outBus=0, bufnum=75,
 		massCoordView, massWeightView, startButton, resetInBusMenu, rateKnob, resetRateKnob, newXKnob, newYKnob;
 	*new { |par|
 		^super.new.init_gravitygridplayer(par);
@@ -11,6 +13,13 @@ GravityGridPlayer : InstrumentVoice {
 		nodeNum = server.nextNodeID;
 		groupNum = server.nextNodeID;
 		massCoords = Array.fill(5, { |ind| (150.rand @ 150.rand); });
+		startParams = Dictionary[
+			'resetInBus' -> resetInBus,
+			'rate' -> 1, 
+			'newX' -> 0.5, 
+			'newY' ->  0.5,
+			'resetRate' -> 1
+		];
 		server.sendMsg('g_new', groupNum, 0, 1);
 		this.addMixerChannel;
 		this.makeGUI;
@@ -28,9 +37,8 @@ GravityGridPlayer : InstrumentVoice {
 		server.listSendMsg(['b_setn', bufnum, 0, 1 + (massCoords.size * 3), massCoords.size] ++ this.getParamList);
 	}
 	start {
-		server.sendMsg('s_new', 's_gravityGrid', nodeNum, 0, groupNum, 
-			'outBus', outBus, 'resetInBus', resetInBus, 'rate', rate, 
-			'newX', newX, 'newY',  newY, 'bufnum', bufnum, 'resetRate', resetRate);
+		server.listSendMsg(['s_new', 's_gravityGrid', nodeNum, 0, groupNum, 
+			'outBus', outBus, 'bufnum', bufnum] ++ startParams);
 	}
 	stop {
 		server.sendMsg('n_free', nodeNum);
@@ -43,24 +51,24 @@ GravityGridPlayer : InstrumentVoice {
 		};
 	}
 	setResetInBus { |val|
-		resetInBus = val;
-		server.sendMsg('n_set', nodeNum, 'resetInBus', resetInBus); 
+		startParams['resetInBus'] = val;
+		server.sendMsg('n_set', nodeNum, 'resetInBus', startParams['resetInBus']); 
 	}
 	setRate { |val| 
-		rate = val;
-		server.sendMsg('n_set', nodeNum, 'rate', rate); 
+		startParams['rate'] = val;
+		server.sendMsg('n_set', nodeNum, 'rate', startParams['rate']); 
 	}
 	setNewX { |val| 
-		newX = val;
-		server.sendMsg('n_set', nodeNum, 'newX', newX); 
+		startParams['newX'] = val;
+		server.sendMsg('n_set', nodeNum, 'newX', startParams['newX']); 
 	}
 	setNewY { |val| 
-		newY = val;
-		server.sendMsg('n_set', nodeNum, 'newY', newY); 
+		startParams['newY'] = val;
+		server.sendMsg('n_set', nodeNum, 'newY', startParams['newY']); 
 	}
 	setResetRate { |val|
-		resetRate = val;
-		server.sendMsg('n_set', nodeNum, 'resetRate', resetRate);
+		startParams['resetRate'] = val;
+		server.sendMsg('n_set', nodeNum, 'resetRate', startParams['resetRate']);
 	}
 	getParamList {
 		var x, y, wgt;

@@ -24,22 +24,25 @@
 
 */
 ThyInstrument {
-	classvar noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0,
-        <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl, <controlFont, <strongFont, <>effectsList,
-        <>filterUGens, <filterSpecs;
+	var noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0, <strongFont, <>effectsList, <>filterUGens, <filterSpecs, <controlFont;
+    var <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl;
 	*new {
+		^super.new.init_thyinstrument;
+	}
+	
+	init_thyinstrument {
 		this.initializeMIDI;
 		this.launchMidiResponders;
 		this.createFilters;
 		this.launchObjects;
 	}
 	
-	*test {
+	test {
 		this.new;
 		this.useComputerKeyboard;
 	}
 	
-	*createFilters {
+	createFilters {
 	/*  filterSpecs and filterUGens are shared by WavetableSynthFilter and by Filter... this is why the functions
 		are in the "global" namespace */
 		filterUGens = Dictionary[
@@ -84,7 +87,7 @@ ThyInstrument {
 		];
 	}
 	
-	*initializeMIDI {
+	initializeMIDI {
 		noteOnFunction = { |src,chan,num,vel|
 			//[src,chan,num,vel].postln;
 			lastChannel = chan;
@@ -123,27 +126,27 @@ ThyInstrument {
 		};
 	}
 	
-	*noteOn { |src,chan,num,vel|
+	noteOn { |src,chan,num,vel|
 		noteOnFunction.value(src,chan,num,vel);
 	}
 	
-	*noteOff { |src,chan,num,vel|
+	noteOff { |src,chan,num,vel|
 		noteOffFunction.value(src,chan,num,vel);
 	}
 	
-	*bend { |src,chan,val|
+	bend { |src,chan,val|
 		bendFunction.value(src, chan, val);
 	}
 	
-	*cc { |src,chan,num,val|
+	cc { |src,chan,num,val|
 		ccFunction.value(src, chan, num, val);
 	}
 	
-	*touch { |src,chan,val|
+	touch { |src,chan,val|
 		touchFunction.value(src,chan.val);
 	}
 	
-	*launchObjects {
+	launchObjects {
 		// global helper objects
 		audioBusRegister = Dictionary.new;
 		effectsList = Array.new;
@@ -155,12 +158,12 @@ ThyInstrument {
 				
 		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
 		
-		//monoInputChannel = MonoInputChannel.new(this);
+		monoInputChannel = MonoInputChannel.new(this);
 
 		polySynth = WavetableSynthFilter.new(this);//, true); // enable midi thru
 //		polySynth = WavetableSynth.new(this);
 
-		drumSynth = DrumSynth.new(this);
+//		drumSynth = DrumSynth.new(this);
 				
 		Platform.case('osx', {
 			gravityGridPlayer = GravityGridPlayer.new(this);
@@ -170,7 +173,7 @@ ThyInstrument {
 		
 	}
 	
-	*launchMidiResponders {
+	launchMidiResponders {
 		NoteOnResponder(noteOnFunction);
 		NoteOffResponder(noteOffFunction);
 		CCResponder(ccFunction);
@@ -178,15 +181,15 @@ ThyInstrument {
 		BendResponder(bendFunction);
 	}
 	
-	*loadSynthDefs { // deprecated
+	loadSynthDefs { // deprecated
 		var path;
 		path = Platform.userAppSupportDir ++ "/Extensions/theinstrument/SynthDefs/*.scd";
 		path.pathMatch.do{ |obj,ind| obj.load; };
 	}
 	
-	*useComputerKeyboard { |create=true|
+	useComputerKeyboard { |create=true|
 		if(create){
-			keyControl = QuickKeyboard.new(this); // this is a really ugly class
+			keyControl = QuickKeyboard.new(this);
 		}{
 			keyControl = nil;
 		};
