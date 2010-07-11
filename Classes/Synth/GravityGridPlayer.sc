@@ -14,7 +14,7 @@ GravityGridPlayer : InstrumentVoice {
 		groupNum = server.nextNodeID;
 		massCoords = Array.fill(5, { |ind| (150.rand @ 150.rand); });
 		startParams = Dictionary[
-			'resetInBus' -> resetInBus,
+			'resetInBus' -> 22,
 			'rate' -> 1, 
 			'newX' -> 0.5, 
 			'newY' ->  0.5,
@@ -24,6 +24,7 @@ GravityGridPlayer : InstrumentVoice {
 		this.addMixerChannel;
 		this.makeGUI;
 		this.initBuffer;
+		startParams['resetInBus'] = outBus;
 	}
 	addMixerChannel {
 		parent.mixer.addMonoChannel("GravityGrid", 0);

@@ -914,6 +914,19 @@ WavetableSynthFilter : WavetableSynth {
 			Out.ar(outBus, aFilt * aEnv);
 		}, [nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 1, nil, 1, 1, 1, nil, 1, 1, 1, nil, nil, nil, nil, nil, nil, 1, 1]).load(s);
 		
+		/*		SynthDef.new("wavetableSynthLFO", {
+			|freq, waveformType, outBus|
+			var aCub, aTri, aSig;
+			
+			aCub = LFCub.ar(0.2, 0, 1);			
+			aCub = LFTri.ar(0.2, 0, 1);
+			
+			aSig = Select.ar(waveformType, [aCub, aTri]);
+
+			Out.ar(outBus, aSig);
+			
+		}).load(s);
+		*/
 	
 	}
 	

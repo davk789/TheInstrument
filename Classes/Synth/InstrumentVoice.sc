@@ -3,12 +3,12 @@ InstrumentVoice {
 		i will contain all functionality common to the following "voice" classes:
 			DSBase            .... the common base for all drum synth voices     
 			SampleLooper      .... the channels and not the Sampler container classs
-			WavetableSynth    .... is inherited by WvetableSynthFilter
+			WavetableSynth    .... is inherited by WavetableSynthFilter
 			GravityGridPlayer .... for semantic consistency
 
 	*/
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
-	var sep, saveRoot, rawParams, formattedParams, nodeNum;
+	var sep, saveRoot, rawParams, formattedParams, nodeNum, startParams, s;
 	*new {
 		^super.new.init_instrumentbase;
 	}
@@ -17,6 +17,7 @@ InstrumentVoice {
 		postln("initializing InstrumentBase");
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
+		s = Server.default;
 	}
 	
 	setParam { |param,val|
