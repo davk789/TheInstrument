@@ -14,10 +14,25 @@ InstrumentVoice {
 	}
 	
 	init_instrumentbase {
-		postln("initializing InstrumentBase");
+		noteOnFunction = { |src,chan,num,vel|
+			[src,chan,num,vel].postln;
+		};
+		noteOffFunction = { |src,chan,num,vel|
+			[src,chan,num,vel].postln;
+		};
+		ccFunction = { |src,chan,num,val|
+			[src,chan,num,val].postln;
+		};
+		bendFunction = { |src,chan,val|
+			[src,chan,val].postln;
+		};
+		afterTouchFunction = { |src,chan,val|
+			[src,chan,val].postln;
+		}; 
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
 		s = Server.default;
+		postln(this.class.asString ++ " initialized");
 	}
 	
 	setParam { |param,val|
@@ -76,24 +91,24 @@ InstrumentVoice {
 		// how should i be handled?	
 	}
 	
-	noteOn {
-		noteOnFunction.value;
+	noteOn { |src,chan,num,vel|
+		noteOnFunction.value(src,chan,num,vel);
 	}
 	
-	noteOff {
-		noteOffFunction.value;
+	noteOff { |src,chan,num,vel|
+		noteOffFunction.value(src,chan,num,vel);
 	}
 	
-	bend {
-		bendFunction.value;
+	bend { |src,chan,val|
+		bendFunction.value(src,chan,val);
 	}
 	
-	cc {
-		ccFunction.value;
+	cc { |src,chan,num,val|
+		ccFunction.value(src,chan,num,val);
 	}
 	
-	afterTouch {
-		afterTouchFunction.value;
+	afterTouch { |src,chan,val|
+		afterTouchFunction.value(src,chan,val);
 	}
 	
 }
