@@ -1,5 +1,4 @@
 PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
-	var activeNotes;
 	*new {
 		^super.new.init_polygendy;
 	}
@@ -12,7 +11,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 
 	initializeMIDI {
 		noteOnFunction = { |src,chan,num,vel|
-			this.addActiveNote(num, s.nextNodeID);
+			this.addActiveNote(num, server.nextNodeID);
 			[src,chan,num,vel].postln;
 		};
 
@@ -38,17 +37,26 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		SynthDef.new("PolyGendy", {
 			|ampdist,durdist,adparam,ddparam,minfreq,maxfreq,durscale,initcps,scale,add|
 			Gendy1.ar(ampdist,durdist,adparam,ddparam,minfreq,maxfreq,durscale,initcps,add);
-		}).load(s);
+		}).load(server);
 	}
 
-	addActiveNote { |noteNum,id|
-		var lastNote;
-		if(activeNotes[noteNum].notNil){
-			lastNote = activeNotes[noteNum];
-			activeNotes[noteNum] = lastNote ++ id;
-		}{
-			activeNotes = activeNotes.add(noteNum -> id.asArray);
-		};
+	noteOn {
+
 	}
 
+	noteOff {
+	
+	}
+
+	afterTouch {
+	
+	}
+
+	bend {
+	
+	}
+
+	cc {
+	
+	}
 }

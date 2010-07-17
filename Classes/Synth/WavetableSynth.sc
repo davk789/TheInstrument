@@ -432,8 +432,6 @@ init_wavetablesynth { |par, midi|
 			if(midiThru){
 				midiOut.noteOff(1, num, vel);
 			};
-		}{
-			postln("The EventLooper is dropping the first note of the sequence now, but at least it basically works.");
 		};
 	}
 	

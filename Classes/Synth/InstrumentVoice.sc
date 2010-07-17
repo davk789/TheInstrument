@@ -7,9 +7,12 @@ InstrumentVoice {
 			GravityGridPlayer .... for semantic consistency
 
 	*/
+	classvar server;
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
-	var sep, saveRoot, rawParams, formattedParams, nodeNum, startParams, s;
+	var sep, saveRoot, rawParams, formattedParams, nodeNum, startParams;
+	var activeNotes, lastNote;
 	*new {
+		server = Server.default;
 		^super.new.init_instrumentbase;
 	}
 	
@@ -31,13 +34,12 @@ InstrumentVoice {
 		}; 
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
-		s = Server.default;
 		postln(this.class.asString ++ " initialized");
 	}
 	
 	setParam { |param,val|
 		startParams[param] = val;
-		s.sendMsg('n_set', nodeNum, param, val);
+		server.sendMsg('n_set', nodeNum, param, val);
 	}
 	
 	savePreset { |name|
@@ -110,5 +112,24 @@ InstrumentVoice {
 	afterTouch { |src,chan,val|
 		afterTouchFunction.value(src,chan,val);
 	}
+
+	addActiveNote { |noteNum,id|
+		var lastNote;
+		if(activeNotes[noteNum].notNil){
+			lastNote = activeNotes[noteNum];
+			activeNotes[noteNum] = lastNote ++ id;
+		}{
+			activeNotes = activeNotes.add(noteNum -> id.asArray);
+		};
+	}
+
+	removeActiveNote { |noteNum|
+		if(lastNote.size == 1){
+			activeNotes.removeAt(noteNum);
+		}{
+			activeNotes[noteNum].removeAt(0);
+		};
+	}
+
 	
 }
