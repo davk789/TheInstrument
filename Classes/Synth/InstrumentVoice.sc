@@ -10,13 +10,14 @@ InstrumentVoice {
 	classvar server;
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
 	var sep, saveRoot, rawParams, formattedParams, nodeNum, startParams;
-	var activeNotes, lastNote;
-	*new {
+	var activeNotes, lastNote, parent;
+	*new { |par|
 		server = Server.default;
-		^super.new.init_instrumentbase;
+		^super.new.init_instrumentbase(par);
 	}
 	
-	init_instrumentbase {
+	init_instrumentbase { |par|
+		parent = par;
 		noteOnFunction = { |src,chan,num,vel|
 			[src,chan,num,vel].postln;
 		};
