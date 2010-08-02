@@ -9,7 +9,8 @@ InstrumentVoice {
 	*/
 	classvar server;
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
-	var sep, saveRoot, rawParams, formattedParams, nodeNum, startParams;
+	var sep, saveRoot, rawParams, formattedParams, nodeNum, groupID, startParams;
+	var <>win;
 	var activeNotes, lastNote, parent;
 	*new { |par|
 		server = Server.default;
@@ -33,6 +34,7 @@ InstrumentVoice {
 		afterTouchFunction = { |src,chan,val|
 			[src,chan,val].postln;
 		}; 
+		startParams = Dictionary.new;
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
 		postln(this.class.asString ++ " initialized");
@@ -40,7 +42,7 @@ InstrumentVoice {
 	
 	setParam { |param,val|
 		startParams[param] = val;
-		server.sendMsg('n_set', nodeNum, param, val);
+		server.sendMsg('n_set', groupID, param, val);
 	}
 	
 	savePreset { |name|

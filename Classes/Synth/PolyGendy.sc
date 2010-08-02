@@ -1,4 +1,5 @@
 PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
+	var adParamButtons, ddParamButtons, freqRangeSlider, durScaleSlider, initCPsSlider;
 	*new { |par|
 		^super.new(par).init_polygendy;
 	}
@@ -34,6 +35,26 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		};
 
 	}
+	
+	setDDParam { |sel|
+		this.setParam('ddParam', sel);
+	}
+
+	setADParam { |sel|
+		this.setParam('adParam', sel);
+	}
+
+	setFreqRange { |val|
+		this.setParam('freqRange', val);
+	}
+	
+	setInitCPs { |val|
+		this.setParam('initCPs', val);
+	}
+	
+	setDurScale { |val|
+		this.setParam('durScale', val);
+	}
 
 	*loadSythDef {
 		SynthDef.new("PolyGendy", {
@@ -63,8 +84,87 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 	
 	makeGUI {
-		var win;
+		var probDists, adParamView, ddParamView;
 		win = GUI.window.new("PolyGendy", Rect.new(500.rand, 500.rand, 600, 200)).front;
+		win.view.decorator = FlowLayout(win.view.bounds);
+
+		probDists = ["linear","cauchy","logist","hyperbcos","arcsine","expon","sinus",];
+
+		adParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
+		GUI.staticText.new(adParamView, Rect.new(0, 0, 50, 25))
+			.string_("adparam")
+			.font_(parent.controlFont);
+		adParamButtons = Array.fill(7, { |ind|
+			GUI.button.new(adParamView, Rect.new(0, 0, 50, 25))
+				.font_(parent.controlFont)
+				.states_([
+					[probDists[ind], Color.blue(0.2), Color.white,],
+					[probDists[ind], Color.white, Color.blue(0.2),],
+				])
+				.action_({ |obj|
+					this.setADParam(ind);
+					adParamButtons.do{ |o,i|
+						if(i == ind){
+							o.value = 1;	
+						}{
+							o.value = 0;
+						};
+					};
+				})
+
+		});
+		adParamButtons[0].value = 1;
+
+		ddParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
+		GUI.staticText.new(ddParamView, Rect.new(0, 0, 50, 25))
+			.string_("ddparam")
+			.font_(parent.controlFont);
+		ddParamButtons = Array.fill(7, { |ind|
+			GUI.button.new(ddParamView, Rect.new(0, 0, 50, 25))
+				.font_(parent.controlFont)
+				.states_([
+					[probDists[ind], Color.blue(0.2), Color.white,],
+					[probDists[ind], Color.white, Color.blue(0.2),],
+				])
+				.action_({ |obj|
+					this.setDDParam(ind);
+					ddParamButtons.do{ |o,i|
+						if(i == ind){
+							o.value = 1;	
+						}{
+							o.value = 0;
+						};
+					};
+				})
+		});
+		ddParamButtons[0].value = 1;
+		//, durScaleSlider, initCPsSlider
+		freqRangeSlider = EZSlider.new(
+			parent: win, 
+			bounds: Rect.new(0, 0, 500, 25),
+			label:"freq range",
+			controlSpec: 'freq'.asSpec,
+			initVal: 200,
+			action: { |obj| this.setFreqRange(obj.value) }
+		);
+
+		durScaleSlider = EZSlider.new(
+			parent: win, 
+			bounds: Rect.new(0, 0, 500, 25),
+			label:"dur scale",
+			initVal: 1,
+			action: { |obj| this.setDurScale(obj.value) }
+		);
+		
+		initCPsSlider = EZSlider.new(
+			parent: win, 
+			bounds: Rect.new(0, 0, 500, 25),
+			label:"init cps",
+			controlSpec: [2, 24].asSpec,
+			initVal: 12,
+			round: 1,
+			action: { |obj| this.setInitCPs(obj.value) }
+		);
 		
 	}
 

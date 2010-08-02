@@ -25,7 +25,8 @@
 */
 ThyInstrument {
 	var noteOnFunction, noteOffFunction, bendFunction, ccFunction, touchFunction, lastChannel=0, <strongFont, <>effectsList, <>filterUGens, <filterSpecs, <controlFont;
-    var <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, keyControl;
+    var <>audioBusRegister, <>mixer, <>eventLooper, <>monoInputChannel, <>polySynth, <>drumSynth, <>gravityGridPlayer, <>sampler, <>polyGendy,
+    keyControl;
 	*new {
 		^super.new.init_thyinstrument;
 	}
@@ -156,7 +157,7 @@ ThyInstrument {
 		// Instrument classes
 		mixer = Mixer.new(this);
 				
-		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
+/*		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
 		
 		monoInputChannel = MonoInputChannel.new(this);
 
@@ -170,6 +171,8 @@ ThyInstrument {
 		});
 
 		sampler = Sampler.new(this, 8);
+*/		
+		polyGendy = PolyGendy.new(this);
 		
 	}
 	
