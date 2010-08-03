@@ -152,7 +152,6 @@ init_wavetablesynth { |par, midi|
 	}
 	setParams { |values|
 		instGroup = values[0];
-		// ... so, I'll add this crummy workaround since the preset stuff was coded so badly here
 		// TODO !!! must make the WavetableSynth load and save presets sensibly !!!
 		//outBus = values[1];
 		peakA = values[2];

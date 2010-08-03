@@ -11,7 +11,7 @@ InstrumentVoice {
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
 	var sep, saveRoot, rawParams, formattedParams, nodeNum, groupID, startParams;
 	var <>win;
-	var activeNotes, lastNote, parent;
+	var activeNotes, lastNote, parent, synthDefName;
 	*new { |par|
 		server = Server.default;
 		^super.new.init_instrumentbase(par);
@@ -19,11 +19,24 @@ InstrumentVoice {
 	
 	init_instrumentbase { |par|
 		parent = par;
+		activeNotes = Dictionary.new;
+		startParams = Dictionary.new;
+		sep = Platform.pathSeparator;
+		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
+		
+		this.initializeMIDI;
+		postln(this.class.asString ++ " initialized");
+	}
+	
+	initializeMIDI {
 		noteOnFunction = { |src,chan,num,vel|
 			[src,chan,num,vel].postln;
+			server.listSendMsg(['s_new', synthDefName, activeNotes[num].last, 0, groupID] ++ startParams);
+			server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			[src,chan,num,vel].postln;
+			server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 		};
 		ccFunction = { |src,chan,num,val|
 			[src,chan,num,val].postln;
@@ -34,10 +47,6 @@ InstrumentVoice {
 		afterTouchFunction = { |src,chan,val|
 			[src,chan,val].postln;
 		}; 
-		startParams = Dictionary.new;
-		sep = Platform.pathSeparator;
-		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
-		postln(this.class.asString ++ " initialized");
 	}
 	
 	setParam { |param,val|
@@ -97,23 +106,30 @@ InstrumentVoice {
 	}
 	
 	noteOn { |src,chan,num,vel|
+		this.addActiveNote(num, server.nextNodeID);
 		noteOnFunction.value(src,chan,num,vel);
+		// add looper support here
 	}
 	
 	noteOff { |src,chan,num,vel|
+		this.removeActiveNote(num);
 		noteOffFunction.value(src,chan,num,vel);
+		// add looper support here
 	}
 	
 	bend { |src,chan,val|
 		bendFunction.value(src,chan,val);
+		// add looper support here
 	}
 	
 	cc { |src,chan,num,val|
 		ccFunction.value(src,chan,num,val);
+		// add looper support here
 	}
 	
 	afterTouch { |src,chan,val|
 		afterTouchFunction.value(src,chan,val);
+		// add looper support here
 	}
 
 	addActiveNote { |noteNum,id|

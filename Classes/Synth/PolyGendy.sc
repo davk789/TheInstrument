@@ -1,39 +1,17 @@
 PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
-	var adParamButtons, ddParamButtons, freqRangeSlider, durScaleSlider, initCPsSlider;
+	var adParamButtons, ddParamButtons, freqRangeSlider, durScaleSlider, initCPsSlider,
+		initCPsModulatorMenu, durScaleModulatorMenu, freqRangeModulatorMenu, envelopeView, envScaleSlider;
 	*new { |par|
 		^super.new(par).init_polygendy;
 	}
 
 	init_polygendy {
-		activeNotes = Dictionary.new;
-		this.initializeMIDI;
+
+		startParams = Dictionary[];
+		synthDefName = 'PolyGendy';
+		
 		this.makeGUI;
 		postln(this.class.asString ++ " initialized");
-	}
-
-	initializeMIDI {
-		noteOnFunction = { |src,chan,num,vel|
-			this.addActiveNote(num, server.nextNodeID);
-			[src,chan,num,vel].postln;
-		};
-
-		noteOffFunction = { |src,chan,num,vel|
-			this.removeActiveNote(num);
-			[src,chan,num,vel].postln;
-		};
- 
-		ccFunction = { |src,chan,num,val|
-			[src,chan,num,val].postln;
-		};
-
-		bendFunction = { |src,chan,val|
-			[src,chan,val].postln;
-		};
-
-		afterTouchFunction = { |src,chan,val|
-			[src,chan,val].postln;
-		};
-
 	}
 	
 	setDDParam { |sel|
@@ -55,11 +33,38 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	setDurScale { |val|
 		this.setParam('durScale', val);
 	}
+	
+	setEnvelope { |env|
+		// not optimal?
+		startParams['att'] = (env[0][1] - env[0][0]);
+		startParams['dec'] = (env[0][2] - env[0][1]);
+		startParams['sus'] = (env[0][3] - env[0][2]);
+		startParams['rel'] = (env[0][4] - env[0][3]);
+		startParams['peakA'] = env[1][1];
+		startParams['peakB'] = env[1][2];
+		startParams['peakC'] = env[1][3];
+		s.sendMsg('n_set', groupID, 
+			'att',   startParams['att'], 
+			'dec',   startParams['dec'],
+			'sus',   startParams['sus'], 
+			'rel',   startParams['rel'], 
+			'peakA', startParams['peakA'], 
+			'peakB', startParams['peakB'], 
+			'peakC', startParams['peakC']
+		);
+	}
+	
+	setEnvScale { |val|
+		this.setParam('envScale', val);
+	}
 
-	*loadSythDef {
+	*loadSynthDef {
 		SynthDef.new("PolyGendy", {
-			|ampdist,durdist,adparam,ddparam,minfreq,maxfreq,durscale,initcps,mul,add|
-			Gendy1.ar(
+			|ampdist,durdist,adparam,ddparam,minfreq,maxfreq,durscale,initcps,mul,add
+			 peakA=0.7, peakB=0.5, peakC=0.6, att=0.1, dec=0.2, sus=0.3, rel=0.2,
+			 gate=0, lev=1, envScale=0, curve=(-1.6), outBus=22|
+			var aOsc, aEnv;
+			aOsc = Gendy1.ar(
 				ampdist, /*Choice of probability distribution for the next perturbation of the amplitude of a control point. 
 					The distributions are (adapted from the GENDYN program in Formalized Music):
 					0- LINEAR
@@ -80,22 +85,34 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 				initcps, /*initCPs- Initialise the number of control points in the memory. Xenakis specifies 12. There would be this number of control points per cycle of the oscillator, though the oscillator's period will constantly change due to the duration distribution.  */
 				mul,
 				add);
+			aEnv = EnvGen.ar(
+				Env.new([0, peakA, peakB, peakC, 0], 
+						[att, sus, dec, rel], 
+						[curve, 0, 0, curve], 3), // applying curve only to attack and release
+				gate, 
+				lev, 
+				0, 
+				envScale, 
+				2);
+			Out.ar(outBus, aEnv * aOsc);
 		}).load(server);
 	}
 	
 	makeGUI {
-		var probDists, adParamView, ddParamView;
-		win = GUI.window.new("PolyGendy", Rect.new(500.rand, 500.rand, 600, 200)).front;
+		var probDists, midiSources, adParamView, ddParamView;
+		var envScaleSpec, envView;
+		win = GUI.window.new("PolyGendy", Rect.new(500.rand, 500.rand, 600, 300)).front;
 		win.view.decorator = FlowLayout(win.view.bounds);
 
 		probDists = ["linear","cauchy","logist","hyperbcos","arcsine","expon","sinus",];
+		
+		midiSources = ['*none*', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8',];
 
 		adParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
-		GUI.staticText.new(adParamView, Rect.new(0, 0, 50, 25))
-			.string_("adparam")
-			.font_(parent.controlFont);
+		GUI.staticText.new(adParamView, Rect.new(0, 0, 60, 25))
+			.string_("adparam");
 		adParamButtons = Array.fill(7, { |ind|
-			GUI.button.new(adParamView, Rect.new(0, 0, 50, 25))
+			GUI.button.new(adParamView, Rect.new(0, 0, 60, 25))
 				.font_(parent.controlFont)
 				.states_([
 					[probDists[ind], Color.blue(0.2), Color.white,],
@@ -116,11 +133,10 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		adParamButtons[0].value = 1;
 
 		ddParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
-		GUI.staticText.new(ddParamView, Rect.new(0, 0, 50, 25))
-			.string_("ddparam")
-			.font_(parent.controlFont);
+		GUI.staticText.new(ddParamView, Rect.new(0, 0, 60, 25))
+			.string_("ddparam");
 		ddParamButtons = Array.fill(7, { |ind|
-			GUI.button.new(ddParamView, Rect.new(0, 0, 50, 25))
+			GUI.button.new(ddParamView, Rect.new(0, 0, 60, 25))
 				.font_(parent.controlFont)
 				.states_([
 					[probDists[ind], Color.blue(0.2), Color.white,],
@@ -147,6 +163,9 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			initVal: 200,
 			action: { |obj| this.setFreqRange(obj.value) }
 		);
+		freqRangeModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
+			.items_(midiSources)
+			.action_({ |obj| "need a function".postln; });
 
 		durScaleSlider = EZSlider.new(
 			parent: win, 
@@ -155,6 +174,9 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			initVal: 1,
 			action: { |obj| this.setDurScale(obj.value) }
 		);
+		durScaleModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
+			.items_(midiSources)
+			.action_({ |obj| "need a function".postln; });
 		
 		initCPsSlider = EZSlider.new(
 			parent: win, 
@@ -165,7 +187,25 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			round: 1,
 			action: { |obj| this.setInitCPs(obj.value) }
 		);
+		initCPsModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
+			.items_(midiSources ++ ["velocity"])
+			.action_({ |obj| "need a function".postln; });
 		
+		envView = GUI.vLayoutView.new(win, Rect.new(0, 0, 150, 130));
+		envelopeView = GUI.envelopeView.new(envView, Rect.new(0, 0, 150, 100))
+			.value_([[0.0, 0.05, 0.15, 0.8, 1.0], [0.0, 0.99, 0.5, 0.65, 0.0]])
+			.thumbSize_(5)
+			.drawLines_(true)
+			.setEditable(0, false)
+			.setEditable(4, false)
+			.action_({ |obj| this.setEnvelope(obj.value); });
+
+		envScaleSpec = [0.1, 10, 2.2].asSpec;
+		envScaleSlider = GUI.slider.new(envView, Rect.new(0, 0, 150, 25))
+			.value_(envScaleSpec.unmap(1))
+			.action_({ |obj| this.setEnvScale(envScaleSpec.map(obj.value)); });
+
+
 	}
 
 }
