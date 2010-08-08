@@ -6,11 +6,30 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 
 	init_polygendy {
-
-		startParams = Dictionary[];
+		startParams = Dictionary[
+			'ampdist'  -> 0,
+			'durdist'  -> 0,
+			'ddparam'  -> 1,
+			'adparam'  -> 1,
+			'minfreq'  -> 200,
+			'maxfreq'  -> 400,
+			'durscale' -> 1.0,
+			'peakA'    -> 0.7,
+			'peakB'    -> 0.3,
+			'peakC'    -> 0.4,
+			'att'      -> 0.04,
+			'dec'      -> 0.2,
+			'sus'      -> 0.3,
+			'rel'      -> 0.2,
+			'lev'      -> 1,
+			'envScale' -> 1,
+			'curve'    -> -1.6,
+			'outBus'   -> outBus
+		];
 		synthDefName = 'PolyGendy';
 		
 		this.makeGUI;
+		this.addMixerChannel;
 		postln(this.class.asString ++ " initialized");
 	}
 	
@@ -35,7 +54,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 	
 	setEnvelope { |env|
-		// not optimal?
+		// maybe this isn't the most elegant way to do this
 		startParams['att'] = (env[0][1] - env[0][0]);
 		startParams['dec'] = (env[0][2] - env[0][1]);
 		startParams['sus'] = (env[0][3] - env[0][2]);
@@ -43,7 +62,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		startParams['peakA'] = env[1][1];
 		startParams['peakB'] = env[1][2];
 		startParams['peakC'] = env[1][3];
-		s.sendMsg('n_set', groupID, 
+		server.sendMsg('n_set', groupID, 
 			'att',   startParams['att'], 
 			'dec',   startParams['dec'],
 			'sus',   startParams['sus'], 
@@ -59,7 +78,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 
 	*loadSynthDef {
-		SynthDef.new("PolyGendy", {
+		SynthDef.new(synthDefName, {
 			|ampdist,durdist,adparam,ddparam,minfreq,maxfreq,durscale,initcps,mul,add
 			 peakA=0.7, peakB=0.5, peakC=0.6, att=0.1, dec=0.2, sus=0.3, rel=0.2,
 			 gate=0, lev=1, envScale=0, curve=(-1.6), outBus=22|
@@ -108,7 +127,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		
 		midiSources = ['*none*', 'mod wheel', 'aftertouch', 'bend', 'knob 1', 'knob 2', 'knob 3', 'knob 4', 'knob 5', 'knob 6', 'knob 7', 'knob 8',];
 
-		adParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
+		adParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 600, 25));
 		GUI.staticText.new(adParamView, Rect.new(0, 0, 60, 25))
 			.string_("adparam");
 		adParamButtons = Array.fill(7, { |ind|
@@ -132,7 +151,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		});
 		adParamButtons[0].value = 1;
 
-		ddParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 500, 25));
+		ddParamView = GUI.hLayoutView.new(win, Rect.new(0, 0, 600, 25));
 		GUI.staticText.new(ddParamView, Rect.new(0, 0, 60, 25))
 			.string_("ddparam");
 		ddParamButtons = Array.fill(7, { |ind|
@@ -163,6 +182,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			initVal: 200,
 			action: { |obj| this.setFreqRange(obj.value) }
 		);
+
 		freqRangeModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
 			.items_(midiSources)
 			.action_({ |obj| "need a function".postln; });
@@ -174,6 +194,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			initVal: 1,
 			action: { |obj| this.setDurScale(obj.value) }
 		);
+
 		durScaleModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
 			.items_(midiSources)
 			.action_({ |obj| "need a function".postln; });
@@ -187,6 +208,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			round: 1,
 			action: { |obj| this.setInitCPs(obj.value) }
 		);
+
 		initCPsModulatorMenu = GUI.popUpMenu.new(win, Rect.new(0, 0, 75, 25))
 			.items_(midiSources ++ ["velocity"])
 			.action_({ |obj| "need a function".postln; });

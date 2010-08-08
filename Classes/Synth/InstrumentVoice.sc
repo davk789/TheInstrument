@@ -7,11 +7,11 @@ InstrumentVoice {
 			GravityGridPlayer .... for semantic consistency
 
 	*/
-	classvar server;
+	classvar server, synthDefName;
 	var noteOnFunction, noteOffFunction, ccFunction, bendFunction, afterTouchFunction;
 	var sep, saveRoot, rawParams, formattedParams, nodeNum, groupID, startParams;
 	var <>win;
-	var activeNotes, lastNote, parent, synthDefName;
+	var activeNotes, lastNote, parent, outBus=22;
 	*new { |par|
 		server = Server.default;
 		^super.new.init_instrumentbase(par);
@@ -23,8 +23,12 @@ InstrumentVoice {
 		startParams = Dictionary.new;
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets";
+		groupID = server.nextNodeID;
+
+		server.sendMsg('g_new', groupID, 0, 1);
 		
 		this.initializeMIDI;
+		// the subclass needs to call this.addMixerChannel
 		postln(this.class.asString ++ " initialized");
 	}
 	
@@ -36,7 +40,7 @@ InstrumentVoice {
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			[src,chan,num,vel].postln;
-			server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
+			server.sendMsg('n_set', activeNotes[num].last, 'gate', 0);
 		};
 		ccFunction = { |src,chan,num,val|
 			[src,chan,num,val].postln;
@@ -47,6 +51,11 @@ InstrumentVoice {
 		afterTouchFunction = { |src,chan,val|
 			[src,chan,val].postln;
 		}; 
+	}
+
+	addMixerChannel { // must be called by the subclass, after synthDefName is set
+		parent.mixer.addMonoChannel(synthDefName, 0);
+		outBus = parent.mixer.channels[synthDefName].inBus;
 	}
 	
 	setParam { |param,val|

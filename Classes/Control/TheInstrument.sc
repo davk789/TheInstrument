@@ -94,7 +94,9 @@ ThyInstrument {
 			lastChannel = chan;
 			switch(chan,
 				0, { // WavetableSynth
-					polySynth.noteOn(src, chan, num, vel);
+					// for testing purposes, disable polySynth
+					polyGendy.noteOn(src, chan, num, vel); 
+					//polySynth.noteOn(src, chan, num, vel);
 				},
 				9, { // DrumSynth
 					drumSynth.noteOn(src, chan, num, vel);
@@ -103,7 +105,8 @@ ThyInstrument {
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			if(chan == 0){
-				polySynth.noteOff(src,chan,num,vel);
+				polyGendy.noteOff(src, chan, num, vel);
+				//polySynth.noteOff(src,chan,num,vel);
 			};
 		};
 		bendFunction = { |src,chan,val|
