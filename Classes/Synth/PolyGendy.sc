@@ -1,6 +1,7 @@
 PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	var adParamButtons, ddParamButtons, freqRangeSlider, durScaleSlider, initCPsSlider,
 		initCPsModulatorMenu, durScaleModulatorMenu, freqRangeModulatorMenu, envelopeView, envScaleSlider;
+	var freqRange=200;
 	*new { |par|
 		^super.new(par).init_polygendy;
 	}
@@ -12,7 +13,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			'ddparam'  -> 1,
 			'adparam'  -> 1,
 			'minfreq'  -> 200,
-			'maxfreq'  -> 400,
+			'maxfreq'  -> { (200 + freqRange).abs },
 			'durscale' -> 1.0,
 			'peakA'    -> 0.7,
 			'peakB'    -> 0.3,
@@ -42,6 +43,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 
 	setFreqRange { |val|
+		
 		this.setParam('freqRange', val);
 	}
 	
@@ -54,7 +56,6 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 	
 	setEnvelope { |env|
-		// maybe this isn't the most elegant way to do this
 		startParams['att'] = (env[0][1] - env[0][0]);
 		startParams['dec'] = (env[0][2] - env[0][1]);
 		startParams['sus'] = (env[0][3] - env[0][2]);

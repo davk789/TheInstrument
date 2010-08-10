@@ -27,30 +27,16 @@ InstrumentVoice {
 
 		server.sendMsg('g_new', groupID, 0, 1);
 		
-		this.initializeMIDI;
 		// the subclass needs to call this.addMixerChannel
 		postln(this.class.asString ++ " initialized");
 	}
 	
 	initializeMIDI {
-		noteOnFunction = { |src,chan,num,vel|
-			[src,chan,num,vel].postln;
-			server.listSendMsg(['s_new', synthDefName, activeNotes[num].last, 0, groupID] ++ startParams);
-			server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
-		};
-		noteOffFunction = { |src,chan,num,vel|
-			[src,chan,num,vel].postln;
-			server.sendMsg('n_set', activeNotes[num].last, 'gate', 0);
-		};
-		ccFunction = { |src,chan,num,val|
-			[src,chan,num,val].postln;
-		};
-		bendFunction = { |src,chan,val|
-			[src,chan,val].postln;
-		};
-		afterTouchFunction = { |src,chan,val|
-			[src,chan,val].postln;
-		}; 
+		noteOnFunction = {  };
+		noteOffFunction = {};
+		ccFunction = {};
+		bendFunction = {};
+		afterTouchFunction = {};
 	}
 
 	addMixerChannel { // must be called by the subclass, after synthDefName is set
@@ -113,32 +99,68 @@ InstrumentVoice {
 	getParams {
 		// how should i be handled?	
 	}
-	
+
 	noteOn { |src,chan,num,vel|
-		this.addActiveNote(num, server.nextNodeID);
+		// pre-process params if needed
 		noteOnFunction.value(src,chan,num,vel);
+		// voice management
+		this.addActiveNote(num, server.nextNodeID);
+		// server messaging
+		this.doNoteOn(src,chan,num,vel);
 		// add looper support here
 	}
 	
 	noteOff { |src,chan,num,vel|
-		this.removeActiveNote(num);
+		// pre-process params if needed
 		noteOffFunction.value(src,chan,num,vel);
+		// voice management
+		this.removeActiveNote(num);
+		// server messaging
+		this.doNoteOff(src,chan,num,vel);
 		// add looper support here
 	}
 	
 	bend { |src,chan,val|
 		bendFunction.value(src,chan,val);
+		this.doBend(src,chan,val);
 		// add looper support here
 	}
 	
 	cc { |src,chan,num,val|
 		ccFunction.value(src,chan,num,val);
+		this.doCC(src,chan,num,val);
 		// add looper support here
 	}
 	
 	afterTouch { |src,chan,val|
 		afterTouchFunction.value(src,chan,val);
+		this.doAfterTouch(src,chan,val);
 		// add looper support here
+	}
+
+	// midi functions
+
+	doNoteOn { |src,chan,num,vel|
+		[src,chan,num,vel].postln;
+		server.listSendMsg(['s_new', synthDefName, activeNotes[num].last, 0, groupID] ++ startParams);
+		server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
+	}
+
+	doNoteOff { |src,chan,num,vel|
+		[src,chan,num,vel].postln;
+		server.sendMsg('n_set', activeNotes[num].last, 'gate', 0);
+	}
+
+	doCC { |src,chan,num,val|
+		[src,chan,num,val].postln;
+	}
+
+	doBend { |src,chan,val|
+		[src,chan,val].postln;
+	}
+
+	doAfterTouch { |src,chan,val|
+		[src,chan,val].postln;
 	}
 
 	addActiveNote { |noteNum,id|
@@ -159,5 +181,6 @@ InstrumentVoice {
 		};
 	}
 
+	//
 	
 }
