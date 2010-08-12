@@ -1,7 +1,7 @@
 PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	var adParamButtons, ddParamButtons, freqRangeSlider, durScaleSlider, initCPsSlider,
 		initCPsModulatorMenu, durScaleModulatorMenu, freqRangeModulatorMenu, envelopeView, envScaleSlider;
-	var freqRange=200;
+	var maxFreq=2;
 	*new { |par|
 		^super.new(par).init_polygendy;
 	}
@@ -13,7 +13,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			'ddparam'  -> 1,
 			'adparam'  -> 1,
 			'minfreq'  -> 200,
-			'maxfreq'  -> { (200 + freqRange).abs },
+			'maxfreq'  -> 400,
 			'durscale' -> 1.0,
 			'peakA'    -> 0.7,
 			'peakB'    -> 0.3,
@@ -29,9 +29,17 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 		];
 		synthDefName = 'PolyGendy';
 		
+		this.initMIDI;
 		this.makeGUI;
 		this.addMixerChannel;
 		postln(this.class.asString ++ " initialized");
+	}
+
+	initMIDI {
+		noteOnFunction = { |src,chan,num,val|
+			startParams['minFreq'] = num.midicps; // maybe add support for microtunings?
+			startParams['maxFreq'] = startParams['minFreq'] * maxFreq;
+		};
 	}
 	
 	setDDParam { |sel|
@@ -43,8 +51,8 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 	}
 
 	setFreqRange { |val|
-		
-		this.setParam('freqRange', val);
+		maxFreq = val;
+		startParams['maxFreq'] = maxFreq * startParams['minFreq'];
 	}
 	
 	setInitCPs { |val|
@@ -179,7 +187,7 @@ PolyGendy : InstrumentVoice { // a challenge to myself to finish a small project
 			parent: win, 
 			bounds: Rect.new(0, 0, 500, 25),
 			label:"freq range",
-			controlSpec: 'freq'.asSpec,
+			controlSpec: [1, 4].asSpec,
 			initVal: 200,
 			action: { |obj| this.setFreqRange(obj.value) }
 		);

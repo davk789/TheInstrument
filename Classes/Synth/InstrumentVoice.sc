@@ -32,7 +32,7 @@ InstrumentVoice {
 	}
 	
 	initializeMIDI {
-		noteOnFunction = {  };
+		noteOnFunction = {};
 		noteOffFunction = {};
 		ccFunction = {};
 		bendFunction = {};
