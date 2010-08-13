@@ -142,7 +142,7 @@ InstrumentVoice {
 
 	doNoteOn { |src,chan,num,vel|
 		[src,chan,num,vel].postln;
-		server.listSendMsg(['s_new', synthDefName, activeNotes[num].last, 0, groupID] ++ startParams);
+		server.listSendMsg(['s_new', synthDefName, activeNotes[num].last, 0, groupID] ++ startParams.asKeyValuePairs);
 		server.sendMsg('n_set', activeNotes[num].last, 'gate', 1);
 	}
 
