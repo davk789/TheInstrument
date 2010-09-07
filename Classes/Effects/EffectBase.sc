@@ -15,6 +15,7 @@ EffectBase {
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ this.class.asString;
 		server = Server.default;
 		nodeID = server.nextNodeID;
+		addGUIControls = { "default addGUIControls function".postln; };
 		winBounds = Rect.new(500.rand, 500.rand, 400, 120);
 		paramControls = Dictionary.new;
 		groupID = group;
@@ -131,6 +132,7 @@ EffectBase {
 	makeGUI {
 		if(win.isNil){
 			this.initGUI;
+			postln("evaluating addGUIControls with this type: " ++ addGUIControls.class.asString);
 			addGUIControls.value;
 		};
 		if(win.isClosed){

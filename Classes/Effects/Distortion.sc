@@ -54,7 +54,7 @@ Distortion : EffectBase {
 		};
 		this.writeBuffers;
 		this.startSynth;
-		// this sets addGUIControls to a big ugly GUI creation function
+
 		this.setGUIControls; 
 	}
 	

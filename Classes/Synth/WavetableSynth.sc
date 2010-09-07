@@ -16,7 +16,8 @@ WavetableSynth : InstrumentVoice {
 	*new { |par, midi|
 		^super.new.init_wavetablesynth(par, midi);
 	}
-init_wavetablesynth { |par, midi|
+
+	init_wavetablesynth { |par, midi|
 		s = Server.default;
 		parent = par;
 		if(midi.notNil){ midiThru = midi; };
@@ -858,6 +859,7 @@ WavetableSynthFilter : WavetableSynth {
 			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
 			.action_({|obj| this.setCutoffModFlag(obj.value) });
 	}
+
 	loadSynthDef { |filter|
 		filter = filter ? parent.filterUGens["MoogFF"];
 		SynthDef.new("s_dualWavetableRLPF", { 

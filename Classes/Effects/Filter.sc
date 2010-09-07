@@ -8,6 +8,7 @@ SimpleFilter : EffectBase {
 	
 	init_simplefilter {
 		var bus;
+		postln("beginning " ++ this.class ++ " initialization");
 		cutoffSpec = [-12,12].asSpec;
 		cutoffModSpec = [0, 8].asSpec;
 		synthdefName = 'simpleFilter';
@@ -27,15 +28,19 @@ SimpleFilter : EffectBase {
 			'resonance'  -> 1,
 			'filterType' -> "RLPF"
 		];
-		this.setGUIControls;
-//		this.startSynth;
+		
+
 		this.setFilterType("MoogVCF");
+		//this.startSynth; // called by this.setFilterType
+
+		this.setGUIControls;
+		postln("done with " ++ this.class ++ " initialization");
 	}
 	
-	*loadSynthDef { |filter, s|
+	loadSynthDef { |filter, s|
 		// this works because ThyInstrument calls this synth after initializing 
 		// its member variables
-		filter = filter ? ThyInstrument.filterUGens["RLPF"];
+		filter = filter ? parent.filterUGens["RLPF"];
 		s = s ? Server.default;
 		SynthDef.new("simpleFilter", { |gain=1, bus=20, modBus=20, modAmt=0, modLag=0.2,
 			mix=1, freq=440, resonance=1, gate=1|
@@ -92,7 +97,9 @@ SimpleFilter : EffectBase {
 		if(paramControls['resonance'].notNil){
 			paramControls['resonance'].spec = parent.filterSpecs[startParams['filterType']];
 		};
-		this.class.loadSynthDef(parent.filterUGens[startParams['filterType']]);
+
+		this.loadSynthDef(parent.filterUGens[startParams['filterType']]);
+
 		AppClock.sched( 0.15, {
 			server.sendMsg('n_free', nodeID);
 			this.startSynth;
@@ -104,13 +111,13 @@ SimpleFilter : EffectBase {
 		addGUIControls = {
 			paramControls = paramControls.add(
 				'mix' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mix")
-					.value_(startParams['mix'])
-					.knobAction_({ |val| this.setMix(val); })
+				    .value_(startParams['mix'])
+				    .knobAction_({ |val| this.setMix(val) })
 					.knobColor_([Color.black, Color.white, Color.grey.alpha_(0.3), Color.white])
-					.stringColor_(Color.white)
-					.knob.step_(0.005)
+				    .stringColor_(Color.white)
+				    .knob.step_(0.005);
 			);
- 
+
 			paramControls = paramControls.add(
 				'gain' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "gain")
 					.value_(startParams['gain'])
@@ -120,7 +127,6 @@ SimpleFilter : EffectBase {
 					.stringColor_(Color.white)
 					.knob.step_(0.005)
 			);
-			
 			paramControls = paramControls.add(
 				'modAmt' -> EZJKnob.new(win, Rect.new(0, 0, 50, 100), "mod")
 					.value_(startParams['modAmt'])
@@ -197,8 +203,9 @@ SimpleFilter : EffectBase {
 			paramControls['resonance']
 				.value_(startParams['resonance'])
 				.knob.step_(0.005);
-
+			
 		};
+
 	}
 
 }

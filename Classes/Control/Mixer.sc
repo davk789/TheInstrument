@@ -251,6 +251,7 @@ MixerChannel {
 				effects[ind].releaseSynth;
 				effects[ind] = nil;
 			};
+			postln("attempting to create " ++ menu.item);
 			effects[ind] = menu.item.interpret.new(parent, group, channelName, ind);
 			effects[ind].makeGUI(menu.item);
 		}{

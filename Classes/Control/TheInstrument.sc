@@ -95,8 +95,8 @@ ThyInstrument {
 			switch(chan,
 				0, { // WavetableSynth
 					// for testing purposes, disable polySynth
-					polyGendy.noteOn(src, chan, num, vel); 
-					//polySynth.noteOn(src, chan, num, vel);
+					//polyGendy.noteOn(src, chan, num, vel); 
+					polySynth.noteOn(src, chan, num, vel);
 				},
 				9, { // DrumSynth
 					drumSynth.noteOn(src, chan, num, vel);
@@ -105,8 +105,8 @@ ThyInstrument {
 		};
 		noteOffFunction = { |src,chan,num,vel|
 			if(chan == 0){
-				polyGendy.noteOff(src, chan, num, vel);
-				//polySynth.noteOff(src,chan,num,vel);
+				//polyGendy.noteOff(src, chan, num, vel);
+				polySynth.noteOff(src,chan,num,vel);
 			};
 		};
 		bendFunction = { |src,chan,val|
@@ -160,7 +160,7 @@ ThyInstrument {
 		// Instrument classes
 		mixer = Mixer.new(this);
 				
-/*		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
+		eventLooper = EventLooper.new;//(this); // EventLooper doesn't access the top level  namespace??
 		
 		monoInputChannel = MonoInputChannel.new(this);
 
@@ -174,8 +174,8 @@ ThyInstrument {
 		});
 
 		sampler = Sampler.new(this, 8);
-*/		
-		polyGendy = PolyGendy.new(this);
+		
+		//		polyGendy = PolyGendy.new(this);
 		
 	}
 	
