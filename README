@@ -1,0 +1,9 @@
+
+
+TheInstrument is 2 things:
+
+1 - It is an environment of audio sources and processors for computer music performance using SuperCollider.
+
+2 - It is a framework for rapid development of these instruments using an MVC design pattern.
+
+Part 1 is covered by the legacy classes. Part 2 is what I intend to implement here. Ultimately, separatiing the View from the Model will make it easier for sclang to accept control input from any source that generates Open Sound Control messages. Presently, OSC messages interact with scsynth by default. I wish to create some classes that use OSCresponderNode to interact with the language in a similarly consistent way.
