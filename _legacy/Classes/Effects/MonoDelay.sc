@@ -115,7 +115,7 @@ MonoDelay : EffectBase {
 				parent.audioBusRegister.findKeyForValue(startParams['modBus'])
 			);
 
-		};					
+		};
 	}
 	
 	*loadSynthDef { |s|

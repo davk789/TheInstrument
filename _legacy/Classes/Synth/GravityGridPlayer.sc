@@ -105,7 +105,8 @@ GravityGridPlayer : InstrumentVoice {
 /**
 The massCoordView scrambles its point array when editing the control, so it can't update the massWeightView on editing. This should be fixed later.
  */
-		massCoordView = MarkerArea.new(win, Rect.new(0, 0, 150, 150))
+		//massCoordView = MarkerArea.new(win, Rect.new(0, 0, 150, 150))
+		massCoordView = WFSMarkerArea.new(win, Rect.new(0, 0, 150, 150))
 			.mouseMoveAction_({ |obj,x,y,mod| this.updateMassWeightView; })
 			.mouseUpAction_({ |obj| this.updateBuffer; });
 		massCoordView.coords_(massCoords);

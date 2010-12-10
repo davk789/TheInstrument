@@ -1,4 +1,5 @@
- WavetableSynthGUI {
+WavetableSynthGUI {
+	// should the GUI elements get their own variable declarations?
 	*new {
 		^super.new.init_wavetablesynthgui;
 	}
@@ -8,6 +9,8 @@
 	}
 	 
 	makeGUI {
+		postln("this is the function that will create the GUI. but what else should it do??");
+		/*
 		win.bounds = Rect.new(win.view.bounds.left, win.view.bounds.top, win.view.bounds.width, win.view.bounds.height + 135);
 		presetMenu.items_((saveRoot ++ sep ++ "*").pathMatch.collect{ |obj,ind| obj.split($/).last.asSymbol; });
 		filterMidiRow = GUI.hLayoutView.new(win, Rect.new(0, 0, win.view.bounds.width - 10, 25))
@@ -50,5 +53,6 @@
 		cutoffModEnvButton = GUI.button.new(filterEnvRow, Rect.new(0, 0, 34, 0))
 			.states_([["env", Color.black, Color.clear],["env", Color.red, Color.yellow]])
 			.action_({|obj| this.setCutoffModFlag(obj.value) });
+		*/
 	}
 }

@@ -11,6 +11,6 @@ ParamManager : SimpleController {
 	
 	add { |par,val|
 		// error handling?
-		params = params.add(par -> val);
+		params = params.add(par, val);
 	}
 }

@@ -1,4 +1,5 @@
-TestClass {
+TestClass : Class {
+	// * just a generic class to check out how the language works
 	classvar instanceNum=1;
 	var buffer, server, privateDataA, privateDataB, parent, bounds, <>action;
 	var classMethodVar;
@@ -20,6 +21,16 @@ TestClass {
 		    .action_({ |obj|
 				action.value(this);
 			});*/
+	}
+
+	*testLoopBreak { |count|
+		count.do{ |ind|
+			if(ind > 20){
+				^ind;
+			};
+		};
+
+		^"didn't break the loop";
 	}
 
 	getMultiArgs { |firstArg ... args|

@@ -443,7 +443,8 @@ DrumSynth {
 		server.sendMsg('g_new', drumSynthGroup, 0, 1);
 		server.sendMsg('g_new', drumXGroup, 0, drumSynthGroup);
 		if(name.notNil){ recorderID = name; };
-		noteOns = [50, 45, 51, 49, 36, 38, 46, 42];
+		//noteOns = [50, 45, 51, 49, 36, 38, 46, 42];
+		noteOns = [36, 37, 38, 39, 40, 41, 42, 43];
 		sep = Platform.pathSeparator;
 		saveRoot = Platform.userAppSupportDir ++ sep ++ "Presets" ++ sep ++ "DrumSynth";
 		this.addMixerChannel;
