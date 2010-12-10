@@ -49,12 +49,24 @@
 
 		10.do{ |ind|
 			var angle;
+			var radialDistance = 0;
+			
 			Pen.moveTo(~circleBOrigin);
 			
 			angle = (0.8.rand * 2pi) - 0.025;
 
 			Pen.moveTo(~convertToPolar.value(~circleBSize, angle) + ~circleBOrigin);
-			Pen.lineTo(~convertToPolar.value(500, angle) + ~circleBOrigin);
+			
+			5.do{ |ind|
+//				Pen.strokeColor = Color.rand;
+				
+				radialDistance = 100.rand + radialDistance;
+				
+				angle = angle + (0.01.rand - 0.005);
+				
+				Pen.lineTo(~convertToPolar.value(radialDistance + ~circleBSize, angle + 0.1.rand) + ~circleBOrigin);
+			}
+			
 		};
 
 		//
@@ -69,6 +81,6 @@
 
 // WFSMarkerArea SCPen Document
 /*
-warning infinite loooop !!!
+//warning infinite loop !!! Do not uncomment!!!
 Document.current.path.load;
 */
