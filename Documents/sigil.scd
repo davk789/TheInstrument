@@ -1,7 +1,7 @@
 
 // variables
 
-~startAngle = 0.95;
+~startAngle = 0.975;
 ~circleAOrigin = 375 @ 125;
 ~circleASize = 50;
 ~circleBOrigin = 165 @ 315;
@@ -22,17 +22,22 @@
 ~win = Window("sigil", Rect.new(0,0, 500, 500)).front;
 
 ~view = UserView(~win, ~win.view.bounds)
-    .background_(Color.white)
+    .background_(Color.black)
     .mouseDownAction_({ |obj| obj.refresh })
     .mouseMoveAction_({ |obj| obj.refresh });
 
 ~view.drawFunc = {
 	var lineStartPoint, lineEndPoint;
 	Pen.use{
+		// options
+
+		Pen.strokeColor = Color.white;
+		Pen.fillColor = Color.black;
+		Pen.width = 5;
+
 		// top right circle
-		Pen.strokeColor = Color.black;
-		Pen.fillColor = Color.white;
-		Pen.addArc(~circleAOrigin, ~circleASize, ~startAngle * 2pi, (~startAngle - 0.001) * 2pi);
+
+		Pen.addArc(~circleAOrigin, ~circleASize, (~startAngle) * 2pi, (~startAngle - 0.06) * 2pi);
 
 		// bottom left circle
 		Pen.moveTo(~circleBOrigin + (~circleBSize @ 0));
@@ -47,7 +52,7 @@
 
 		// hairs
 
-		10.do{ |ind|
+		(10.rand + 5).do{ |ind|
 			var angle;
 			var radialDistance = 0;
 			
@@ -57,7 +62,7 @@
 
 			Pen.moveTo(~convertToPolar.value(~circleBSize, angle) + ~circleBOrigin);
 			
-			5.do{ |ind|
+			(10.rand + 5).do{ |ind|
 //				Pen.strokeColor = Color.rand;
 				
 				radialDistance = 100.rand + radialDistance;
